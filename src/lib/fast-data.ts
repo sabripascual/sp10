@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile, type Profile } from "@/lib/profile";
 import {
   dayMark,
+  fastWindow,
   fastStreak,
   getFastState,
   lastNDays,
@@ -10,6 +11,8 @@ import {
   type DayMark,
   type FastDay,
   type FastState,
+  type FastStatus,
+  baseDurationMinutes,
 } from "@/lib/fast";
 
 export type FastData = {
@@ -17,19 +20,27 @@ export type FastData = {
   now: Date;
   state: FastState;
   streak: number;
-  calendar: { date: string; mark: DayMark }[];
+  calendar: { date: string; mark: DayMark; editable: boolean }[];
 };
 
-/** Fecha desde la que se cuentan ayunos: el día en que se creó el perfil. */
-export function sinceDate(profile: Profile) {
-  return localDate(new Date(profile.created_at), profile.timezone);
+/**
+ * Fecha desde la que se cuentan ayunos: el día en que se creó el perfil,
+ * o antes si se cargaron ayunos anteriores a mano.
+ */
+export function sinceDate(profile: Profile, records?: Map<string, FastDay>) {
+  const created = localDate(new Date(profile.created_at), profile.timezone);
+  const earliest = records ? [...records.keys()].sort()[0] : undefined;
+  return earliest && earliest < created ? earliest : created;
 }
+
+/** Cuántos días para atrás se pueden cargar o corregir. */
+export const EDITABLE_DAYS = 60;
 
 export async function loadFastRecords(profile: Profile, fromDate: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("fast_days")
-    .select("date, status, broken_at, extra_hours, event_id")
+    .select("date, status, broken_at, extra_hours, event_id, started_at, ended_at")
     .gte("date", fromDate)
     .order("date");
   if (error) throw new Error(`No pude leer los ayunos: ${error.message}`);
@@ -39,8 +50,8 @@ export async function loadFastRecords(profile: Profile, fromDate: string) {
 export async function getFastData(): Promise<FastData> {
   const profile = await getProfile();
   const now = new Date();
-  const since = sinceDate(profile);
-  const records = await loadFastRecords(profile, shiftDate(since, -1));
+  const records = await loadFastRecords(profile, shiftDate(localDate(now, profile.timezone), -400));
+  const since = sinceDate(profile, records);
   const cfg = profile;
   return {
     profile,
@@ -50,6 +61,8 @@ export async function getFastData(): Promise<FastData> {
     calendar: lastNDays(now, profile.timezone, 30).map((date) => ({
       date,
       mark: dayMark(date, now, cfg, records, since),
+      // se puede tocar cualquier ayuno que ya terminó
+      editable: fastWindow(date, cfg, records.get(date) ?? null).end <= now,
     })),
   };
 }
@@ -57,30 +70,34 @@ export async function getFastData(): Promise<FastData> {
 /** Serializa el estado para pasarlo a componentes de cliente. */
 export type FastView = {
   phase: FastState["phase"];
-  startISO: string;
+  startISO: string; // ayuno en curso, o el último que terminó
   endISO: string;
-  brokenAtISO: string | null;
+  lastStatus: FastStatus | null; // cómo terminó el último (en ventana abierta)
   nextStartISO: string;
   extraHours: number;
   canExtend: boolean;
+  canResume: boolean;
+  baseHours: number;
   timezone: string;
   nowISO: string;
 };
 
 export function toView({ state, now, profile }: FastData): FastView {
   const current = state.phase === "eating" ? state.previous : state.window;
-  const next = state.phase === "fasting" ? null : state.next;
+  const next = state.phase === "eating" ? state.next : null;
   return {
     phase: state.phase,
     startISO: current.start.toISOString(),
     endISO: current.end.toISOString(),
-    brokenAtISO: current.record?.broken_at ?? null,
+    lastStatus: state.phase === "eating" ? (current.record?.status ?? "ok") : null,
     nextStartISO: (next ?? current).start.toISOString(),
     extraHours: current.record?.extra_hours ?? 0,
     canExtend:
       state.phase === "fasting"
         ? (current.record?.extra_hours ?? 0) < 8
-        : state.phase === "eating" && state.canExtend,
+        : state.canExtend,
+    canResume: state.phase === "eating" && state.canResume,
+    baseHours: baseDurationMinutes(profile) / 60,
     timezone: profile.timezone,
     nowISO: now.toISOString(),
   };

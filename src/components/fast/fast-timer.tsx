@@ -24,14 +24,14 @@ export function FastTimer({ view, compact = false }: { view: FastView; compact?:
     big = clock(now - start);
     progress = Math.min((now - start) / (end - start), 1);
     detail = `Termina a las ${hour(view.endISO, tz)} · faltan ${humanDuration(end - now)}`;
-  } else if (view.phase === "broken") {
-    label = "Cortado a las";
-    big = view.brokenAtISO ? hour(view.brokenAtISO, tz) : "--:--";
-    detail = `Cero drama. El próximo arranca a las ${hour(view.nextStartISO, tz)}.`;
   } else {
     label = "Ventana abierta";
     big = clock(nextStart - now);
-    detail = `Se cierra a las ${hour(view.nextStartISO, tz)}. ¡A comer rico!`;
+    const last =
+      view.lastStatus === "broken"
+        ? `El último lo cortaste a las ${hour(view.endISO, tz)}. Cero drama.`
+        : `Último ayuno: ${humanDuration(end - start)}. ¡Bien ahí!`;
+    detail = `${last} Se cierra a las ${hour(view.nextStartISO, tz)}.`;
   }
 
   const body = (

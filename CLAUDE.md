@@ -18,7 +18,7 @@
 
 - [x] Etapa 0, base
 - [x] Etapa 1, login y perfil
-- [ ] Etapa 2, ayuno y Hoy (código listo; falta correr `0002_fast_days.sql`)
+- [x] Etapa 2, ayuno y Hoy (+ botones Empezar/Terminar y calendario editable)
 - [ ] Etapa 3, entrenos y eventos
 - [ ] Etapa 4, cuerpo
 - [ ] Etapa 5, PWA y avisos
@@ -277,7 +277,7 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Semana**: de lunes a domingo.
 - **Supabase**: plan gratis, proyecto propio `sp10` en **us-west-2 (Oregon)** (se pausó otro proyecto para liberar el lugar).
 - **Región Vercel**: funciones en `pdx1` (Portland), al lado de la base (`vercel.json`). Login y sesión se verifican con `auth.getClaims()` (JWT local, sin ida y vuelta al servidor de Auth); usar `getClaims()` en vez de `getUser()` salvo que haga falta el usuario fresco.
-- **Ayuno**: cada fila de `fast_days` se identifica por la fecha en que ARRANCA (la noche). Sin fila = cumplido. La racha cuenta desde el día de creación del perfil; el ayuno en curso no suma y uno roto la corta. Se puede extender hasta 2 h después de terminado. Lógica pura en `src/lib/fast.ts` con tests (`npm test`).
+- **Ayuno**: cada fila de `fast_days` se identifica por la fecha en que ARRANCA (la noche). Sin fila = cumplido. La racha cuenta desde el día de creación del perfil; el ayuno en curso no suma y uno roto la corta. Botones **Empezar** (en la ventana abierta, guarda `started_at`; fin = inicio + 16 h) y **Terminar** (guarda `ended_at`; cumplido si llegó a las 16 h con 10 min de changüí, extendido si pasó 1 h o más, cortado si no). Sin tocar nada, el ayuno sigue el horario solo. Se puede extender hasta 2 h después de terminado solo, y "Seguir ayunando" deshace un Terminar de hace menos de 2 h. Tocando un día del calendario se carga o corrige (hasta 60 días atrás); la racha cuenta desde el primer día cargado. Lógica pura en `src/lib/fast.ts` con tests (`npm test`).
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
 ## Preguntas abiertas

@@ -10,6 +10,8 @@ export type FastDay = {
   broken_at: string | null;
   extra_hours: number;
   event_id: string | null;
+  started_at?: string | null;
+  ended_at?: string | null;
 };
 
 export type FastConfig = {
@@ -27,8 +29,7 @@ export type FastWindow = {
 
 export type FastState =
   | { phase: "fasting"; window: FastWindow }
-  | { phase: "broken"; window: FastWindow; next: FastWindow }
-  | { phase: "eating"; previous: FastWindow; next: FastWindow; canExtend: boolean };
+  | { phase: "eating"; previous: FastWindow; next: FastWindow; canExtend: boolean; canResume: boolean };
 
 export type DayMark = "ok" | "extended" | "event" | "broken" | "pending" | "none";
 
@@ -58,10 +59,30 @@ export function shiftDate(date: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+export function scheduledStart(date: string, cfg: FastConfig) {
+  return fromZonedTime(`${date}T${cfg.fast_start.slice(0, 5)}:00`, cfg.timezone);
+}
+
+/**
+ * Ventana real de un ayuno: arranca a la hora tocada en "Empezar" (o la del horario)
+ * y termina a la hora tocada en "Terminar" / "Lo rompí" (o inicio + 16 h + extensión).
+ */
 export function fastWindow(date: string, cfg: FastConfig, record: FastDay | null): FastWindow {
-  const start = fromZonedTime(`${date}T${cfg.fast_start.slice(0, 5)}:00`, cfg.timezone);
-  const minutes = baseDurationMinutes(cfg) + (record?.extra_hours ?? 0) * 60;
-  return { date, start, end: new Date(start.getTime() + minutes * 60_000), record };
+  const start = record?.started_at ? new Date(record.started_at) : scheduledStart(date, cfg);
+  const planned = baseDurationMinutes(cfg) + (record?.extra_hours ?? 0) * 60;
+  const closedAt = record?.ended_at ?? record?.broken_at;
+  const end = closedAt ? new Date(closedAt) : new Date(start.getTime() + planned * 60_000);
+  return { date, start, end, record };
+}
+
+/** Resultado de terminar un ayuno a la hora `endAt`. */
+export function closeOutcome(start: Date, endAt: Date, cfg: FastConfig) {
+  const base = baseDurationMinutes(cfg) * 60_000;
+  const elapsed = endAt.getTime() - start.getTime();
+  const TOLERANCE = 10 * 60_000; // 10 min de changüí
+  if (elapsed + TOLERANCE < base) return { status: "broken" as const, extra_hours: 0, missingMs: base - elapsed };
+  const extra = Math.min(Math.floor((elapsed - base + TOLERANCE) / 3_600_000), MAX_EXTRA_HOURS);
+  return { status: extra > 0 ? ("extended" as const) : ("ok" as const), extra_hours: extra, missingMs: 0 };
 }
 
 export function getFastState(
@@ -76,18 +97,22 @@ export function getFastState(
   const active = candidates.find((w) => w.start <= now && now < w.end);
   const next = candidates.find((w) => w.start > now)!;
 
-  if (active) {
-    return active.record?.status === "broken"
-      ? { phase: "broken", window: active, next }
-      : { phase: "fasting", window: active };
-  }
+  if (active) return { phase: "fasting", window: active };
 
-  const previous = [...candidates].reverse().find((w) => w.end <= now)!;
-  const canExtend =
-    previous.record?.status !== "broken" &&
-    now.getTime() - previous.end.getTime() < EXTEND_GRACE_MS &&
-    (previous.record?.extra_hours ?? 0) < MAX_EXTRA_HOURS;
-  return { phase: "eating", previous, next, canExtend };
+  const previous = [...candidates]
+    .filter((w) => w.end <= now)
+    .sort((a, b) => b.end.getTime() - a.end.getTime())[0];
+  const recent = now.getTime() - previous.end.getTime() < EXTEND_GRACE_MS;
+  const closedByHand = Boolean(previous.record?.ended_at || previous.record?.broken_at);
+  return {
+    phase: "eating",
+    previous,
+    next,
+    // terminó solo a la hora del horario: se puede estirar
+    canExtend: recent && !closedByHand && (previous.record?.extra_hours ?? 0) < MAX_EXTRA_HOURS,
+    // lo terminaste a mano hace poco: "Seguir ayunando" lo deshace
+    canResume: recent && closedByHand,
+  };
 }
 
 /** Marca de un día para el calendario y la racha. */
