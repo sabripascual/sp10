@@ -13,9 +13,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default async function HoyPage() {
-  const fast = await getFastData();
+  // Todo en paralelo: el perfil se pide una sola vez (React cache).
+  const [fast, training, body] = await Promise.all([
+    getFastData(),
+    getTrainingData(),
+    getBodyData(undefined, { withPhotos: false }),
+  ]);
   const { profile, streak } = fast;
-  const [training, body] = await Promise.all([getTrainingData(profile), getBodyData(profile, { withPhotos: false })]);
   const checkDue = body.nextDate <= body.today && body.checks.at(-1)?.date !== body.today;
   const apodo = randomNickname(profile.nicknames);
   const todayPlan = training.week.find((d) => d.isToday)!;

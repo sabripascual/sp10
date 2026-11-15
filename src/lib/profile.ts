@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,7 +20,7 @@ export type Profile = {
 export const DEFAULT_NICKNAMES = ["crack", "reina", "bebita", "diosa", "amorrrr"];
 
 /** Devuelve el perfil de la usuaria logueada (lo crea si todavía no existe). */
-export async function getProfile(): Promise<Profile> {
+export const getProfile = cache(async function getProfile(): Promise<Profile> {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getClaims();
   const userId = auth?.claims?.sub;
@@ -40,7 +41,7 @@ export async function getProfile(): Promise<Profile> {
     .single();
   if (insertError) throw new Error(`No pude crear el perfil: ${insertError.message}`);
   return created as Profile;
-}
+});
 
 export function randomNickname(nicknames: string[]) {
   const list = nicknames.length ? nicknames : DEFAULT_NICKNAMES;

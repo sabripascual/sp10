@@ -6,7 +6,7 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <TopBar />
-      <main className="mx-auto max-w-md px-5 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-2">
+      <main className="mx-auto max-w-md px-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-2">
         {children}
         <Footer />
       </main>

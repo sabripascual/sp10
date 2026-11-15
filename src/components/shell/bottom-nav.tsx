@@ -13,30 +13,27 @@ const tabs = [
   { href: "/progreso", label: "Progreso", icon: TrendingUp },
 ];
 
-// Botonera amarilla: la pestaña activa va en una pastilla negra.
+// Botonera amarilla flotante: íconos negros nítidos, la activa en pastilla negra.
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 rounded-t-2xl bg-accent pb-[calc(env(safe-area-inset-bottom)*0.5)] text-accent-fg">
-      <ul className="mx-auto grid max-w-md grid-cols-5 px-2 py-1">
+    <nav className="fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md rounded-full bg-accent text-accent-fg shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
+      <ul className="grid grid-cols-5 p-1.5">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <li key={href}>
               <Link
                 href={href}
+                aria-label={label}
                 aria-current={active ? "page" : undefined}
-                className="flex h-12 flex-col items-center justify-center gap-0.5 text-[10px] font-extrabold"
+                className={cn(
+                  "flex h-12 flex-col items-center justify-center rounded-full transition-colors",
+                  active ? "bg-accent-fg text-accent" : "text-accent-fg active:bg-black/10",
+                )}
               >
-                <span
-                  className={cn(
-                    "grid h-6 w-10 place-items-center rounded-full transition-colors",
-                    active ? "bg-accent-fg text-accent" : "text-accent-fg/60",
-                  )}
-                >
-                  <Icon className="size-4" strokeWidth={active ? 2.75 : 2.25} />
-                </span>
-                <span className={active ? "text-accent-fg" : "text-accent-fg/60"}>{label}</span>
+                <Icon className="size-[22px]" strokeWidth={2.5} />
+                <span className="text-[10px] font-extrabold leading-tight">{label}</span>
               </Link>
             </li>
           );
