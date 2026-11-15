@@ -16,7 +16,7 @@
 ### Estado de las etapas
 
 - [x] Etapa 0, base
-- [ ] Etapa 1, login y perfil (código listo; falta configurar Supabase)
+- [x] Etapa 1, login y perfil
 - [ ] Etapa 2, ayuno y Hoy
 - [ ] Etapa 3, entrenos y eventos
 - [ ] Etapa 4, cuerpo
