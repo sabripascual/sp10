@@ -11,6 +11,7 @@
 - Tema BRAVE: tokens en `src/app/globals.css`. **Un solo elemento amarillo (`accent`) por pantalla.**
 - Mobile first, modo oscuro siempre.
 - Cada etapa termina con `npm run lint` y `npm run build` en verde, commit y deploy en Vercel.
+- **Flujo de entrega**: cada etapa o corrección se sube directo a `main` (además de la rama de trabajo). La dueña la prueba en producción en Vercel y manda correcciones.
 - Secretos solo en variables de entorno (Vercel / `.env.local`), nunca en el repo.
 
 ### Estado de las etapas
