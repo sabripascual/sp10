@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { Bell, Settings } from "lucide-react";
 import { CatLogo } from "@/components/brand/cat-logo";
 
 export function TopBar() {
@@ -10,13 +10,22 @@ export function TopBar() {
           <CatLogo className="size-9" />
           SP10
         </Link>
-        <Link
-          href="/ajustes"
-          aria-label="Ajustes"
-          className="grid size-10 place-items-center rounded-full bg-surface text-fg"
-        >
-          <Settings className="size-5" />
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/ajustes#avisos"
+            aria-label="Avisos"
+            className="grid size-10 place-items-center rounded-full bg-surface text-fg"
+          >
+            <Bell className="size-5" />
+          </Link>
+          <Link
+            href="/ajustes"
+            aria-label="Ajustes"
+            className="grid size-10 place-items-center rounded-full bg-surface text-fg"
+          >
+            <Settings className="size-5" />
+          </Link>
+        </div>
       </div>
     </header>
   );

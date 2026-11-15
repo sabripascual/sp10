@@ -8,6 +8,16 @@ import { cn } from "@/lib/utils";
 
 type Status = "loading" | "unsupported" | "install" | "denied" | "off" | "on";
 
+/** Registra el service worker si hace falta y espera a que esté activo (máx 5 s). */
+async function getRegistration() {
+  const reg = (await navigator.serviceWorker.getRegistration()) ?? (await navigator.serviceWorker.register("/sw.js"));
+  if (reg.active) return reg;
+  return await Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<ServiceWorkerRegistration>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+  ]);
+}
+
 function urlBase64ToUint8Array(base64: string) {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
   const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"));
@@ -29,10 +39,15 @@ export function PushSettings({ vapidPublicKey, prefs }: { vapidPublicKey: string
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
         return setStatus(isIOS && !standalone ? "install" : "unsupported");
       }
+      if (isIOS && !standalone) return setStatus("install");
       if (Notification.permission === "denied") return setStatus("denied");
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      setStatus(sub ? "on" : "off");
+      try {
+        const reg = await getRegistration();
+        const sub = await reg.pushManager.getSubscription();
+        setStatus(sub ? "on" : "off");
+      } catch {
+        setStatus("off");
+      }
     })();
   }, []);
 
@@ -41,7 +56,12 @@ export function PushSettings({ vapidPublicKey, prefs }: { vapidPublicKey: string
       setMsg(null);
       const perm = await Notification.requestPermission();
       if (perm !== "granted") return setStatus(perm === "denied" ? "denied" : "off");
-      const reg = await navigator.serviceWorker.ready;
+      let reg: ServiceWorkerRegistration;
+      try {
+        reg = await getRegistration();
+      } catch {
+        return setMsg("No pude preparar los avisos. Cerrá la app del todo y volvé a abrirla.");
+      }
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
@@ -55,7 +75,7 @@ export function PushSettings({ vapidPublicKey, prefs }: { vapidPublicKey: string
 
   const disable = () =>
     start(async () => {
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await getRegistration();
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
         await removeSubscription(sub.endpoint);
@@ -79,6 +99,7 @@ export function PushSettings({ vapidPublicKey, prefs }: { vapidPublicKey: string
 
   return (
     <div className="space-y-4">
+      {status === "loading" && <p className="text-sm text-muted">Revisando los avisos…</p>}
       {status === "install" && (
         <p className="rounded-xl bg-bg p-3 text-sm">
           En iPhone los avisos funcionan con la app instalada: en Safari tocá <b>Compartir</b> →{" "}

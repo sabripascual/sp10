@@ -13,7 +13,7 @@ export default async function AjustesPage() {
   return (
     <>
       <PageHeader title="Ajustes" />
-      <Card className="mb-4 space-y-4">
+      <Card id="avisos" className="mb-4 scroll-mt-20 space-y-4">
         <div>
           <CardTitle>Avisos</CardTitle>
           <CardDescription>Te escribo con apodo y onda. Activá los que quieras.</CardDescription>
