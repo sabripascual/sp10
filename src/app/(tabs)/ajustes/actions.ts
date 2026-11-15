@@ -28,10 +28,9 @@ export async function updateSettings(
   if (nicknames.length === 0) return { error: "Dejame al menos un apodo." };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Se cerró la sesión. Volvé a entrar." };
+  const { data: auth } = await supabase.auth.getClaims();
+  const userId = auth?.claims?.sub;
+  if (!userId) return { error: "Se cerró la sesión. Volvé a entrar." };
 
   const { error } = await supabase
     .from("profiles")
@@ -42,7 +41,7 @@ export async function updateSettings(
       hide_weight: hideWeight,
       nicknames,
     })
-    .eq("id", user.id);
+    .eq("id", userId);
   if (error) return { error: `No se pudo guardar: ${error.message}` };
 
   revalidatePath("/", "layout");

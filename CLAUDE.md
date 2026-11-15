@@ -274,7 +274,8 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 ## Decisiones tomadas
 - **Login**: email + contraseña de Supabase Auth (sin Google ni magic link). Registro público desactivado; el usuario se crea a mano en Supabase → Authentication → Add user. Además, `ALLOWED_EMAIL` corta cualquier otro email en el middleware (`src/middleware.ts`).
 - **Semana**: de lunes a domingo.
-- **Supabase**: plan Pro, proyecto propio para SP10.
+- **Supabase**: plan gratis, proyecto propio `sp10` en **us-west-2 (Oregon)** (se pausó otro proyecto para liberar el lugar).
+- **Región Vercel**: funciones en `pdx1` (Portland), al lado de la base (`vercel.json`). Login y sesión se verifican con `auth.getClaims()` (JWT local, sin ida y vuelta al servidor de Auth); usar `getClaims()` en vez de `getUser()` salvo que haga falta el usuario fresco.
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
 ## Preguntas abiertas

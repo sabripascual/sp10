@@ -18,22 +18,21 @@ export const DEFAULT_NICKNAMES = ["crack", "reina", "bebita", "diosa", "amorrrr"
 /** Devuelve el perfil de la usuaria logueada (lo crea si todavía no existe). */
 export async function getProfile(): Promise<Profile> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { data: auth } = await supabase.auth.getClaims();
+  const userId = auth?.claims?.sub;
+  if (!userId) redirect("/login");
 
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
   if (error) throw new Error(`No pude leer el perfil: ${error.message}`);
   if (data) return data as Profile;
 
   const { data: created, error: insertError } = await supabase
     .from("profiles")
-    .insert({ id: user.id })
+    .insert({ id: userId })
     .select("*")
     .single();
   if (insertError) throw new Error(`No pude crear el perfil: ${insertError.message}`);

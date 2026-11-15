@@ -39,12 +39,12 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresca el token si hace falta: así la sesión no se cae nunca.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refresca el token si hace falta (la sesión no se cae nunca) y verifica el JWT
+  // localmente con las claves públicas del proyecto: sin ida y vuelta a Oregon.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
 
-  if (!user) {
+  if (!user?.sub) {
     return isPublic ? response : redirectTo(request, "/login", response);
   }
   if (!isAllowedEmail(user.email)) {
