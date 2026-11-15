@@ -25,6 +25,7 @@ export function BottomNav() {
             <li key={href}>
               <Link
                 href={href}
+                prefetch // precarga completa: al tocar, la pestaña ya está lista
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
                 className={cn(
