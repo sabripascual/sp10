@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Tokens BRAVE. Regla de oro: un solo elemento --accent por pantalla. */
+:root {
+  --bg: #000000;
+  --surface: #2a2a2a;
+  --muted: #606060;
+  --fg: #ffffff;
+  --accent: #ffe900;
+  --accent-fg: #000000;
+  --radius: 16px;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-fg: var(--fg);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+
+  /* alias estilo shadcn */
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--fg);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-fg);
+  --color-border: var(--muted);
+  --color-ring: var(--accent);
+
+  --font-sans: var(--font-open-sans);
+  --radius-card: var(--radius);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-open-sans), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}

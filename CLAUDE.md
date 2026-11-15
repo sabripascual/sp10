@@ -1,0 +1,277 @@
+# SP10 — Documento del MVP
+
+> 15 nov 2026 · Sabri Pascual. Este archivo es la fuente de verdad del producto. Claude Code lo lee al arrancar cada sesión.
+
+## Convenciones del repo (para Claude Code)
+
+- Idioma de la UI: español rioplatense (voseo), tono amigable, humor argentino, **nunca culpa**.
+- Stack: Next.js 15 (App Router) + TypeScript + Tailwind v4 + componentes estilo shadcn/ui (en `src/components/ui`, escritos a mano porque el registro de shadcn no es accesible desde el entorno cloud).
+- Zona horaria: `America/Argentina/Tucuman` (UTC-3). Todas las fechas con `date-fns` + `date-fns-tz`.
+- La semana va de **lunes a domingo**.
+- Tema BRAVE: tokens en `src/app/globals.css`. **Un solo elemento amarillo (`accent`) por pantalla.**
+- Mobile first, modo oscuro siempre.
+- Cada etapa termina con `npm run lint` y `npm run build` en verde, commit y deploy en Vercel.
+- Secretos solo en variables de entorno (Vercel / `.env.local`), nunca en el repo.
+
+### Estado de las etapas
+
+- [x] Etapa 0, base
+- [ ] Etapa 1, login y perfil
+- [ ] Etapa 2, ayuno y Hoy
+- [ ] Etapa 3, entrenos y eventos
+- [ ] Etapa 4, cuerpo
+- [ ] Etapa 5, PWA y avisos
+- [ ] Etapa 6, progreso
+
+---
+
+## Visión y objetivo
+
+SP10 es una PWA personal de hábitos que sostiene tres cosas: el ayuno 16:8, la fuerza 3 veces por semana y la evolución del cuerpo. No es un tracker de rendimiento: es un coach de bolsillo, motivador y con humor argentino.
+
+Objetivos de la usuaria: bajar de peso, construir un cuerpo atlético y sostener un hábito deportivo con fuerza para ganar potencia y destreza para competir.
+
+### Principios de producto
+
+- **Cero fricción**: todo se registra con uno o dos toques. Lo que es rutina (el ayuno, el fútbol fijo) se asume cumplido salvo que se marque lo contrario.
+- **Sin culpa**: no se anota qué se comió. Un evento social se compensa y queda la marca de compensado.
+- **Progreso visible**: rachas, gráficos y resumen semanal son el motor de la motivación.
+- **Cuidado con el peso**: pesaje quincenal, con opción de ocultar el número y ver solo la tendencia. Medidas y fotos tienen tanto protagonismo como la balanza.
+
+**Métrica de éxito del MVP**: usarla todos los días durante 4 semanas seguidas, con al menos 3 sesiones de fuerza por semana registradas.
+
+## Usuaria y rutina
+
+Una sola usuaria (la dueña, con rol admin), que usa la app instalada en el iPhone. Su rutina define los valores por defecto.
+
+### Día típico
+
+| Momento | Hora | Qué pasa |
+|---|---|---|
+| Despertar | 9:00 | — |
+| Primera comida (fin del ayuno) | 11:00 | Desayuno |
+| Última comida (inicio del ayuno) | 19:00 | Se cierra la ventana de alimentación |
+
+Ayuno 16:8 fijo de 19:00 a 11:00. Hoy no usa apps y controla mirando el reloj.
+
+### Semana deportiva actual
+
+| Día | Actividad habitual |
+|---|---|
+| Lunes | Academia de fútbol, 1 h |
+| Martes | Entrenamiento de fútbol con el equipo |
+| Miércoles | Nada o pádel |
+| Jueves | Partido amistoso de fútbol (5 o 7), 50 min |
+| Viernes | Libre |
+| Sábado | Partido de fútbol |
+| Domingo | Libre |
+
+Meta nueva: fuerza en el gym 3 veces por semana, sin día fijo. Correr sin plan: le importa el tiempo corrido (hoy 30 min a ritmo limpio) y subir de a poco.
+
+**Deslices**: vienen de eventos sociales (cumples, salidas) que terminan en cena o tragos. Suele saberlos con anticipación. No quiere anotar qué comió: quiere compensar al día siguiente con ayuno o entrenamiento y tener una marca de compensado.
+
+**Cuerpo**: pesarse le genera angustia; hoy lo hace cada mes o más, e ideal sería cada 2 semanas. Tiene balanza. Le importan sobre todo piernas, cintura y brazos. Quiere fotos de progreso.
+
+**Motivación**: rachas, gráficos de evolución y resúmenes semanales. Notificaciones de toda la rutina, en tono amigable y argentino.
+
+**Fuera del MVP**: el Apple Watch casi no se usa para registrar; queda para una etapa posterior.
+
+## Funcionalidades del MVP
+
+Siete módulos. Cada uno lista lo que tiene que pasar para darlo por terminado.
+
+### F1. Login con sesión persistente
+- Login con Google o magic link de Supabase Auth; la sesión se renueva sola y no vuelve a pedir login en la PWA instalada.
+- Solo el email de la dueña puede entrar (allowlist en una variable de entorno); cualquier otro ve "Acceso restringido".
+- Perfil con rol admin.
+
+### F2. Ayuno automático 16:8
+- Configuración: hora de inicio (19:00) y fin (11:00) por defecto, editables. Mismo esquema todos los días.
+- Cada día se asume cumplido. La usuaria solo interviene si lo rompe o lo extiende.
+- Pantalla con contador en vivo, barra de progreso y hora de fin.
+- Acciones: "Lo rompí" (registra la hora) y "Extender" (+1 h o +2 h).
+- Racha de días cumplidos. Un día roto por un evento compensado no corta la racha.
+
+### F3. Entrenamientos con un toque
+- Tipos: Fútbol, Fuerza, Correr, Pádel, Otro.
+- Plantilla de semana: lunes, martes, jueves y sábado aparecen como fútbol sugerido; un toque confirma y otro marca "no fui".
+- Correr guarda minutos y sensación (Difícil / Bien / Excelente). Fuerza guarda duración y una nota opcional.
+- Meta semanal visible: fuerza 3/3 con anillo de progreso. La semana va de lunes a domingo.
+
+### F4. Eventos y compensación
+- Crear un evento futuro o de hoy: nombre ("Cumple de Juli"), fecha y tipo (cena, tragos o ambos).
+- Elegir compensación: +2 h de ayuno al día siguiente (primera comida a las 13:00), un entreno extra (fuerza o 30 min de correr), o las dos.
+- El día previo se sugiere "preparar" (por ejemplo, fuerza ese día).
+- Al día siguiente aparece la tarea; al tildarla queda la marca de compensado.
+- No se registra qué se comió ni las calorías.
+
+### F5. Cuerpo: peso, medidas y fotos
+- Control quincenal con recordatorio. Se puede cargar en cualquier momento.
+- Peso en kg con modo "número oculto": en ese modo se muestra solo la tendencia (bajando, estable o subiendo) y el número aparece al mantener presionado.
+- Medidas en cm: cintura, cadera, pecho, brazo y pierna (muslo); todas opcionales.
+- Fotos de frente, perfil y espalda, guardadas en Storage privado. Comparador antes/ahora con slider.
+
+### F6. Progreso y resumen
+- Rachas: ayuno, semanas con fuerza 3/3 y eventos compensados.
+- Gráficos: medidas en el tiempo, tendencia de peso (promedio de controles) y minutos corridos por semana.
+- Resumen semanal el domingo, por ejemplo: "3/3 fuerza, 7/7 ayuno, 1 evento compensado, 75 min corridos".
+
+### F7. Notificaciones
+- Web Push en la PWA instalada (iOS 16.4 o superior).
+- Disparadores y frases en la sección de Notificaciones; cada tipo se puede activar o desactivar en Ajustes.
+- Apodo aleatorio en cada mensaje.
+
+## Pantallas y flujos
+
+Cinco pestañas en una barra inferior, más Ajustes desde el avatar. Mobile first, con modo oscuro por defecto.
+
+| Pestaña | Qué muestra | Acciones principales |
+|---|---|---|
+| Hoy | Saludo con apodo, estado del ayuno, qué toca hoy (fútbol sugerido, fuerza pendiente, compensación), rachas | Confirmar actividad, tildar compensación |
+| Ayuno | Contador grande, progreso, hora de fin, racha, historial de 30 días en calendario | Lo rompí, Extender +1/+2 h |
+| Entrenos | Semana lunes a domingo con chips por día, anillo de fuerza 3/3, minutos corridos | Registrar con un toque (bottom sheet) |
+| Cuerpo | Último control, próximo control, tendencia, galería de fotos, comparador | Nuevo control (peso, medidas, fotos) |
+| Progreso | Rachas, gráficos de medidas y peso, minutos corridos, resúmenes semanales | Ver resumen de semanas anteriores |
+| Ajustes | Horario de ayuno, plantilla semanal, meta de fuerza, notificaciones, número oculto | Editar y activar o desactivar avisos |
+
+### Flujo de evento y compensación
+1. Desde Hoy o Entrenos: "Tengo un evento", con nombre, fecha y tipo.
+2. La app propone compensación: +2 h de ayuno, entreno extra o ambas. Elige una.
+3. El día previo: aviso "Mañana tenés el cumple, hoy metéle fuerza" (opcional).
+4. El día del evento: el ayuno de esa noche queda marcado como "evento" y no corta la racha.
+5. El día siguiente: la tarjeta de compensación aparece primera en Hoy.
+6. Al tildarla: marca de compensado, animación y suma a la racha de compensados.
+7. Si no se tilda en 48 h, queda como "pendiente", sin castigo, y se refleja en el resumen.
+
+### Flujo de control quincenal
+1. Notificación el día que toca.
+2. Paso 1, peso (con número oculto si está activo). Paso 2, medidas. Paso 3, fotos. Todos se pueden saltear.
+3. Cierre con comparación contra el control anterior, empezando por las medidas.
+
+## Notificaciones
+
+Nueve avisos cubren la rutina. Cada mensaje elige al azar un apodo de la lista y una frase del banco, sin repetir la última usada. Todas las horas son de Argentina (UTC-3).
+
+Apodos: crack, reina, bebita, diosa, amorrrr. Se guardan en Ajustes y se pueden editar.
+
+| Aviso | Cuándo | Ejemplo |
+|---|---|---|
+| Cierre de ventana | 18:30 todos los días | "{apodo}, metéle a la última comida que en media hora se te cierra la ventana" |
+| Ayuno iniciado | 19:00 | "Arrancó el ayuno, {apodo}. Nos vemos a las 11 con todo" |
+| Ayuno cumplido | 11:00 (o 13:00 si hay compensación) | "¡16 horas, {apodo}! Ya podés desayunar como la campeona que sos" |
+| Fuerza pendiente | Jueves 10:00 si va menos de 2/3, domingo 10:00 si va menos de 3/3 | "{apodo}, vas 1 de 3 en fuerza y ya es jueves. Hora de meterle fierro" |
+| Evento mañana | Día previo, 10:00 | "Mañana hay cumple, {apodo}. ¿Cómo lo compensamos?" |
+| Compensación de hoy | Día siguiente, 10:00 | "Ayer fue fiesta, hoy toca devolverle al cuerpo. Vos podés, {apodo}" |
+| Confirmar fútbol | Lunes, martes, jueves y sábado, 22:00 | "{apodo}, ¿hubo fútbol hoy? Tocame y lo anoto" |
+| Control quincenal | Cada 14 días, 9:30 | "Toca control, {apodo}. Es solo un dato, no un juicio" |
+| Resumen semanal | Domingo 20:00 | "Semana cerrada, {apodo}: 3/3 fuerza, 7/7 ayuno. Sos una máquina" |
+
+### Banco de frases inicial
+- "Crack, hora de meterle fierro"
+- "Reina, metéle a la última comida que se te acaba la ventana"
+- "Diosa, la racha no se cuida sola"
+- "Bebita, 30 minutitos de trote y sos otra"
+- "Amorrrr, el gym te extraña. No lo hagas sufrir"
+- "Crack, ni el Dibu ataja tanta constancia"
+- "Reina, hoy no se negocia: fuerza y a otra cosa"
+
+**Reglas de tono**: nunca culpa ni vergüenza; humor y empuje. Ningún aviso menciona el peso como número. Silencio nocturno de 23:00 a 8:30.
+
+## Modelo de datos (Supabase)
+
+Ocho tablas en Postgres, todas con `user_id` y RLS que limita cada fila a su dueña. Las fotos van a un bucket privado de Storage.
+
+| Tabla | Para qué | Campos clave |
+|---|---|---|
+| profiles | Usuaria y preferencias | id (= auth.users.id), role, nicknames text[], fast_start time, fast_end time, strength_goal int, hide_weight bool, timezone, week_template jsonb |
+| fast_days | Un registro por día de ayuno | date, status (ok, broken, extended, event), broken_at, extra_hours, event_id |
+| workouts | Entrenamientos | date, type (futbol, fuerza, correr, padel, otro), minutes, feeling, note, source (manual, template) |
+| events | Eventos sociales | name, date, kind (cena, tragos, ambos), compensation (fast, workout, both), compensated_at, status |
+| body_checks | Control quincenal | date, weight_kg, waist_cm, hip_cm, chest_cm, arm_cm, thigh_cm, note |
+| body_photos | Fotos de progreso | check_id, angle (front, side, back), storage_path |
+| push_subscriptions | Suscripciones Web Push | endpoint, p256dh, auth, user_agent |
+| notification_log | Avisos enviados, para no repetir | kind, sent_at, phrase_id |
+
+RLS (igual en todas las tablas):
+
+```sql
+alter table workouts enable row level security;
+create policy "solo la dueña" on workouts
+  for all using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+```
+
+Storage: bucket `body-photos` privado, con la ruta `{user_id}/{check_id}/{angle}.jpg`. Se sirve con URLs firmadas de corta duración.
+
+Vistas útiles: `v_week_summary` (fuerza, ayunos, minutos corridos y eventos por semana ISO) y `v_streaks` (rachas actuales y máximas).
+
+## Stack y arquitectura
+
+Next.js en Vercel para la app, y Supabase para datos, login, fotos y el reloj que dispara los avisos.
+
+Cada 15 minutos Supabase llama al endpoint de avisos en Vercel. Ese endpoint decide qué notificación toca y la envía por Apple Web Push al iPhone.
+
+| Capa | Elección | Por qué |
+|---|---|---|
+| Frontend | Next.js (App Router) + TypeScript | Server actions simplifican el backend |
+| Estilos | Tailwind CSS + shadcn/ui | Componentes accesibles, fáciles de llevar a la marca BRAVE |
+| Gráficos | Recharts | Medidas, peso y minutos corridos |
+| Auth | Supabase Auth (Google o magic link) + @supabase/ssr | Cookies con refresh automático: la sesión no se cae |
+| Datos | Supabase Postgres + RLS | Una usuaria, filas protegidas |
+| Fotos | Supabase Storage (privado) | URLs firmadas |
+| PWA | manifest.webmanifest + service worker | Instalable, ícono propio, push |
+| Push | web-push con claves VAPID | Funciona en iOS 16.4 o superior con la app agregada a Inicio |
+| Programación | Supabase pg_cron + pg_net | El cron de Vercel en el plan gratis corre como máximo una vez por día |
+| Fechas | date-fns + date-fns-tz | Todo en America/Argentina/Tucuman |
+
+Variables de entorno: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo en el cron), `ALLOWED_EMAIL`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET`.
+
+## Branding BRAVE aplicado
+
+Fondo oscuro, grises, Open Sans y el amarillo `#ffe900` solo para llamar la atención. El logo propio es un gatito canchero y minimalista entrenando.
+
+| Token | Color | Uso en SP10 |
+|---|---|---|
+| --bg | #000000 | Fondo de la app |
+| --surface | #2a2a2a | Tarjetas y barra inferior |
+| --muted | #606060 | Texto secundario, bordes, íconos inactivos |
+| --fg | #ffffff | Texto principal |
+| --accent | #ffe900 | Solo para atención: botón principal, racha activa, meta cumplida, pestaña activa |
+
+**Regla de oro**: el amarillo es "puramente atencional". Hay un solo elemento amarillo por pantalla, el que importa en ese momento.
+
+**Tipografía**: Open Sans (next/font). Extra Bold (800) para números grandes y títulos (contador del ayuno, rachas); Bold para encabezados; Regular para texto.
+
+**Personalidad**: fuerte, accesible, inclusivo, innovador, funcional; arquetipo creador/explorador (audaz, humano, minimalista, "te inspira sin imponerte"): pantallas limpias, mucho aire, botones grandes y textos cortos con humor.
+
+### Logo SP10: gatito canchero
+- Silueta de gato minimalista, de trazo grueso y geométrico, en pose de levantar una pesa (o con vincha), con media sonrisa y un ojo guiñado.
+- Monocromático, en blanco o negro; versión de ícono con fondo amarillo #ffe900 y gato negro.
+- Wordmark "SP10" en Open Sans Extra Bold con kerning cerrado (-80 → `tracking-[-0.08em]`).
+- La cola del gato hace una espiral que recuerda al huracán del isotipo BRAVE.
+- Entregables: icon-512.png, icon-192.png, apple-touch-icon.png (180 px), favicon.svg, splash oscuro.
+
+**Componentes clave**: tarjeta oscura con radio de 16 px, anillo de progreso con trazo amarillo, chips por día de la semana, bottom sheet para registrar y confeti amarillo al cumplir una meta.
+
+## Roadmap después del MVP
+1. v1.1, ajustes de uso real: frases nuevas, horarios de avisos afinados, widgets de iOS vía Atajos.
+2. v1.2, Apple Watch vía Salud: un Atajo de iOS (o Health Auto Export) manda entrenos, calorías activas y peso a `/api/health/ingest`.
+3. v1.3, acciones rápidas desde el reloj: Atajos en el Watch para "Rompí el ayuno", "Fui al gym" y "Tengo evento".
+4. v1.4, plan de fuerza: rutinas simples por día (tren superior, inferior, core) con progreso de cargas.
+5. v2, app nativa (opcional): SwiftUI + HealthKit. Supabase sigue siendo el backend.
+
+## Plan de trabajo
+Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un deploy en Vercel.
+
+- Etapa 0, base: Next.js + TypeScript + Tailwind + shadcn/ui, tema BRAVE (tokens y Open Sans), layout con barra inferior y deploy inicial.
+- Etapa 1, login y perfil: Supabase Auth con sesión persistente, allowlist por email, tabla profiles, pantalla de Ajustes (horario de ayuno, apodos, meta de fuerza).
+- Etapa 2, ayuno y Hoy: tabla fast_days, contador en vivo, "Lo rompí" y "Extender", racha y pantalla Hoy.
+- Etapa 3, entrenos y eventos: tablas workouts y events, plantilla semanal de fútbol, registro con un toque, anillo de fuerza 3/3, flujo de compensación.
+- Etapa 4, cuerpo: body_checks, body_photos y bucket privado; control quincenal en 3 pasos, número oculto y comparador de fotos.
+- Etapa 5, PWA y avisos: manifest, íconos del gatito, service worker, suscripción push, /api/cron/notify, pg_cron cada 15 min y banco de frases.
+- Etapa 6, progreso: vistas v_week_summary y v_streaks, gráficos con Recharts y resumen del domingo.
+
+## Preguntas abiertas
+- ¿Login con Google o con magic link por email?
+- ¿La semana de fuerza arranca el lunes (propuesto) o el domingo?
+- ¿Qué fecha tiene el primer control quincenal?
