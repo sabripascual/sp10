@@ -16,6 +16,8 @@ function redirectTo(request: NextRequest, pathname: string, base: NextResponse) 
 
 export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  // El cron se autentica con CRON_SECRET, no con sesión
+  if (path.startsWith("/api/cron/")) return NextResponse.next();
   const isPublic = PUBLIC_PATHS.includes(path);
 
   if (!isSupabaseConfigured) {

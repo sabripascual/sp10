@@ -1,11 +1,13 @@
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { LoginForm } from "./login-form";
 import { Footer } from "@/components/shell/footer";
+import { CatLogo } from "@/components/brand/cat-logo";
 
 export default function LoginPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-10">
-      <p className="text-6xl font-extrabold tracking-[-0.08em]">SP10</p>
+      <CatLogo className="mb-2 size-24" />
+      <p className="text-6xl font-black tracking-[-0.06em]">SP10</p>
       <p className="mt-2 mb-10 text-muted">Tu coach de bolsillo. Entrá y metéle.</p>
       {isSupabaseConfigured ? (
         <LoginForm />

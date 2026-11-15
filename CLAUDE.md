@@ -21,7 +21,7 @@
 - [x] Etapa 2, ayuno y Hoy (+ botones Empezar/Terminar y calendario editable)
 - [x] Etapa 3, entrenos y eventos
 - [x] Etapa 4, cuerpo
-- [ ] Etapa 5, PWA y avisos
+- [x] Etapa 5, PWA y avisos (falta que la dueña cargue claves y programe el cron)
 - [ ] Etapa 6, progreso
 
 ---
@@ -281,6 +281,9 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Entrenos**: `workouts.status` = `done` o `skipped` ("no fui" de la plantilla). La plantilla (`profiles.week_template`, día ISO → tipo) sugiere fútbol L/M/J/S; un día planeado que ya pasó esta semana sin confirmar muestra "¿Hubo fútbol?" con Fui / No fui. Registro con un toque en bottom sheet (hoy o ayer, minutos en chips, sensación para correr, nota). Tipos y constantes de cliente en `src/lib/training-types.ts`; datos del servidor en `src/lib/training.ts`.
 - **Eventos**: crear un evento marca el ayuno de esa noche como `event` (no corta la racha) y, si la compensación incluye ayuno, le suma +2 h (primera comida 2 h más tarde). Fases en `src/lib/events.ts`: upcoming, tomorrow (preparar), today, compensate (día siguiente y el otro, 48 h), pending (sin castigo), compensated. La tarjeta de compensar va primera en Hoy.
 - **Cuerpo**: un control por día (`body_checks` unique user_id+date; el wizard hace upsert del de hoy). Primer control en `profiles.body_check_start` (2026-11-16, editable en Ajustes); después cada 14 días desde el último (`src/lib/body.ts`). Tendencia de peso = último vs. promedio de hasta 3 anteriores, ±0,3 kg. Número oculto: tendencia visible, número al mantener apretado (400 ms). Fotos: se comprimen en el celular (1600 px JPEG) y se suben directo desde el navegador a `body-photos/{user_id}/{check_id}/{angle}.jpg`; se muestran con URLs firmadas de 1 h. Decimales con coma (`fmt`).
+- **Logo**: gatito geométrico levantando una pesa, ojo guiñado, media sonrisa y cola en espiral. Fuente en `design/*.svg`; íconos PNG en `public/` (192, 512, maskable, apple-touch 180) y splash en `public/splash/`. Componente `CatLogo` (usa `currentColor`).
+- **PWA**: `src/app/manifest.ts`, `public/sw.js` (push + abrir al tocar, sin caché offline), registro en `ServiceWorkerRegister`. En iOS los avisos solo andan con la app agregada a Inicio.
+- **Avisos**: reglas puras en `src/lib/notify-rules.ts` (horas relativas al horario de ayuno de la dueña; margen de 30 min para que el cron no se los saltee; silencio 23:00-8:30) y frases en `src/lib/phrases.ts` (apodo al azar, sin repetir la última frase por tipo). `/api/cron/notify` (POST con `Authorization: Bearer CRON_SECRET`) usa el cliente service role, registra en `notification_log` (unique user+kind+ref, evita duplicados) antes de mandar, y borra suscripciones vencidas (404/410). Preferencias por tipo en `profiles.notify_prefs`. Ajustes genera las claves VAPID y el CRON_SECRET en el navegador si faltan. Programación: `supabase/scripts/cron.sql` (pg_cron cada 15 min + pg_net, secreto en Vault).
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
 ## Pendientes de la dueña
