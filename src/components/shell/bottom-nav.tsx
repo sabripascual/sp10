@@ -17,8 +17,8 @@ const tabs = [
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 rounded-t-3xl bg-accent pb-[env(safe-area-inset-bottom)] text-accent-fg">
-      <ul className="mx-auto grid max-w-md grid-cols-5 px-2 pt-2 pb-1">
+    <nav className="fixed inset-x-0 bottom-0 z-40 rounded-t-2xl bg-accent pb-[calc(env(safe-area-inset-bottom)*0.5)] text-accent-fg">
+      <ul className="mx-auto grid max-w-md grid-cols-5 px-2 py-1">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
@@ -26,15 +26,15 @@ export function BottomNav() {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className="flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-extrabold"
+                className="flex h-12 flex-col items-center justify-center gap-0.5 text-[10px] font-extrabold"
               >
                 <span
                   className={cn(
-                    "grid h-8 w-12 place-items-center rounded-full transition-colors",
+                    "grid h-6 w-10 place-items-center rounded-full transition-colors",
                     active ? "bg-accent-fg text-accent" : "text-accent-fg/60",
                   )}
                 >
-                  <Icon className="size-5" strokeWidth={active ? 2.75 : 2.25} />
+                  <Icon className="size-4" strokeWidth={active ? 2.75 : 2.25} />
                 </span>
                 <span className={active ? "text-accent-fg" : "text-accent-fg/60"}>{label}</span>
               </Link>
