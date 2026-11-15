@@ -1,0 +1,57 @@
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_ANON_KEY, SUPABASE_URL, isAllowedEmail, isSupabaseConfigured } from "./env";
+
+const PUBLIC_PATHS = ["/login", "/restringido"];
+
+function redirectTo(request: NextRequest, pathname: string, base: NextResponse) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = "";
+  const res = NextResponse.redirect(url);
+  // conservar las cookies de sesión refrescadas
+  base.cookies.getAll().forEach((c) => res.cookies.set(c));
+  return res;
+}
+
+export async function updateSession(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const isPublic = PUBLIC_PATHS.includes(path);
+
+  if (!isSupabaseConfigured) {
+    return isPublic ? NextResponse.next() : redirectTo(request, "/login", NextResponse.next());
+  }
+
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options),
+        );
+      },
+    },
+  });
+
+  // Refresca el token si hace falta: así la sesión no se cae nunca.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return isPublic ? response : redirectTo(request, "/login", response);
+  }
+  if (!isAllowedEmail(user.email)) {
+    return path === "/restringido" ? response : redirectTo(request, "/restringido", response);
+  }
+  if (isPublic) {
+    return redirectTo(request, "/", response);
+  }
+  return response;
+}

@@ -1,10 +1,13 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
+import { getProfile, randomNickname } from "@/lib/profile";
 
-export default function HoyPage() {
+export default async function HoyPage() {
+  const profile = await getProfile();
+  const apodo = randomNickname(profile.nicknames);
   return (
     <>
-      <PageHeader title="Hola, crack" subtitle="Esto es lo que toca hoy." />
+      <PageHeader title={`Hola, ${apodo}`} subtitle="Esto es lo que toca hoy." />
       <div className="space-y-4">
         <Card>
           <CardTitle>Ayuno</CardTitle>

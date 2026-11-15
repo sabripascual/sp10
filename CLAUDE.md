@@ -16,7 +16,7 @@
 ### Estado de las etapas
 
 - [x] Etapa 0, base
-- [ ] Etapa 1, login y perfil
+- [ ] Etapa 1, login y perfil (código listo; falta configurar Supabase)
 - [ ] Etapa 2, ayuno y Hoy
 - [ ] Etapa 3, entrenos y eventos
 - [ ] Etapa 4, cuerpo
@@ -81,7 +81,7 @@ Meta nueva: fuerza en el gym 3 veces por semana, sin día fijo. Correr sin plan:
 Siete módulos. Cada uno lista lo que tiene que pasar para darlo por terminado.
 
 ### F1. Login con sesión persistente
-- Login con Google o magic link de Supabase Auth; la sesión se renueva sola y no vuelve a pedir login en la PWA instalada.
+- Login con email y contraseña de Supabase Auth; la sesión se renueva sola y no vuelve a pedir login en la PWA instalada.
 - Solo el email de la dueña puede entrar (allowlist en una variable de entorno); cualquier otro ve "Acceso restringido".
 - Perfil con rol admin.
 
@@ -216,7 +216,7 @@ Cada 15 minutos Supabase llama al endpoint de avisos en Vercel. Ese endpoint dec
 | Frontend | Next.js (App Router) + TypeScript | Server actions simplifican el backend |
 | Estilos | Tailwind CSS + shadcn/ui | Componentes accesibles, fáciles de llevar a la marca BRAVE |
 | Gráficos | Recharts | Medidas, peso y minutos corridos |
-| Auth | Supabase Auth (Google o magic link) + @supabase/ssr | Cookies con refresh automático: la sesión no se cae |
+| Auth | Supabase Auth (email + contraseña) + @supabase/ssr | Cookies con refresh automático: la sesión no se cae |
 | Datos | Supabase Postgres + RLS | Una usuaria, filas protegidas |
 | Fotos | Supabase Storage (privado) | URLs firmadas |
 | PWA | manifest.webmanifest + service worker | Instalable, ícono propio, push |
@@ -271,7 +271,11 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - Etapa 5, PWA y avisos: manifest, íconos del gatito, service worker, suscripción push, /api/cron/notify, pg_cron cada 15 min y banco de frases.
 - Etapa 6, progreso: vistas v_week_summary y v_streaks, gráficos con Recharts y resumen del domingo.
 
+## Decisiones tomadas
+- **Login**: email + contraseña de Supabase Auth (sin Google ni magic link). Registro público desactivado; el usuario se crea a mano en Supabase → Authentication → Add user. Además, `ALLOWED_EMAIL` corta cualquier otro email en el middleware (`src/middleware.ts`).
+- **Semana**: de lunes a domingo.
+- **Supabase**: plan Pro, proyecto propio para SP10.
+- **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
+
 ## Preguntas abiertas
-- ¿Login con Google o con magic link por email?
-- ¿La semana de fuerza arranca el lunes (propuesto) o el domingo?
 - ¿Qué fecha tiene el primer control quincenal?
