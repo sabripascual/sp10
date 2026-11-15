@@ -1,37 +1,50 @@
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { ProgressRing } from "@/components/ui/progress-ring";
+import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
-import { RegisterSheet } from "./register-sheet";
+import { EventCard } from "@/components/training/event-cards";
+import { EventSheet } from "@/components/training/event-sheet";
+import { PlannedConfirm } from "@/components/training/planned-confirm";
+import { RegisterSheet } from "@/components/training/register-sheet";
+import { StrengthCard } from "@/components/training/strength-card";
+import { WeekStrip } from "@/components/training/week-strip";
+import { WorkoutList } from "@/components/training/workout-list";
+import { getTrainingData } from "@/lib/training";
 
-const days = ["L", "M", "M", "J", "V", "S", "D"];
+export default async function EntrenosPage() {
+  const { profile, today, week, strengthDone, runMinutes, events } = await getTrainingData();
+  const toConfirm = week.filter((d) => d.awaitingConfirm).reverse();
+  const workouts = week.flatMap((d) => d.workouts).reverse();
+  const firstMeal = profile.fast_end.slice(0, 5);
 
-export default function EntrenosPage() {
   return (
     <>
       <PageHeader title="Entrenos" subtitle="Semana de lunes a domingo." />
       <div className="space-y-4">
-        <Card className="flex items-center gap-5">
-          <ProgressRing value={0} max={3}>
-            <span className="text-3xl font-extrabold">0/3</span>
-          </ProgressRing>
-          <div>
-            <CardTitle>Fuerza</CardTitle>
-            <CardDescription>Meta semanal. Arrancamos cuando quieras.</CardDescription>
-          </div>
-        </Card>
+        <StrengthCard done={strengthDone} goal={profile.strength_goal} runMinutes={runMinutes} today={today} />
+
         <Card>
-          <ul className="grid grid-cols-7 gap-1.5">
-            {days.map((d, i) => (
-              <li
-                key={i}
-                className="grid h-12 place-items-center rounded-xl border border-muted/50 text-sm font-bold text-muted"
-              >
-                {d}
-              </li>
-            ))}
-          </ul>
+          <WeekStrip week={week} />
         </Card>
-        <RegisterSheet />
+
+        <RegisterSheet today={today} label="Registrar entreno" className="w-full" />
+
+        {toConfirm.map((d) => (
+          <PlannedConfirm key={d.date} day={d} />
+        ))}
+
+        {events.length > 0 && (
+          <div className="space-y-3 pt-2">
+            <h2 className="text-lg font-extrabold">Eventos</h2>
+            {events.map((ev) => (
+              <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} />
+            ))}
+          </div>
+        )}
+        <EventSheet today={today} className="w-full" />
+
+        <Card>
+          <CardTitle className="mb-2">Esta semana</CardTitle>
+          <WorkoutList workouts={workouts} />
+        </Card>
       </div>
     </>
   );

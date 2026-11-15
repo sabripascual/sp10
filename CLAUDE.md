@@ -19,7 +19,7 @@
 - [x] Etapa 0, base
 - [x] Etapa 1, login y perfil
 - [x] Etapa 2, ayuno y Hoy (+ botones Empezar/Terminar y calendario editable)
-- [ ] Etapa 3, entrenos y eventos
+- [x] Etapa 3, entrenos y eventos
 - [ ] Etapa 4, cuerpo
 - [ ] Etapa 5, PWA y avisos
 - [ ] Etapa 6, progreso
@@ -278,6 +278,8 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Supabase**: plan gratis, proyecto propio `sp10` en **us-west-2 (Oregon)** (se pausó otro proyecto para liberar el lugar).
 - **Región Vercel**: funciones en `pdx1` (Portland), al lado de la base (`vercel.json`). Login y sesión se verifican con `auth.getClaims()` (JWT local, sin ida y vuelta al servidor de Auth); usar `getClaims()` en vez de `getUser()` salvo que haga falta el usuario fresco.
 - **Ayuno**: cada fila de `fast_days` se identifica por la fecha en que ARRANCA (la noche). Sin fila = cumplido. La racha cuenta desde el día de creación del perfil; el ayuno en curso no suma y uno roto la corta. Botones **Empezar** (en la ventana abierta, guarda `started_at`; fin = inicio + 16 h) y **Terminar** (guarda `ended_at`; cumplido si llegó a las 16 h con 10 min de changüí, extendido si pasó 1 h o más, cortado si no). Sin tocar nada, el ayuno sigue el horario solo. Se puede extender hasta 2 h después de terminado solo, y "Seguir ayunando" deshace un Terminar de hace menos de 2 h. Tocando un día del calendario se carga o corrige (hasta 60 días atrás); la racha cuenta desde el primer día cargado. Lógica pura en `src/lib/fast.ts` con tests (`npm test`).
+- **Entrenos**: `workouts.status` = `done` o `skipped` ("no fui" de la plantilla). La plantilla (`profiles.week_template`, día ISO → tipo) sugiere fútbol L/M/J/S; un día planeado que ya pasó esta semana sin confirmar muestra "¿Hubo fútbol?" con Fui / No fui. Registro con un toque en bottom sheet (hoy o ayer, minutos en chips, sensación para correr, nota). Tipos y constantes de cliente en `src/lib/training-types.ts`; datos del servidor en `src/lib/training.ts`.
+- **Eventos**: crear un evento marca el ayuno de esa noche como `event` (no corta la racha) y, si la compensación incluye ayuno, le suma +2 h (primera comida 2 h más tarde). Fases en `src/lib/events.ts`: upcoming, tomorrow (preparar), today, compensate (día siguiente y el otro, 48 h), pending (sin castigo), compensated. La tarjeta de compensar va primera en Hoy.
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
 ## Pendientes de la dueña
