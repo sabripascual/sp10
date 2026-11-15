@@ -8,7 +8,7 @@
 - Stack: Next.js 15 (App Router) + TypeScript + Tailwind v4 + componentes estilo shadcn/ui (en `src/components/ui`, escritos a mano porque el registro de shadcn no es accesible desde el entorno cloud).
 - Zona horaria: `America/Argentina/Tucuman` (UTC-3). Todas las fechas con `date-fns` + `date-fns-tz`.
 - La semana va de **lunes a domingo**.
-- Tema BRAVE: tokens en `src/app/globals.css`. **Un solo elemento amarillo (`accent`) por pantalla.**
+- Tema BRAVE: tokens en `src/app/globals.css`. **Botonera inferior y botones de acción principales en amarillo** (`variant="primary"`); el resto en negro y grises. Fuente **Nunito**. Footer con firma BRAVE en todas las pantallas.
 - Mobile first, modo oscuro siempre.
 - Cada etapa termina con `npm run lint` y `npm run build` en verde, commit y deploy en Vercel.
 - **Flujo de entrega**: cada etapa o corrección se sube directo a `main` (además de la rama de trabajo). La dueña la prueba en producción en Vercel y manda correcciones.
@@ -87,7 +87,7 @@ Siete módulos. Cada uno lista lo que tiene que pasar para darlo por terminado.
 - Perfil con rol admin.
 
 ### F2. Ayuno automático 16:8
-- Configuración: hora de inicio (19:00) y fin (11:00) por defecto, editables. Mismo esquema todos los días.
+- Configuración: protocolo a elección (12:12, 14:10, **16:8 por defecto**, 18:6, 20:4, 23:1 o personalizado) y hora de última comida (19:00); la primera comida se calcula. Mismo esquema todos los días.
 - Cada día se asume cumplido. La usuaria solo interviene si lo rompe o lo extiende.
 - Pantalla con contador en vivo, barra de progreso y hora de fin.
 - Acciones: "Lo rompí" (registra la hora) y "Extender" (+1 h o +2 h).
@@ -239,16 +239,16 @@ Fondo oscuro, grises, Open Sans y el amarillo `#ffe900` solo para llamar la aten
 | --fg | #ffffff | Texto principal |
 | --accent | #ffe900 | Solo para atención: botón principal, racha activa, meta cumplida, pestaña activa |
 
-**Regla de oro**: el amarillo es "puramente atencional". Hay un solo elemento amarillo por pantalla, el que importa en ese momento.
+**Regla de color (decisión de la dueña, reemplaza la del manual)**: la botonera inferior es amarilla (pestaña activa en pastilla negra) y los botones de acción principales son amarillos. Tarjetas, fondos y acciones secundarias en negro y grises.
 
-**Tipografía**: Open Sans (next/font). Extra Bold (800) para números grandes y títulos (contador del ayuno, rachas); Bold para encabezados; Regular para texto.
+**Tipografía**: Nunito (next/font). Extra Bold/Black (800-900) para números grandes y títulos (contador del ayuno, rachas); Bold para encabezados; Regular para texto.
 
 **Personalidad**: fuerte, accesible, inclusivo, innovador, funcional; arquetipo creador/explorador (audaz, humano, minimalista, "te inspira sin imponerte"): pantallas limpias, mucho aire, botones grandes y textos cortos con humor.
 
 ### Logo SP10: gatito canchero
 - Silueta de gato minimalista, de trazo grueso y geométrico, en pose de levantar una pesa (o con vincha), con media sonrisa y un ojo guiñado.
 - Monocromático, en blanco o negro; versión de ícono con fondo amarillo #ffe900 y gato negro.
-- Wordmark "SP10" en Open Sans Extra Bold con kerning cerrado (-80 → `tracking-[-0.08em]`).
+- Wordmark "SP10" en Nunito Black con kerning cerrado (-80 → `tracking-[-0.08em]`).
 - La cola del gato hace una espiral que recuerda al huracán del isotipo BRAVE.
 - Entregables: icon-512.png, icon-192.png, apple-touch-icon.png (180 px), favicon.svg, splash oscuro.
 
@@ -279,6 +279,9 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Región Vercel**: funciones en `pdx1` (Portland), al lado de la base (`vercel.json`). Login y sesión se verifican con `auth.getClaims()` (JWT local, sin ida y vuelta al servidor de Auth); usar `getClaims()` en vez de `getUser()` salvo que haga falta el usuario fresco.
 - **Ayuno**: cada fila de `fast_days` se identifica por la fecha en que ARRANCA (la noche). Sin fila = cumplido. La racha cuenta desde el día de creación del perfil; el ayuno en curso no suma y uno roto la corta. Botones **Empezar** (en la ventana abierta, guarda `started_at`; fin = inicio + 16 h) y **Terminar** (guarda `ended_at`; cumplido si llegó a las 16 h con 10 min de changüí, extendido si pasó 1 h o más, cortado si no). Sin tocar nada, el ayuno sigue el horario solo. Se puede extender hasta 2 h después de terminado solo, y "Seguir ayunando" deshace un Terminar de hace menos de 2 h. Tocando un día del calendario se carga o corrige (hasta 60 días atrás); la racha cuenta desde el primer día cargado. Lógica pura en `src/lib/fast.ts` con tests (`npm test`).
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
+
+## Pendientes de la dueña
+- Pasar el logo BRAVE en SVG para el footer (hoy es un wordmark de texto).
 
 ## Preguntas abiertas
 - ¿Qué fecha tiene el primer control quincenal?

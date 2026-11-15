@@ -49,7 +49,7 @@ export function FastActions({ view }: { view: FastView }) {
     <div className="space-y-3">
       {view.phase === "fasting" ? (
         <>
-          <Button size="lg" className="w-full" disabled={pending} onClick={onEnd}>
+          <Button variant="primary" size="lg" className="w-full" disabled={pending} onClick={onEnd}>
             Terminar ayuno
           </Button>
           {view.canExtend && (
@@ -61,7 +61,7 @@ export function FastActions({ view }: { view: FastView }) {
         </>
       ) : (
         <>
-          <Button size="lg" className="w-full" disabled={pending} onClick={() => run(startFast)}>
+          <Button variant="primary" size="lg" className="w-full" disabled={pending} onClick={() => run(startFast)}>
             Empezar ayuno ahora
           </Button>
           {view.canResume && (
@@ -89,7 +89,7 @@ export function FastActions({ view }: { view: FastView }) {
           </SheetDescription>
           <div className="grid gap-3">
             <SheetClose asChild>
-              <Button size="lg" className="bg-bg" onClick={() => run(endFast)}>
+              <Button variant="primary" size="lg" onClick={() => run(endFast)}>
                 Sí, terminar
               </Button>
             </SheetClose>

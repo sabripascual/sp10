@@ -4,10 +4,11 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import type { Profile } from "@/lib/profile";
+import { FastProtocolPicker } from "@/components/fast/fast-protocol";
 import { updateSettings, type SettingsState } from "./actions";
 
 const inputClass =
-  "h-12 w-full rounded-xl bg-bg px-4 text-base text-fg outline-none focus:ring-2 focus:ring-fg/40";
+  "h-12 w-full rounded-xl bg-bg px-4 text-base text-fg outline-none focus:ring-2 focus:ring-accent";
 
 export function SettingsForm({ profile }: { profile: Profile }) {
   const [state, action, pending] = useActionState<SettingsState, FormData>(updateSettings, {});
@@ -17,18 +18,9 @@ export function SettingsForm({ profile }: { profile: Profile }) {
       <Card className="space-y-4">
         <div>
           <CardTitle>Ayuno</CardTitle>
-          <CardDescription>Mismo horario todos los días.</CardDescription>
+          <CardDescription>Elegí tu ventana. Mismo horario todos los días.</CardDescription>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="space-y-1 text-sm text-muted">
-            Última comida
-            <input name="fast_start" type="time" defaultValue={profile.fast_start.slice(0, 5)} className={inputClass} required />
-          </label>
-          <label className="space-y-1 text-sm text-muted">
-            Primera comida
-            <input name="fast_end" type="time" defaultValue={profile.fast_end.slice(0, 5)} className={inputClass} required />
-          </label>
-        </div>
+        <FastProtocolPicker start={profile.fast_start.slice(0, 5)} end={profile.fast_end.slice(0, 5)} />
       </Card>
 
       <Card className="space-y-4">
@@ -73,7 +65,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
             name="hide_weight"
             type="checkbox"
             defaultChecked={profile.hide_weight}
-            className="size-6 accent-white"
+            className="size-6 accent-[#ffe900]"
           />
         </label>
       </Card>

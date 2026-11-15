@@ -1,5 +1,6 @@
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { LoginForm } from "./login-form";
+import { Footer } from "@/components/shell/footer";
 
 export default function LoginPage() {
   return (
@@ -14,6 +15,7 @@ export default function LoginPage() {
           <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> en Vercel y volvé a deployar.
         </p>
       )}
+      <Footer />
     </main>
   );
 }

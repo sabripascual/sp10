@@ -1,5 +1,6 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { PageHeader } from "@/components/shell/page-header";
+import Link from "next/link";
+import { protocolLabel } from "@/lib/fast-protocol";
 import { FastActions } from "@/components/fast/fast-actions";
 import { FastCalendar } from "@/components/fast/fast-calendar";
 import { FastTimer } from "@/components/fast/fast-timer";
@@ -12,10 +13,18 @@ export default async function AyunoPage() {
 
   return (
     <>
-      <PageHeader
-        title="Ayuno"
-        subtitle={`16:8, de ${profile.fast_start.slice(0, 5)} a ${profile.fast_end.slice(0, 5)}.`}
-      />
+      <div className="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">Ayuno</h1>
+          <p className="mt-1 text-muted">
+            {protocolLabel(profile.fast_start, profile.fast_end)}, de {profile.fast_start.slice(0, 5)} a{" "}
+            {profile.fast_end.slice(0, 5)}
+          </p>
+        </div>
+        <Link href="/ajustes" className="rounded-full bg-surface px-4 py-2 text-sm font-bold">
+          Cambiar
+        </Link>
+      </div>
       <div className="space-y-4">
         <FastTimer view={view} />
         <FastActions view={view} />

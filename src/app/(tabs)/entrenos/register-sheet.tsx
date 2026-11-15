@@ -17,7 +17,7 @@ export function RegisterSheet() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="lg" className="w-full">
+        <Button variant="primary" size="lg" className="w-full">
           Registrar entreno
         </Button>
       </SheetTrigger>
