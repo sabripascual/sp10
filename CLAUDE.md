@@ -20,7 +20,7 @@
 - [x] Etapa 1, login y perfil
 - [x] Etapa 2, ayuno y Hoy (+ botones Empezar/Terminar y calendario editable)
 - [x] Etapa 3, entrenos y eventos
-- [ ] Etapa 4, cuerpo
+- [x] Etapa 4, cuerpo
 - [ ] Etapa 5, PWA y avisos
 - [ ] Etapa 6, progreso
 
@@ -280,10 +280,11 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Ayuno**: cada fila de `fast_days` se identifica por la fecha en que ARRANCA (la noche). Sin fila = cumplido. La racha cuenta desde el día de creación del perfil; el ayuno en curso no suma y uno roto la corta. Botones **Empezar** (en la ventana abierta, guarda `started_at`; fin = inicio + 16 h) y **Terminar** (guarda `ended_at`; cumplido si llegó a las 16 h con 10 min de changüí, extendido si pasó 1 h o más, cortado si no). Sin tocar nada, el ayuno sigue el horario solo. Se puede extender hasta 2 h después de terminado solo, y "Seguir ayunando" deshace un Terminar de hace menos de 2 h. Tocando un día del calendario se carga o corrige (hasta 60 días atrás); la racha cuenta desde el primer día cargado. Lógica pura en `src/lib/fast.ts` con tests (`npm test`).
 - **Entrenos**: `workouts.status` = `done` o `skipped` ("no fui" de la plantilla). La plantilla (`profiles.week_template`, día ISO → tipo) sugiere fútbol L/M/J/S; un día planeado que ya pasó esta semana sin confirmar muestra "¿Hubo fútbol?" con Fui / No fui. Registro con un toque en bottom sheet (hoy o ayer, minutos en chips, sensación para correr, nota). Tipos y constantes de cliente en `src/lib/training-types.ts`; datos del servidor en `src/lib/training.ts`.
 - **Eventos**: crear un evento marca el ayuno de esa noche como `event` (no corta la racha) y, si la compensación incluye ayuno, le suma +2 h (primera comida 2 h más tarde). Fases en `src/lib/events.ts`: upcoming, tomorrow (preparar), today, compensate (día siguiente y el otro, 48 h), pending (sin castigo), compensated. La tarjeta de compensar va primera en Hoy.
+- **Cuerpo**: un control por día (`body_checks` unique user_id+date; el wizard hace upsert del de hoy). Primer control en `profiles.body_check_start` (2026-11-16, editable en Ajustes); después cada 14 días desde el último (`src/lib/body.ts`). Tendencia de peso = último vs. promedio de hasta 3 anteriores, ±0,3 kg. Número oculto: tendencia visible, número al mantener apretado (400 ms). Fotos: se comprimen en el celular (1600 px JPEG) y se suben directo desde el navegador a `body-photos/{user_id}/{check_id}/{angle}.jpg`; se muestran con URLs firmadas de 1 h. Decimales con coma (`fmt`).
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
 ## Pendientes de la dueña
 - Pasar el logo BRAVE en SVG para el footer (hoy es un wordmark de texto).
 
 ## Preguntas abiertas
-- ¿Qué fecha tiene el primer control quincenal?
+- (ninguna por ahora)

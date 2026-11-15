@@ -55,6 +55,14 @@ export function SettingsForm({ profile }: { profile: Profile }) {
         />
       </Card>
 
+      <Card className="space-y-3">
+        <div>
+          <CardTitle>Primer control</CardTitle>
+          <CardDescription>Después se repite cada 14 días desde el último.</CardDescription>
+        </div>
+        <input name="body_check_start" type="date" defaultValue={profile.body_check_start ?? ""} className={inputClass} />
+      </Card>
+
       <Card>
         <label className="flex items-center justify-between gap-4">
           <span>

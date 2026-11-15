@@ -15,6 +15,8 @@ export async function updateSettings(
   const fastEnd = String(formData.get("fast_end") ?? "");
   const strengthGoal = Number(formData.get("strength_goal"));
   const hideWeight = formData.get("hide_weight") === "on";
+  const bodyStart = String(formData.get("body_check_start") ?? "");
+  if (bodyStart && !/^\d{4}-\d{2}-\d{2}$/.test(bodyStart)) return { error: "Revisá la fecha del primer control." };
   const nicknames = String(formData.get("nicknames") ?? "")
     .split(",")
     .map((n) => n.trim())
@@ -40,6 +42,7 @@ export async function updateSettings(
       strength_goal: strengthGoal,
       hide_weight: hideWeight,
       nicknames,
+      body_check_start: bodyStart || null,
     })
     .eq("id", userId);
   if (error) return { error: `No se pudo guardar: ${error.message}` };

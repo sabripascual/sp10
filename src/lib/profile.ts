@@ -12,6 +12,7 @@ export type Profile = {
   timezone: string;
   week_template: Record<string, string>;
   created_at: string;
+  body_check_start: string | null;
 };
 
 export const DEFAULT_NICKNAMES = ["crack", "reina", "bebita", "diosa", "amorrrr"];
