@@ -5,7 +5,8 @@ import "./globals.css";
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800", "900"],
+  // Nunito es variable: sin "weight" baja un solo archivo con todos los pesos.
+  display: "swap",
 });
 
 export const metadata: Metadata = {
