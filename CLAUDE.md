@@ -17,7 +17,7 @@
 
 - [x] Etapa 0, base
 - [x] Etapa 1, login y perfil
-- [ ] Etapa 2, ayuno y Hoy
+- [ ] Etapa 2, ayuno y Hoy (código listo; falta correr `0002_fast_days.sql`)
 - [ ] Etapa 3, entrenos y eventos
 - [ ] Etapa 4, cuerpo
 - [ ] Etapa 5, PWA y avisos
@@ -276,6 +276,7 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Semana**: de lunes a domingo.
 - **Supabase**: plan gratis, proyecto propio `sp10` en **us-west-2 (Oregon)** (se pausó otro proyecto para liberar el lugar).
 - **Región Vercel**: funciones en `pdx1` (Portland), al lado de la base (`vercel.json`). Login y sesión se verifican con `auth.getClaims()` (JWT local, sin ida y vuelta al servidor de Auth); usar `getClaims()` en vez de `getUser()` salvo que haga falta el usuario fresco.
+- **Ayuno**: cada fila de `fast_days` se identifica por la fecha en que ARRANCA (la noche). Sin fila = cumplido. La racha cuenta desde el día de creación del perfil; el ayuno en curso no suma y uno roto la corta. Se puede extender hasta 2 h después de terminado. Lógica pura en `src/lib/fast.ts` con tests (`npm test`).
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
 ## Preguntas abiertas

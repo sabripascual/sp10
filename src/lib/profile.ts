@@ -11,6 +11,7 @@ export type Profile = {
   hide_weight: boolean;
   timezone: string;
   week_template: Record<string, string>;
+  created_at: string;
 };
 
 export const DEFAULT_NICKNAMES = ["crack", "reina", "bebita", "diosa", "amorrrr"];
