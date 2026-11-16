@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { Minus, Plus } from "lucide-react";
 import { addWorkout } from "@/app/(tabs)/entrenos/actions";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { Chips } from "./chips";
 import { Celebration } from "./celebration";
 
-const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "otro"];
+const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "trekking", "otro"];
 const MINUTES = [30, 45, 60, 75, 90, 120];
 const DEFAULT_ZONE: ZoneWork = { exercises: 3, reps: 12, rounds: 3 };
 
@@ -52,6 +52,7 @@ export function RegisterSheet({
   variant = "primary",
   size = "lg",
   className,
+  children,
 }: {
   today: string;
   weightKg: number;
@@ -61,6 +62,8 @@ export function RegisterSheet({
   variant?: "primary" | "secondary";
   size?: "lg" | "sm" | "default";
   className?: string;
+  /** Si viene, el disparador es este contenido (sin estilo de botón). */
+  children?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<WorkoutType | null>(initialType);
@@ -122,17 +125,30 @@ export function RegisterSheet({
 
   return (
     <>
-      <Button
-        variant={variant}
-        size={size}
-        className={className}
-        onClick={() => {
-          reset();
-          setOpen(true);
-        }}
-      >
-        {label}
-      </Button>
+      {children ? (
+        <button
+          type="button"
+          className={className}
+          onClick={() => {
+            reset();
+            setOpen(true);
+          }}
+        >
+          {children}
+        </button>
+      ) : (
+        <Button
+          variant={variant}
+          size={size}
+          className={className}
+          onClick={() => {
+            reset();
+            setOpen(true);
+          }}
+        >
+          {label}
+        </Button>
+      )}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="max-h-[92dvh] overflow-y-auto">
           {!type ? (

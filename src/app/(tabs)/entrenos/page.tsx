@@ -24,6 +24,7 @@ export default async function EntrenosPage() {
           today={today}
           weightKg={weightKg}
           nicknames={profile.nicknames}
+          showRegisterAll
         />
 
         {events.length > 0 && (
