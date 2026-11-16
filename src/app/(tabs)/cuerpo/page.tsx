@@ -41,7 +41,12 @@ export default async function CuerpoPage() {
 
         {last && (
           <Card className="space-y-4">
-            <CardTitle>Último control · {shortDate(last.date)}</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Último control · {shortDate(last.date)}</CardTitle>
+              <Link href={`/cuerpo/control?id=${last.id}`} className="rounded-full bg-bg px-3 py-1.5 text-xs font-bold">
+                Editar
+              </Link>
+            </div>
             <Deltas rows={measureDeltas(checks, last)} />
             <WeightValue
               weight={last.weight_kg === null ? null : Number(last.weight_kg)}
@@ -60,7 +65,10 @@ export default async function CuerpoPage() {
 
         {checks.length > 0 && (
           <Card className="space-y-3">
-            <CardTitle>Controles</CardTitle>
+            <div>
+              <CardTitle>Controles</CardTitle>
+              <CardDescription>Tocá uno para verlo o editarlo.</CardDescription>
+            </div>
             <CheckHistory checks={checks} />
           </Card>
         )}

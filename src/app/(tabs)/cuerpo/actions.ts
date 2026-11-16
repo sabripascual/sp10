@@ -19,7 +19,12 @@ function num(v: unknown, min: number, max: number) {
 }
 
 /** Crea o actualiza el control de hoy (uno por día). */
-export async function saveCheck(input: { weight?: string; measures?: Partial<Record<Measure, string>> }): Promise<BodyResult> {
+/** Crea o actualiza el control de hoy, o edita uno existente si viene `checkId`. */
+export async function saveCheck(input: {
+  checkId?: string | null;
+  weight?: string;
+  measures?: Partial<Record<Measure, string>>;
+}): Promise<BodyResult> {
   const profile = await getProfile();
   const today = localDate(new Date(), profile.timezone);
 
@@ -38,11 +43,10 @@ export async function saveCheck(input: { weight?: string; measures?: Partial<Rec
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("body_checks")
-    .upsert(row, { onConflict: "user_id,date" })
-    .select("id")
-    .single();
+  const { date, ...fields } = row;
+  const { data, error } = input.checkId
+    ? await supabase.from("body_checks").update(fields).eq("id", input.checkId).select("id").single()
+    : await supabase.from("body_checks").upsert({ date, ...fields }, { onConflict: "user_id,date" }).select("id").single();
   if (error) return { error: error.message };
   revalidatePath("/", "layout");
   return { id: data.id };

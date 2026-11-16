@@ -28,23 +28,25 @@ export function CheckWizard({
   userId: string;
   today: string;
   hideWeight: boolean;
-  previous: BodyCheck[]; // controles anteriores a hoy
-  existing: BodyCheck | null; // si ya hay un control hoy
+  previous: BodyCheck[]; // controles anteriores al que se carga o edita
+  existing: (BodyCheck & { photos?: Partial<Record<Angle, string>> }) | null; // control a editar (o el de hoy)
 }) {
   const [step, setStep] = useState(0);
-  const [weight, setWeight] = useState(existing?.weight_kg?.toString() ?? "");
+  const comma = (n: number | null | undefined) => (n === null || n === undefined ? "" : String(n).replace(".", ","));
+  const [weight, setWeight] = useState(comma(existing?.weight_kg));
   const [measures, setMeasures] = useState<Partial<Record<Measure, string>>>(
-    Object.fromEntries(MEASURES.map(({ key }) => [key, existing?.[key]?.toString() ?? ""])),
+    Object.fromEntries(MEASURES.map(({ key }) => [key, comma(existing?.[key])])),
   );
   const [checkId, setCheckId] = useState<string | null>(existing?.id ?? null);
-  const [photos, setPhotos] = useState<Partial<Record<Angle, string>>>({});
+  const [photos, setPhotos] = useState<Partial<Record<Angle, string>>>(existing?.photos ?? {});
+  const editing = Boolean(existing);
   const [uploading, setUploading] = useState<Angle | null>(null);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const save = (next: number) =>
     start(async () => {
-      const res = await saveCheck({ weight, measures });
+      const res = await saveCheck({ checkId, weight, measures });
       if (res.error) return setError(res.error);
       setError(null);
       setCheckId(res.id!);
@@ -74,7 +76,7 @@ export function CheckWizard({
 
   const current: BodyCheck = {
     id: checkId ?? "nuevo",
-    date: today,
+    date: existing?.date ?? today,
     note: null,
     weight_kg: weight ? Number(weight.replace(",", ".")) : null,
     ...(Object.fromEntries(
@@ -194,7 +196,7 @@ export function CheckWizard({
         <div className="space-y-4">
           <Card className="space-y-2 text-center">
             <p className="text-4xl">🎉</p>
-            <CardTitle>¡Control cerrado!</CardTitle>
+            <CardTitle>{editing ? "¡Control actualizado!" : "¡Control cerrado!"}</CardTitle>
             <CardDescription>Constancia es la palabra. Nos vemos en 14 días.</CardDescription>
           </Card>
           <Card className="space-y-3">

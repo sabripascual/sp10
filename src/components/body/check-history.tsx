@@ -1,7 +1,8 @@
 "use client";
 
 import { useTransition } from "react";
-import { X } from "lucide-react";
+import Link from "next/link";
+import { Pencil, X } from "lucide-react";
 import { deleteCheck } from "@/app/(tabs)/cuerpo/actions";
 import { ANGLES, type Angle } from "@/lib/body";
 import { shortDate } from "@/lib/week";
@@ -14,7 +15,7 @@ export function CheckHistory({ checks }: { checks: Item[] }) {
     <ul className="space-y-3">
       {[...checks].reverse().map((c) => (
         <li key={c.id} className="flex items-center gap-3">
-          <div className="flex gap-1.5">
+          <Link href={`/cuerpo/control?id=${c.id}`} className="flex gap-1.5">
             {ANGLES.map(({ key, label }) =>
               c.photos[key] ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -23,8 +24,11 @@ export function CheckHistory({ checks }: { checks: Item[] }) {
                 <span key={key} className="h-14 w-11 rounded-lg bg-bg" />
               ),
             )}
-          </div>
-          <p className="flex-1 text-sm font-bold">{shortDate(c.date)}</p>
+          </Link>
+          <Link href={`/cuerpo/control?id=${c.id}`} className="flex flex-1 items-center gap-2 text-sm font-bold active:opacity-70">
+            {shortDate(c.date)}
+            <Pencil className="size-3.5 text-muted" />
+          </Link>
           <button
             aria-label="Borrar control"
             disabled={pending}
