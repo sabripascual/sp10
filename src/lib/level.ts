@@ -20,21 +20,22 @@ export const LEVELS: { key: LevelKey; min: number; name: string; emoji: string; 
  *  - Movimiento extra 15: carrera, fútbol, pádel… (3 o más = completo)
  *  - Derrapes 15: compensados no restan; cada pendiente resta 7,5
  */
-export type ScorePart = { key: "ayuno" | "fierritos" | "movimiento" | "derrapes"; emoji: string; points: number; max: number; why: string };
+export type ScorePart = { key: "ayuno" | "fierritos" | "movimiento" | "derrapes"; emoji: string; label: string; points: number; max: number; why: string };
 
 /** Desglose del puntaje: cuántos puntos sumó cada parte y por qué. */
 export function scoreParts(w: WeekSummary): ScorePart[] {
   const goal = Math.max(w.strengthGoal, 1);
   return [
-    { key: "ayuno", emoji: "⏱️", max: 35, points: Math.round(w.fastDays ? (w.fastOk / w.fastDays) * 35 : 0), why: `${w.fastOk}/${w.fastDays} ayunos` },
-    { key: "fierritos", emoji: "💪🏻", max: 35, points: Math.round(Math.min(w.strength / goal, 1) * 35), why: `${w.strength}/${goal} fierritos` },
-    { key: "movimiento", emoji: "🏃‍♀️", max: 15, points: Math.round(Math.min(w.otherWorkouts / 3, 1) * 15), why: `${w.otherWorkouts}/3 extra` },
+    { key: "ayuno", emoji: "⏱️", label: "Ayuno", max: 35, points: Math.round(w.fastDays ? (w.fastOk / w.fastDays) * 35 : 0), why: w.fastDays ? `${w.fastOk}/${w.fastDays} cumplidos` : "todavía ninguno" },
+    { key: "fierritos", emoji: "💪🏻", label: "Fierritos", max: 35, points: Math.round(Math.min(w.strength / goal, 1) * 35), why: `${w.strength} de ${goal}` },
+    { key: "movimiento", emoji: "🏃‍♀️", label: "Extra", max: 15, points: Math.round(Math.min(w.otherWorkouts / 3, 1) * 15), why: `${w.otherWorkouts} de 3 entrenos` },
     {
       key: "derrapes",
       emoji: "😈",
+      label: "Derrapes",
       max: 15,
       points: Math.round(Math.max(0, 15 - 7.5 * w.pending)),
-      why: w.pending ? `${w.pending} sin compensar` : "sin deudas",
+      why: w.pending ? `${w.pending} sin compensar` : "ninguno pendiente",
     },
   ];
 }

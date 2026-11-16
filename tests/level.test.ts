@@ -46,9 +46,9 @@ test("se califica desde la primera semana completa", () => {
 test("desglose de puntos con el porqué", () => {
   const parts = scoreParts(w({ fastOk: 6, strength: 2, otherWorkouts: 1, pending: 1 }));
   assert.deepEqual(parts.map((p) => [p.key, p.points, p.why]), [
-    ["ayuno", 30, "6/7 ayunos"],
-    ["fierritos", 23, "2/3 fierritos"],
-    ["movimiento", 5, "1/3 extra"],
+    ["ayuno", 30, "6/7 cumplidos"],
+    ["fierritos", 23, "2 de 3"],
+    ["movimiento", 5, "1 de 3 entrenos"],
     ["derrapes", 8, "1 sin compensar"],
   ]);
   assert.equal(weekScore(w({ fastOk: 6, strength: 2, otherWorkouts: 1, pending: 1 })), 66);

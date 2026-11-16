@@ -80,17 +80,20 @@ export function LevelCard({
 /** Desglose compacto: puntos de cada parte, barrita y por qué. */
 function Parts({ parts }: { parts: ScorePart[] }) {
   return (
-    <ul className="grid grid-cols-4 gap-1.5">
+    <ul className="grid grid-cols-4 gap-1">
       {parts.map((p) => (
-        <li key={p.key} className="space-y-1 rounded-lg bg-bg px-2 py-1.5">
-          <p className="text-[11px] font-black tabular-nums">
-            {p.emoji} {p.points}
-            <span className="font-bold text-muted">/{p.max}</span>
+        <li key={p.key} className="space-y-1 rounded-lg bg-bg px-1.5 py-1.5">
+          <p className="whitespace-nowrap text-[10px] font-bold tracking-tight text-muted">
+            {p.emoji} {p.label}
+          </p>
+          <p className="text-sm font-black tabular-nums leading-none">
+            {p.points}
+            <span className="text-[11px] font-bold text-muted">/{p.max}</span>
           </p>
           <span className="block h-1 overflow-hidden rounded-full bg-surface">
             <span className="block h-full rounded-full bg-accent" style={{ width: `${(p.points / p.max) * 100}%` }} />
           </span>
-          <p className="truncate text-[10px] leading-tight text-muted">{p.why}</p>
+          <p className="text-[10px] leading-tight text-muted">{p.why}</p>
         </li>
       ))}
     </ul>
