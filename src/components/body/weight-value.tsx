@@ -6,7 +6,17 @@ import { fmt, type Trend } from "@/lib/body";
 const TREND: Record<Trend, string> = { bajando: "↓ Bajando", estable: "→ Estable", subiendo: "↑ Subiendo" };
 
 /** Peso con "número oculto": muestra la tendencia y el número solo mientras mantenés apretado. */
-export function WeightValue({ weight, trend, hidden }: { weight: number | null; trend: Trend | null; hidden: boolean }) {
+export function WeightValue({
+  weight,
+  trend,
+  hidden,
+  compact = false,
+}: {
+  weight: number | null;
+  trend: Trend | null;
+  hidden: boolean;
+  compact?: boolean;
+}) {
   const [reveal, setReveal] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -16,7 +26,7 @@ export function WeightValue({ weight, trend, hidden }: { weight: number | null; 
   if (!hidden) {
     return (
       <div>
-        <p className="text-4xl font-black tabular-nums">{fmt(weight)} kg</p>
+        <p className={compact ? "text-xl font-black tabular-nums" : "text-4xl font-black tabular-nums"}>{fmt(weight)} kg</p>
         <p className="text-sm text-muted">{trendText}</p>
       </div>
     );
@@ -35,10 +45,12 @@ export function WeightValue({ weight, trend, hidden }: { weight: number | null; 
       onPointerUp={stop}
       onPointerLeave={stop}
       onContextMenu={(e) => e.preventDefault()}
-      className="select-none text-left [-webkit-touch-callout:none]"
+      className={compact ? "select-none text-right [-webkit-touch-callout:none]" : "select-none text-left [-webkit-touch-callout:none]"}
     >
-      <p className="text-4xl font-black tabular-nums">{reveal ? `${fmt(weight)} kg` : trendText}</p>
-      <p className="text-sm text-muted">{reveal ? trendText : "Mantené apretado para ver el número"}</p>
+      <p className={compact ? "text-xl font-black tabular-nums" : "text-4xl font-black tabular-nums"}>{reveal ? `${fmt(weight)} kg` : trendText}</p>
+      <p className={compact ? "text-[11px] text-muted" : "text-sm text-muted"}>
+        {reveal ? trendText : compact ? "Mantené apretado" : "Mantené apretado para ver el número"}
+      </p>
     </button>
   );
 }

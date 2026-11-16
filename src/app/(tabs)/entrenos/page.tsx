@@ -1,7 +1,6 @@
-import { Card, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
-import { EventCard } from "@/components/training/event-cards";
-import { EventSheet } from "@/components/training/event-sheet";
+import { EventList } from "@/components/training/event-list";
 import { TrainingCard } from "@/components/training/training-card";
 import { WorkoutList } from "@/components/training/workout-list";
 import { getTrainingData } from "@/lib/training";
@@ -9,7 +8,6 @@ import { getTrainingData } from "@/lib/training";
 export default async function EntrenosPage() {
   const { profile, today, week, strengthDone, runMinutes, runKcal, weightKg, events } = await getTrainingData();
   const workouts = week.flatMap((d) => d.workouts).reverse();
-  const firstMeal = profile.fast_end.slice(0, 5);
 
   return (
     <>
@@ -27,20 +25,20 @@ export default async function EntrenosPage() {
           showRegisterAll
         />
 
-        {events.length > 0 && (
-          <div className="space-y-3 pt-2">
-            <h2 className="text-lg font-extrabold">Derrapes 😈</h2>
-            {events.map((ev) => (
-              <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} />
-            ))}
-          </div>
+        {workouts.length > 0 && (
+          <Card>
+            <CardTitle className="mb-1">Esta semana</CardTitle>
+            <WorkoutList workouts={workouts} />
+          </Card>
         )}
-        <EventSheet today={today} className="w-full" />
 
-        <Card>
-          <CardTitle className="mb-2">Esta semana</CardTitle>
-          <WorkoutList workouts={workouts} />
-        </Card>
+        {events.length > 0 && (
+          <Card>
+            <CardTitle>Derrapes agendados 😈</CardTitle>
+            <CardDescription>Los nuevos se agendan desde Hoy.</CardDescription>
+            <EventList events={events} />
+          </Card>
+        )}
       </div>
     </>
   );
