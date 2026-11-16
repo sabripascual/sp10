@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { endFast, extendFast, resumeFast, startFast } from "@/app/(tabs)/ayuno/actions";
+import { adjustStart, endFast, extendFast, resumeFast, startFast } from "@/app/(tabs)/ayuno/actions";
+import { formatInTimeZone } from "date-fns-tz";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import type { FastView } from "@/lib/fast-data";
@@ -13,6 +14,21 @@ export function FastActions({ view }: { view: FastView }) {
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [confirmMissing, setConfirmMissing] = useState<number | null>(null);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [adjustTime, setAdjustTime] = useState("");
+
+  const openAdjust = () => {
+    const ref = view.phase === "fasting" ? new Date(view.startISO) : new Date();
+    setAdjustTime(formatInTimeZone(ref, view.timezone, "HH:mm"));
+    setAdjustOpen(true);
+  };
+  const saveAdjust = () =>
+    start(async () => {
+      const res = await adjustStart(adjustTime);
+      if (res.error) return setMessage(res.error);
+      setAdjustOpen(false);
+      setMessage("Listo, hora de inicio corregida. El fin se recalculó.");
+    });
 
   const run = (fn: () => Promise<{ error?: string; status?: string }>) =>
     start(async () => {
@@ -78,7 +94,29 @@ export function FastActions({ view }: { view: FastView }) {
         </>
       )}
 
+      <Button variant="ghost" className="w-full text-muted" disabled={pending} onClick={openAdjust}>
+        🕐 {view.phase === "fasting" ? "Ajustar hora de inicio" : "¿Ya empezaste? Poné la hora"}
+      </Button>
+
       {message && <p className="text-center text-sm">{message}</p>}
+
+      <Sheet open={adjustOpen} onOpenChange={setAdjustOpen}>
+        <SheetContent>
+          <SheetTitle>¿A qué hora empezaste?</SheetTitle>
+          <SheetDescription className="mb-5">
+            Ponés la hora real y el fin se recalcula solo ({view.baseHours} h después).
+          </SheetDescription>
+          <input
+            type="time"
+            value={adjustTime}
+            onChange={(e) => setAdjustTime(e.target.value)}
+            className="h-14 w-full rounded-2xl bg-bg px-4 text-2xl font-black text-fg outline-none focus:ring-2 focus:ring-accent"
+          />
+          <Button variant="primary" size="lg" className="mt-4 w-full" disabled={pending || !adjustTime} onClick={saveAdjust}>
+            Guardar hora
+          </Button>
+        </SheetContent>
+      </Sheet>
 
       <Sheet open={confirmMissing !== null} onOpenChange={(o) => !o && setConfirmMissing(null)}>
         <SheetContent>

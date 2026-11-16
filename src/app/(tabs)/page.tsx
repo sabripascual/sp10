@@ -3,8 +3,7 @@ import { PageHeader } from "@/components/shell/page-header";
 import { FastTimer } from "@/components/fast/fast-timer";
 import { EventCard } from "@/components/training/event-cards";
 import { EventSheet } from "@/components/training/event-sheet";
-import { PlannedConfirm } from "@/components/training/planned-confirm";
-import { StrengthCard } from "@/components/training/strength-card";
+import { TrainingCard } from "@/components/training/training-card";
 import { getFastData, toView } from "@/lib/fast-data";
 import { randomNickname } from "@/lib/profile";
 import { getTrainingData } from "@/lib/training";
@@ -22,7 +21,6 @@ export default async function HoyPage() {
   const { profile, streak } = fast;
   const checkDue = body.nextDate <= body.today && body.checks.at(-1)?.date !== body.today;
   const apodo = randomNickname(profile.nicknames);
-  const todayPlan = training.week.find((d) => d.isToday)!;
   const firstMeal = profile.fast_end.slice(0, 5);
 
   const toCompensate = training.events.filter((e) => e.phase === "compensate" || e.phase === "pending");
@@ -54,13 +52,14 @@ export default async function HoyPage() {
           </Card>
         )}
 
-        {todayPlan.awaitingConfirm && <PlannedConfirm day={todayPlan} />}
-
-        <StrengthCard
-          done={training.strengthDone}
+        <TrainingCard
+          week={training.week}
+          strengthDone={training.strengthDone}
           goal={profile.strength_goal}
           runMinutes={training.runMinutes}
+          runKcal={training.runKcal}
           today={training.today}
+          weightKg={training.weightKg}
         />
 
         <Card className="flex items-center gap-5">

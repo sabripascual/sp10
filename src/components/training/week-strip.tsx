@@ -3,7 +3,7 @@ import { TYPE_EMOJI } from "@/lib/training-types";
 import { DAY_SHORT } from "@/lib/week";
 import { cn } from "@/lib/utils";
 
-/** Semana de lunes a domingo: lo hecho en blanco, lo sugerido punteado. */
+/** Semana de lunes a domingo: cada día con los emojis de lo que hiciste. */
 export function WeekStrip({ week }: { week: DayPlan[] }) {
   return (
     <ul className="grid grid-cols-7 gap-1.5">
@@ -24,8 +24,6 @@ export function WeekStrip({ week }: { week: DayPlan[] }) {
               {d.workouts.map((w) => (
                 <span key={w.id}>{TYPE_EMOJI[w.type]}</span>
               ))}
-              {!did && d.planned && !d.skipped && <span className="opacity-40">{TYPE_EMOJI[d.planned]}</span>}
-              {d.skipped && !did && <span className="text-[10px]">—</span>}
             </span>
           </li>
         );

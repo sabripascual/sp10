@@ -103,13 +103,13 @@ export function PushSettings({ vapidPublicKey, prefs }: { vapidPublicKey: string
       {status === "install" && (
         <p className="rounded-xl bg-bg p-3 text-sm">
           En iPhone los avisos funcionan con la app instalada: en Safari tocá <b>Compartir</b> →{" "}
-          <b>Agregar a inicio</b>, abrí SP10 desde el ícono del gatito y volvé acá.
+          <b>Agregar a inicio</b>, abrí Ringo desde el ícono del perrito y volvé acá.
         </p>
       )}
       {status === "unsupported" && <p className="text-sm text-muted">Este navegador no soporta avisos.</p>}
       {status === "denied" && (
         <p className="rounded-xl bg-bg p-3 text-sm">
-          Los avisos están bloqueados. Activalos en Ajustes del iPhone → Notificaciones → SP10.
+          Los avisos están bloqueados. Activalos en Ajustes del iPhone → Notificaciones → Ringo.
         </p>
       )}
       {status === "off" && (

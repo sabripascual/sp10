@@ -1,9 +1,9 @@
-// SP10 service worker: avisos push y abrir la app al tocarlos.
+// Ringo service worker: avisos push y abrir la app al tocarlos.
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
 self.addEventListener("push", (event) => {
-  let data = { title: "SP10", body: "", url: "/" };
+  let data = { title: "Ringo", body: "", url: "/" };
   try {
     data = { ...data, ...event.data.json() };
   } catch {

@@ -6,6 +6,7 @@ import type { BodyCheck } from "@/lib/body";
 import { weekStart } from "@/lib/week";
 import {
   compensatedStreak,
+  zoneStats,
   fastStreaks,
   strengthWeekStreaks,
   weekSummaries,
@@ -21,6 +22,7 @@ export type ProgressData = {
   strength: { current: number; max: number };
   compensated: { current: number; total: number };
   checks: BodyCheck[];
+  zones: ReturnType<typeof zoneStats>;
 };
 
 export async function getProgressData(): Promise<ProgressData> {
@@ -32,7 +34,7 @@ export async function getProgressData(): Promise<ProgressData> {
 
   const [records, wRes, eRes, cRes] = await Promise.all([
     loadFastRecords(profile, shiftDate(today, -400)),
-    supabase.from("workouts").select("date, type, minutes, status").gte("date", from),
+    supabase.from("workouts").select("date, type, minutes, status, details").gte("date", from),
     supabase.from("events").select("date, compensated_at"),
     supabase.from("body_checks").select("id, date, weight_kg, waist_cm, hip_cm, chest_cm, arm_cm, thigh_cm, note").order("date"),
   ]);
@@ -57,5 +59,6 @@ export async function getProgressData(): Promise<ProgressData> {
     strength: strengthWeekStreaks(weeks),
     compensated: compensatedStreak(eRes.data ?? [], today),
     checks: (cRes.data ?? []) as BodyCheck[],
+    zones: zoneStats(wRes.data ?? []),
   };
 }

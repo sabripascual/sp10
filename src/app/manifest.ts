@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "SP10",
-    short_name: "SP10",
-    description: "Tu coach de bolsillo: ayuno, fuerza y cuerpo.",
+    name: "Ringo",
+    short_name: "Ringo",
+    description: "Tu coach de bolsillo: ayuno, fierritos y cuerpo.",
     start_url: "/",
     scope: "/",
     display: "standalone",

@@ -1,8 +1,19 @@
 // Tipos y constantes de entrenos: se pueden usar en el cliente.
 import type { EventPhase, SocialEvent } from "@/lib/events";
 
-export type WorkoutType = "futbol" | "fuerza" | "correr" | "padel" | "otro";
+// Las claves internas no cambian ("fuerza" = Fierritos, "correr" = Carrera).
+export type WorkoutType = "fuerza" | "correr" | "futbol" | "padel" | "otro";
 export type Feeling = "dificil" | "bien" | "excelente";
+
+export type Zone = "brazos" | "core" | "piernas";
+export const ZONES: { key: Zone; label: string; emoji: string }[] = [
+  { key: "brazos", label: "Brazos", emoji: "💪🏻" },
+  { key: "core", label: "Core", emoji: "🔥" },
+  { key: "piernas", label: "Piernas", emoji: "🦵🏻" },
+];
+
+export type ZoneWork = { exercises: number; reps: number; rounds: number };
+export type WorkoutDetails = { zones?: Partial<Record<Zone, ZoneWork>>; kcal?: number };
 
 export type Workout = {
   id: string;
@@ -13,35 +24,45 @@ export type Workout = {
   note: string | null;
   source: "manual" | "template";
   status: "done" | "skipped";
+  details: WorkoutDetails;
 };
 
 export const TYPE_LABEL: Record<WorkoutType, string> = {
+  fuerza: "Fierritos",
+  correr: "Carrera",
   futbol: "Fútbol",
-  fuerza: "Fuerza",
-  correr: "Correr",
   padel: "Pádel",
   otro: "Otro",
 };
 
 export const TYPE_EMOJI: Record<WorkoutType, string> = {
-  futbol: "⚽",
-  fuerza: "🏋️",
+  fuerza: "💪🏻",
   correr: "🏃‍♀️",
+  futbol: "⚽",
   padel: "🎾",
   otro: "✨",
 };
+
+/** kcal aproximadas de una carrera: MET 8,3 (trote suave) × kg × horas. */
+export function runKcal(minutes: number, weightKg: number) {
+  return Math.round(8.3 * weightKg * (minutes / 60));
+}
+
+export function zonesSummary(d: WorkoutDetails) {
+  return ZONES.filter((z) => d.zones?.[z.key])
+    .map((z) => {
+      const w = d.zones![z.key]!;
+      return `${z.label} ${w.exercises}×${w.reps}×${w.rounds}`;
+    })
+    .join(" · ");
+}
 
 export type DayPlan = {
   date: string;
   isoDay: number;
   isToday: boolean;
   isFuture: boolean;
-  planned: WorkoutType | null; // de la plantilla semanal
   workouts: Workout[]; // hechos
-  skipped: boolean; // marcó "no fui" en lo planeado
-  /** planeado, ya pasó o es hoy, y todavía no confirmó ni marcó "no fui" */
-  awaitingConfirm: boolean;
 };
 
 export type EventView = SocialEvent & { phase: EventPhase };
-

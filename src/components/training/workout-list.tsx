@@ -3,10 +3,8 @@
 import { useTransition } from "react";
 import { X } from "lucide-react";
 import { deleteWorkout } from "@/app/(tabs)/entrenos/actions";
-import { TYPE_EMOJI, TYPE_LABEL, type Workout } from "@/lib/training-types";
+import { TYPE_EMOJI, TYPE_LABEL, zonesSummary, type Workout } from "@/lib/training-types";
 import { dayName } from "@/lib/week";
-
-const FEELING: Record<string, string> = { dificil: "Difícil", bien: "Bien", excelente: "Excelente" };
 
 export function WorkoutList({ workouts }: { workouts: Workout[] }) {
   const [pending, start] = useTransition();
@@ -20,10 +18,11 @@ export function WorkoutList({ workouts }: { workouts: Workout[] }) {
             <p className="font-bold">
               {TYPE_LABEL[w.type]}
               {w.minutes ? ` · ${w.minutes} min` : ""}
-              {w.feeling ? ` · ${FEELING[w.feeling]}` : ""}
+              {w.details?.kcal ? ` · ≈ ${w.details.kcal} kcal` : ""}
             </p>
             <p className="truncate text-xs text-muted">
               {dayName(w.date)}
+              {zonesSummary(w.details ?? {}) ? ` · ${zonesSummary(w.details ?? {})}` : ""}
               {w.note ? ` · ${w.note}` : ""}
             </p>
           </div>

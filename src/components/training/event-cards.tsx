@@ -59,7 +59,7 @@ export function EventCard({ ev, firstMeal }: { ev: EventView; firstMeal: string 
     ev.phase === "today"
       ? `Hoy: ${ev.name}. ¡Disfrutá!`
       : ev.phase === "tomorrow"
-        ? `Mañana: ${ev.name}. Hoy metéle fuerza`
+        ? `Mañana: ${ev.name}. Hoy metéle fierritos`
         : `${ev.name} · ${shortDate(ev.date)}`;
 
   return (

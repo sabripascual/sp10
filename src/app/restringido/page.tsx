@@ -7,7 +7,7 @@ export default function RestringidoPage() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 text-center">
       <p className="text-5xl">🔒</p>
       <h1 className="mt-4 text-3xl font-extrabold">Acceso restringido</h1>
-      <p className="mt-2 text-muted">SP10 es una app personal. Este espacio tiene dueña.</p>
+      <p className="mt-2 text-muted">Ringo es una app personal. Este espacio tiene dueña.</p>
       <form action={signOut} className="mt-8">
         <Button type="submit" variant="outline" className="w-full">
           Salir

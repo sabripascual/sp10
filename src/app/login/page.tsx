@@ -1,13 +1,12 @@
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { LoginForm } from "./login-form";
 import { Footer } from "@/components/shell/footer";
-import { CatLogo } from "@/components/brand/cat-logo";
+import { RingoLogo } from "@/components/brand/ringo-logo";
 
 export default function LoginPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-10">
-      <CatLogo className="mb-2 size-24" />
-      <p className="text-6xl font-black tracking-[-0.06em]">SP10</p>
+      <RingoLogo className="mb-2 w-56" />
       <p className="mt-2 mb-10 text-muted">Tu coach de bolsillo. Entrá y metéle.</p>
       {isSupabaseConfigured ? (
         <LoginForm />

@@ -55,7 +55,7 @@ export function weekSummaries(input: {
 }
 
 export function summaryText(s: WeekSummary) {
-  const parts = [`${s.strength}/${s.strengthGoal} fuerza`, `${s.fastOk}/${s.fastDays} ayuno`];
+  const parts = [`${s.strength}/${s.strengthGoal} fierritos`, `${s.fastOk}/${s.fastDays} ayuno`];
   if (s.compensated) parts.push(`${s.compensated} ${s.compensated === 1 ? "evento compensado" : "eventos compensados"}`);
   if (s.pending) parts.push(`${s.pending} pendiente${s.pending === 1 ? "" : "s"}`);
   if (s.runMinutes) parts.push(`${s.runMinutes} min corridos`);
@@ -110,4 +110,45 @@ export function compensatedStreak(events: E[], today: string) {
     else if (e.phase === "pending") run = 0;
   }
   return { current: run, total: past.filter((e) => e.phase === "compensated").length };
+}
+
+// ── Fierritos por zona y su relación con las medidas ───────────────────────
+type ZoneKey = "brazos" | "core" | "piernas";
+type ZW = { exercises: number; reps: number; rounds: number };
+type FW = { type: string; status: string; details?: { zones?: Partial<Record<ZoneKey, ZW>> } | null };
+
+/** Medida que acompaña a cada zona. */
+export const ZONE_MEASURE: Record<ZoneKey, { key: "arm_cm" | "waist_cm" | "thigh_cm"; label: string }> = {
+  brazos: { key: "arm_cm", label: "brazo" },
+  core: { key: "waist_cm", label: "cintura" },
+  piernas: { key: "thigh_cm", label: "pierna" },
+};
+
+export function zoneStats(workouts: FW[]) {
+  const zones: ZoneKey[] = ["brazos", "core", "piernas"];
+  const stats = zones.map((zone) => {
+    let sessions = 0;
+    let rounds = 0;
+    let reps = 0;
+    for (const w of workouts) {
+      const z = w.type === "fuerza" && w.status === "done" ? w.details?.zones?.[zone] : undefined;
+      if (!z) continue;
+      sessions++;
+      rounds += z.rounds;
+      reps += z.exercises * z.reps * z.rounds;
+    }
+    return { zone, sessions, rounds, reps };
+  });
+  const top = [...stats].sort((a, b) => b.sessions - a.sessions || b.reps - a.reps)[0];
+  return { stats, top: top.sessions > 0 ? top.zone : null };
+}
+
+/** Cambio de una medida entre el primer y el último control que la tienen. */
+export function measureChange<T extends { date: string } & Record<string, unknown>>(checks: T[], key: string) {
+  const vals = checks
+    .filter((c) => c[key] !== null && c[key] !== undefined)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((c) => Number(c[key]));
+  if (vals.length < 2) return null;
+  return Math.round((vals.at(-1)! - vals[0]) * 10) / 10;
 }

@@ -25,7 +25,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
 
       <Card className="space-y-4">
         <div>
-          <CardTitle>Meta de fuerza</CardTitle>
+          <CardTitle>Meta de fierritos 💪🏻</CardTitle>
           <CardDescription>Sesiones por semana (lunes a domingo).</CardDescription>
         </div>
         <input

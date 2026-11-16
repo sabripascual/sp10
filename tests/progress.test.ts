@@ -32,7 +32,7 @@ test("resumen de la semana", () => {
     weeks: 1,
   });
   // lun 16 a sáb 21 terminaron (6), el del dom 22 está en curso; el 18 cortado → 5/6
-  assert.equal(summaryText(s[0]), "3/3 fuerza, 5/6 ayuno, 1 evento compensado, 30 min corridos");
+  assert.equal(summaryText(s[0]), "3/3 fierritos, 5/6 ayuno, 1 evento compensado, 30 min corridos");
 });
 
 test("semanas con fuerza cumplida", () => {
@@ -53,4 +53,29 @@ test("compensados seguidos: lo pendiente corta, lo que está en 48 h no", () => 
     { date: "2026-11-29", compensated_at: null }, // todavía en 48 h
   ];
   assert.deepEqual(compensatedStreak(evs, today), { current: 2, total: 3 });
+});
+
+import { measureChange, zoneStats } from "../src/lib/progress";
+
+test("fierritos por zona y lo que más entrenás", () => {
+  const z = (exercises: number, reps: number, rounds: number) => ({ exercises, reps, rounds });
+  const ws = [
+    { type: "fuerza", status: "done", details: { zones: { piernas: z(3, 12, 3), core: z(2, 15, 3) } } },
+    { type: "fuerza", status: "done", details: { zones: { piernas: z(4, 10, 3) } } },
+    { type: "correr", status: "done", details: {} },
+  ];
+  const { stats, top } = zoneStats(ws);
+  assert.equal(top, "piernas");
+  assert.deepEqual(stats.find((s) => s.zone === "piernas"), { zone: "piernas", sessions: 2, rounds: 6, reps: 228 });
+  assert.equal(zoneStats([]).top, null);
+});
+
+test("cambio de medida entre el primer y el último control", () => {
+  const cs = [
+    { date: "2026-11-16", thigh_cm: 56 },
+    { date: "2026-11-30", thigh_cm: null },
+    { date: "2026-12-14", thigh_cm: 54.5 },
+  ];
+  assert.equal(measureChange(cs, "thigh_cm"), -1.5);
+  assert.equal(measureChange(cs.slice(0, 1), "thigh_cm"), null);
 });

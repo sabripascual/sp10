@@ -11,8 +11,6 @@ export type NotifyContext = {
   fastRecords: Map<string, FastDay>;
   strengthDone: number;
   strengthGoal: number;
-  plannedToday: string | null; // tipo planeado hoy (plantilla)
-  plannedConfirmed: boolean; // ya confirmó o marcó "no fui"
   events: { id: string; name: string; date: string; compensated_at: string | null }[];
   bodyNextDate: string;
   bodyDoneToday: boolean;
@@ -63,10 +61,11 @@ export function dueNotifications(ctx: NotifyContext): DueNotification[] {
 
   // Ventana y ayuno
   if (at(startMin - 30)) add("window_closing", today);
-  if (at(startMin)) {
-    const r = ctx.fastRecords.get(today);
-    if (!r?.ended_at) add("fast_started", today, { fin });
-  }
+  // Recordatorio para empezar el ayuno, y otro 1 h después si no lo marcó
+  const tonight = ctx.fastRecords.get(today);
+  const marked = Boolean(tonight?.started_at || tonight?.ended_at);
+  if (at(startMin) && !marked) add("fast_started", today, { fin });
+  if (at(startMin + 60) && !marked) add("fast_confirm", today);
   // Ayuno cumplido: el que terminó hace menos de 1 h y no se cortó
   for (const d of [shiftDate(today, -1), today]) {
     const r = ctx.fastRecords.get(d) ?? null;
@@ -90,8 +89,6 @@ export function dueNotifications(ctx: NotifyContext): DueNotification[] {
       if (ev.date === shiftDate(today, -1) && !ev.compensated_at) add("compensation_today", ev.id, { evento: ev.name });
     }
   }
-
-  if (at("22:00") && ctx.plannedToday === "futbol" && !ctx.plannedConfirmed) add("confirm_futbol", today);
 
   if (at("09:30") && ctx.bodyNextDate <= today && !ctx.bodyDoneToday) add("body_check", today);
 

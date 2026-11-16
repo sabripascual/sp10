@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isPushConfigured, sendPush } from "@/lib/push";
 import { dayMark, localDate, shiftDate, type FastDay } from "@/lib/fast";
 import { nextCheckDate } from "@/lib/body";
-import { isoDay, weekDates } from "@/lib/week";
+import { weekDates } from "@/lib/week";
 import { dueNotifications } from "@/lib/notify-rules";
 import { buildMessage, URLS, type NotifyKind } from "@/lib/phrases";
 
@@ -46,8 +46,6 @@ export async function POST(req: NextRequest) {
     const ws = (workouts.data ?? []) as { date: string; type: string; minutes: number | null; status: string }[];
     const done = ws.filter((w) => w.status === "done");
     const strengthDone = done.filter((w) => w.type === "fuerza").length;
-    const planned = (p.week_template as Record<string, string>)[String(isoDay(today))] ?? null;
-    const plannedConfirmed = ws.some((w) => w.date === today && (w.type === planned || w.status === "skipped"));
     const checkDates = (checks.data ?? []) as { date: string }[];
 
     // Resumen de la semana (para el domingo)
@@ -56,7 +54,7 @@ export async function POST(req: NextRequest) {
     const fastOk = elapsed.filter((d) => ["ok", "extended", "event"].includes(dayMark(d, now, p, records, created))).length;
     const compensated = (events.data ?? []).filter((e) => e.compensated_at && e.date >= week[0]).length;
     const runMin = done.filter((w) => w.type === "correr").reduce((a, w) => a + (w.minutes ?? 0), 0);
-    const parts = [`${strengthDone}/${p.strength_goal} fuerza`, `${fastOk}/${elapsed.length || 7} ayuno`];
+    const parts = [`${strengthDone}/${p.strength_goal} fierritos`, `${fastOk}/${elapsed.length || 7} ayuno`];
     if (compensated) parts.push(`${compensated} ${compensated === 1 ? "evento compensado" : "eventos compensados"}`);
     if (runMin) parts.push(`${runMin} min corridos`);
 
@@ -68,8 +66,6 @@ export async function POST(req: NextRequest) {
       fastRecords: records,
       strengthDone,
       strengthGoal: p.strength_goal,
-      plannedToday: planned,
-      plannedConfirmed,
       events: events.data ?? [],
       bodyNextDate: nextCheckDate(checkDates, p.body_check_start, today),
       bodyDoneToday: checkDates.some((c) => c.date === today),
@@ -86,7 +82,7 @@ export async function POST(req: NextRequest) {
         .from("notification_log")
         .insert({ user_id: userId, kind: n.kind, ref: n.ref, phrase_id: msg.phraseId });
       if (logErr) continue;
-      const { expired } = await sendPush(subs.data, { title: "SP10", body: msg.body, url: URLS[n.kind], tag: n.kind });
+      const { expired } = await sendPush(subs.data, { title: "Ringo", body: msg.body, url: URLS[n.kind], tag: n.kind });
       if (expired.length) await db.from("push_subscriptions").delete().in("endpoint", expired);
       report[userId].push(n.kind);
     }

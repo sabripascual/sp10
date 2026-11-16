@@ -11,8 +11,6 @@ const base = (now: Date, x: Partial<NotifyContext> = {}): NotifyContext => ({
   fastRecords: new Map(),
   strengthDone: 0,
   strengthGoal: 3,
-  plannedToday: null,
-  plannedConfirmed: false,
   events: [],
   bodyNextDate: "2026-12-31",
   bodyDoneToday: false,
@@ -22,9 +20,14 @@ const base = (now: Date, x: Partial<NotifyContext> = {}): NotifyContext => ({
 });
 const kinds = (ctx: NotifyContext) => dueNotifications(ctx).map((n) => n.kind).sort();
 
-test("18:30 cierre de ventana, 19:00 ayuno iniciado", () => {
+test("18:30 cierre de ventana, 19:00 empezá el ayuno, 20:00 ¿ya empezaste?", () => {
   assert.deepEqual(kinds(base(at("2026-11-16T18:30:00"))), ["window_closing"]);
   assert.deepEqual(kinds(base(at("2026-11-16T19:05:00"))), ["fast_started"]);
+  assert.deepEqual(kinds(base(at("2026-11-16T20:05:00"))), ["fast_confirm"]);
+  // si ya tocó Empezar, no molesta
+  const r = new Map([["2026-11-16", { date: "2026-11-16", status: "ok" as const, broken_at: null, extra_hours: 0, event_id: null, started_at: "2026-11-16T22:10:00Z" }]]);
+  assert.deepEqual(kinds(base(at("2026-11-16T19:05:00"), { fastRecords: r })), []);
+  assert.deepEqual(kinds(base(at("2026-11-16T20:05:00"), { fastRecords: r })), []);
 });
 
 test("11:00 ayuno cumplido; con +2 h a las 13:00", () => {
@@ -57,11 +60,9 @@ test("jueves 10:00 fuerza pendiente si va menos de 2/3, eventos y compensación"
   assert.deepEqual(kinds(base(thu, { strengthDone: 2, events })), ["compensation_today", "event_tomorrow"]);
 });
 
-test("fútbol 22:00, control 9:30 y resumen del domingo 20:00", () => {
-  assert.deepEqual(kinds(base(at("2026-11-16T22:00:00"), { plannedToday: "futbol" })), ["confirm_futbol"]);
-  assert.deepEqual(kinds(base(at("2026-11-16T22:00:00"), { plannedToday: "futbol", plannedConfirmed: true })), []);
+test("control 9:30 y resumen del domingo 20:00", () => {
   assert.deepEqual(kinds(base(at("2026-11-16T09:30:00"), { bodyNextDate: "2026-11-16" })), ["body_check"]);
-  assert.deepEqual(kinds(base(at("2026-11-22T20:00:00"), { strengthDone: 3 })), ["weekly_summary"]);
+  assert.deepEqual(kinds(base(at("2026-11-22T20:00:00"), { strengthDone: 3 })), ["fast_confirm", "weekly_summary"]);
 });
 
 test("frase con apodo, sin repetir la última", () => {

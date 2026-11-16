@@ -43,6 +43,6 @@ export const COMPENSATION_LABEL: Record<Compensation, string> = {
 /** Texto de la tarea del día siguiente. */
 export function compensationTask(c: Compensation, firstMeal: string) {
   const fast = `primera comida a las ${firstMeal}`;
-  const workout = "fuerza o 30 min de trote";
+  const workout = "fierritos o 30 min de carrera";
   return c === "fast" ? `Hoy ${fast}.` : c === "workout" ? `Hoy toca ${workout}.` : `Hoy ${fast} y ${workout}.`;
 }

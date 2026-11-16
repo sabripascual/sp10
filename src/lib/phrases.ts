@@ -8,18 +8,18 @@ export type NotifyKind =
   | "strength_pending"
   | "event_tomorrow"
   | "compensation_today"
-  | "confirm_futbol"
+  | "fast_confirm"
   | "body_check"
   | "weekly_summary";
 
 export const NOTIFY_KINDS: { kind: NotifyKind; label: string; when: string }[] = [
   { kind: "window_closing", label: "Cierre de ventana", when: "30 min antes de la última comida" },
-  { kind: "fast_started", label: "Ayuno iniciado", when: "A la hora de la última comida" },
+  { kind: "fast_started", label: "Empezá tu ayuno", when: "A la hora de la última comida" },
+  { kind: "fast_confirm", label: "¿Ya empezaste?", when: "1 h después, si no lo marcaste" },
   { kind: "fast_done", label: "Ayuno cumplido", when: "Cuando termina el ayuno" },
-  { kind: "strength_pending", label: "Fuerza pendiente", when: "Jueves y domingo 10:00" },
+  { kind: "strength_pending", label: "Fierritos pendientes", when: "Jueves y domingo 10:00" },
   { kind: "event_tomorrow", label: "Evento mañana", when: "Día previo, 10:00" },
   { kind: "compensation_today", label: "Compensación de hoy", when: "Día siguiente, 10:00" },
-  { kind: "confirm_futbol", label: "Confirmar fútbol", when: "Días de fútbol, 22:00" },
   { kind: "body_check", label: "Control quincenal", when: "El día que toca, 9:30" },
   { kind: "weekly_summary", label: "Resumen semanal", when: "Domingo 20:00" },
 ];
@@ -31,7 +31,7 @@ export const URLS: Record<NotifyKind, string> = {
   strength_pending: "/entrenos",
   event_tomorrow: "/",
   compensation_today: "/",
-  confirm_futbol: "/",
+  fast_confirm: "/ayuno",
   body_check: "/cuerpo/control",
   weekly_summary: "/progreso",
 };
@@ -43,9 +43,13 @@ export const PHRASES: Record<NotifyKind, string[]> = {
     "Media hora de ventana, {apodo}. Cerrá con algo rico",
   ],
   fast_started: [
-    "Arrancó el ayuno, {apodo}. Nos vemos a las {fin} con todo",
-    "{Apodo}, ventana cerrada. A las {fin} desayunás como reina",
-    "{Apodo}, la racha no se cuida sola. Arrancó el ayuno",
+    "{Apodo}, no te olvides de empezar el ayuno. Tocá Empezar y largamos",
+    "Hora de cerrar la ventana, {apodo}. Marcá Empezar y nos vemos a las {fin}",
+    "{Apodo}, la racha no se cuida sola: dale a Empezar el ayuno",
+  ],
+  fast_confirm: [
+    "{Apodo}, ¿ya empezaste el ayuno? Confirmalo y, si fue antes, ajustá la hora",
+    "¿Arrancaste el ayuno, {apodo}? Un toque y lo dejo anotado con tu hora",
   ],
   fast_done: [
     "¡{horas} horas, {apodo}! Ya podés desayunar como la campeona que sos",
@@ -53,22 +57,18 @@ export const PHRASES: Record<NotifyKind, string[]> = {
     "¡Listo, {apodo}! {horas} horas al hilo. A comer rico",
   ],
   strength_pending: [
-    "{Apodo}, vas {hechas} de {meta} en fuerza y ya es {dia}. Hora de meterle fierro",
+    "{Apodo}, vas {hechas} de {meta} en fierritos y ya es {dia}. Hora de meterle fierro",
     "{Apodo}, el gym te extraña. No lo hagas sufrir",
-    "{Apodo}, hoy no se negocia: fuerza y a otra cosa",
+    "{Apodo}, hoy no se negocia: fierritos y a otra cosa",
     "{Apodo}, hora de meterle fierro",
   ],
   event_tomorrow: [
-    "Mañana hay {evento}, {apodo}. Hoy metéle fuerza y lo disfrutás tranqui",
-    "{Apodo}, mañana es {evento}. ¿Un entreno hoy para llegar con todo?",
+    "Mañana hay {evento}, {apodo}. Hoy metéle fierritos y lo disfrutás tranqui",
+    "{Apodo}, mañana es {evento}. ¿Unos fierritos hoy para llegar con todo?",
   ],
   compensation_today: [
     "Ayer fue fiesta, hoy toca devolverle al cuerpo. Vos podés, {apodo}",
     "{Apodo}, hoy compensamos lo de {evento}. Un toque y queda la marca",
-  ],
-  confirm_futbol: [
-    "{Apodo}, ¿hubo fútbol hoy? Tocame y lo anoto",
-    "{Apodo}, ¿cómo estuvo la pelota? Confirmalo con un toque",
   ],
   body_check: [
     "Toca control, {apodo}. Es solo un dato, no un juicio",

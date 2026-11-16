@@ -2,16 +2,12 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
 import { EventCard } from "@/components/training/event-cards";
 import { EventSheet } from "@/components/training/event-sheet";
-import { PlannedConfirm } from "@/components/training/planned-confirm";
-import { RegisterSheet } from "@/components/training/register-sheet";
-import { StrengthCard } from "@/components/training/strength-card";
-import { WeekStrip } from "@/components/training/week-strip";
+import { TrainingCard } from "@/components/training/training-card";
 import { WorkoutList } from "@/components/training/workout-list";
 import { getTrainingData } from "@/lib/training";
 
 export default async function EntrenosPage() {
-  const { profile, today, week, strengthDone, runMinutes, events } = await getTrainingData();
-  const toConfirm = week.filter((d) => d.awaitingConfirm).reverse();
+  const { profile, today, week, strengthDone, runMinutes, runKcal, weightKg, events } = await getTrainingData();
   const workouts = week.flatMap((d) => d.workouts).reverse();
   const firstMeal = profile.fast_end.slice(0, 5);
 
@@ -19,17 +15,15 @@ export default async function EntrenosPage() {
     <>
       <PageHeader title="Entrenos" subtitle="Semana de lunes a domingo." />
       <div className="space-y-4">
-        <StrengthCard done={strengthDone} goal={profile.strength_goal} runMinutes={runMinutes} today={today} />
-
-        <Card>
-          <WeekStrip week={week} />
-        </Card>
-
-        <RegisterSheet today={today} label="Registrar entreno" className="w-full" />
-
-        {toConfirm.map((d) => (
-          <PlannedConfirm key={d.date} day={d} />
-        ))}
+        <TrainingCard
+          week={week}
+          strengthDone={strengthDone}
+          goal={profile.strength_goal}
+          runMinutes={runMinutes}
+          runKcal={runKcal}
+          today={today}
+          weightKg={weightKg}
+        />
 
         {events.length > 0 && (
           <div className="space-y-3 pt-2">

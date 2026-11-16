@@ -11,11 +11,11 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "SP10",
-  description: "Tu coach de bolsillo: ayuno 16:8, fuerza y cuerpo.",
+  title: "Ringo",
+  description: "Tu coach de bolsillo: ayuno, fierritos y cuerpo.",
   appleWebApp: {
     capable: true,
-    title: "SP10",
+    title: "Ringo",
     statusBarStyle: "black-translucent",
     startupImage: [
       { url: "/splash/splash-1170x2532.png", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },

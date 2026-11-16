@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { fromZonedTime } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { closeOutcome, fastWindow, getFastState, localDate, shiftDate, MAX_EXTRA_HOURS } from "@/lib/fast";
@@ -118,5 +119,29 @@ export async function setFastDay(date: string, choice: DayChoice): Promise<FastA
   const { error } = await supabase
     .from("fast_days")
     .upsert({ date, ...row }, { onConflict: "user_id,date" });
+  return error ? { error: error.message } : done();
+}
+
+/**
+ * "Empecé a las…": corrige la hora real de inicio del ayuno en curso
+ * (o del próximo, si lo empezaste antes de tiempo). El fin se recalcula solo.
+ */
+export async function adjustStart(hhmm: string): Promise<FastActionResult> {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm)) return { error: "Hora inválida." };
+  const { profile, now, state } = await current();
+  const today = localDate(now, profile.timezone);
+
+  let startAt = fromZonedTime(`${today}T${hhmm}:00`, profile.timezone);
+  if (startAt > now) startAt = fromZonedTime(`${shiftDate(today, -1)}T${hhmm}:00`, profile.timezone);
+  if (now.getTime() - startAt.getTime() > 23 * 3_600_000) return { error: "Esa hora es muy vieja para este ayuno." };
+
+  const target = state.phase === "fasting" ? state.window : state.next;
+  const previous = state.phase === "fasting" ? null : state.previous;
+  if (previous && startAt < previous.end) return { error: "Esa hora se pisa con el ayuno anterior." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("fast_days")
+    .upsert({ date: target.date, started_at: startAt.toISOString(), ended_at: null, broken_at: null }, { onConflict: "user_id,date" });
   return error ? { error: error.message } : done();
 }

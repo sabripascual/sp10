@@ -1,6 +1,7 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
 import { MeasuresChart, RunChart, WeightChart } from "@/components/progress/charts";
+import { ZonesCard } from "@/components/progress/zones-card";
 import { getProgressData } from "@/lib/progress-data";
 import { summaryText } from "@/lib/progress";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,7 @@ function Stat({ value, label, sub, hot }: { value: number; label: string; sub: s
 const dm = (date: string) => `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
 
 export default async function ProgresoPage() {
-  const { profile, weeks, fast, strength, compensated, checks } = await getProgressData();
+  const { profile, weeks, fast, strength, compensated, checks, zones } = await getProgressData();
   const current = weeks.at(-1)!;
   const past = weeks.slice(0, -1).reverse().filter((w) => w.fastDays > 0 || w.strength > 0 || w.runMinutes > 0);
 
@@ -28,7 +29,7 @@ export default async function ProgresoPage() {
       <div className="space-y-4">
         <div className="grid grid-cols-3 gap-2">
           <Stat value={fast.current} label="días de ayuno" sub={`Récord: ${fast.max}`} hot={fast.current > 0 && fast.current === fast.max} />
-          <Stat value={strength.current} label={`semanas ${profile.strength_goal}/${profile.strength_goal}`} sub={`Récord: ${strength.max}`} />
+          <Stat value={strength.current} label={`semanas de fierritos ${profile.strength_goal}/${profile.strength_goal}`} sub={`Récord: ${strength.max}`} />
           <Stat value={compensated.current} label="compensados seguidos" sub={`Total: ${compensated.total}`} />
         </div>
 
@@ -37,8 +38,10 @@ export default async function ProgresoPage() {
           <CardDescription className="text-base text-fg">{summaryText(current)}</CardDescription>
         </Card>
 
+        <ZonesCard zones={zones} checks={checks} />
+
         <Card className="space-y-3">
-          <CardTitle>Minutos corridos por semana</CardTitle>
+          <CardTitle>Minutos de carrera por semana</CardTitle>
           <RunChart weeks={weeks} />
         </Card>
 

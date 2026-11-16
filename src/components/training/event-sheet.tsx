@@ -78,7 +78,7 @@ export function EventSheet({ today, className }: { today: string; className?: st
                 onChange={setComp}
                 options={[
                   { value: "fast", label: "+2 h de ayuno" },
-                  { value: "workout", label: "Entreno extra (fuerza o 30 min de trote)" },
+                  { value: "workout", label: "Entreno extra (fierritos o 30 min de carrera)" },
                   { value: "both", label: "Las dos" },
                 ]}
               />

@@ -5,11 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { localDate, shiftDate } from "@/lib/fast";
 import type { Compensation, EventKind } from "@/lib/events";
-import type { Feeling, WorkoutType } from "@/lib/training";
+import { ZONES, type Feeling, type WorkoutDetails, type WorkoutType, type Zone } from "@/lib/training-types";
 
 export type ActionResult = { error?: string; ok?: boolean };
 
-const TYPES: WorkoutType[] = ["futbol", "fuerza", "correr", "padel", "otro"];
+const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "otro"];
 const FEELINGS: Feeling[] = ["dificil", "bien", "excelente"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -37,6 +37,7 @@ export async function addWorkout(input: {
   minutes?: number | null;
   feeling?: Feeling | null;
   note?: string | null;
+  details?: WorkoutDetails;
 }): Promise<ActionResult> {
   const dateError = await validDate(input.date);
   if (dateError) return { error: dateError };
@@ -45,29 +46,29 @@ export async function addWorkout(input: {
   if (minutes !== null && (minutes < 1 || minutes > 600)) return { error: "Revisá los minutos." };
   if (input.feeling && !FEELINGS.includes(input.feeling)) return { error: "Sensación inválida." };
 
+  // Detalle: zonas solo para fierritos, kcal solo para carrera (números chicos y enteros)
+  const details: WorkoutDetails = {};
+  if (input.type === "fuerza" && input.details?.zones) {
+    const zones: WorkoutDetails["zones"] = {};
+    for (const { key } of ZONES) {
+      const z = input.details.zones[key as Zone];
+      if (!z) continue;
+      const clamp = (n: number, max: number) => Math.max(0, Math.min(max, Math.round(Number(n) || 0)));
+      zones[key] = { exercises: clamp(z.exercises, 30), reps: clamp(z.reps, 200), rounds: clamp(z.rounds, 30) };
+    }
+    if (Object.keys(zones).length) details.zones = zones;
+  }
+  if (input.type === "correr" && input.details?.kcal) details.kcal = Math.max(0, Math.min(5000, Math.round(input.details.kcal)));
+
   const supabase = await createClient();
   const { error } = await supabase.from("workouts").insert({
     date: input.date,
     type: input.type,
     minutes,
-    feeling: input.type === "correr" ? (input.feeling ?? null) : null,
-    note: input.note?.trim().slice(0, 280) || null,
+    feeling: null,
+    note: input.type === "correr" ? null : input.note?.trim().slice(0, 280) || null,
     source: "manual",
-  });
-  return error ? { error: error.message } : done();
-}
-
-/** Plantilla: "Fui" o "No fui" para lo planeado ese día. */
-export async function confirmPlanned(date: string, type: WorkoutType, went: boolean): Promise<ActionResult> {
-  const dateError = await validDate(date);
-  if (dateError) return { error: dateError };
-  if (!TYPES.includes(type)) return { error: "Tipo inválido." };
-  const supabase = await createClient();
-  const { error } = await supabase.from("workouts").insert({
-    date,
-    type,
-    source: "template",
-    status: went ? "done" : "skipped",
+    details,
   });
   return error ? { error: error.message } : done();
 }
