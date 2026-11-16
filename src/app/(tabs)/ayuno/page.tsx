@@ -4,6 +4,7 @@ import { protocolLabel } from "@/lib/fast-protocol";
 import { FastActions } from "@/components/fast/fast-actions";
 import { FastCalendar } from "@/components/fast/fast-calendar";
 import { FastTimer } from "@/components/fast/fast-timer";
+import { FastHistory } from "@/components/fast/fast-history";
 import { getFastData, toView } from "@/lib/fast-data";
 
 export default async function AyunoPage() {
@@ -37,6 +38,11 @@ export default async function AyunoPage() {
               {streak === 0 ? "Hoy arranca la cuenta. Vos podés." : "La racha no se cuida sola."}
             </CardDescription>
           </div>
+        </Card>
+
+        <Card>
+          <CardTitle className="mb-2">Tus últimos ayunos</CardTitle>
+          <FastHistory items={data.history} timezone={profile.timezone} />
         </Card>
 
         <Card>

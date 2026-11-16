@@ -66,15 +66,17 @@ export function dueNotifications(ctx: NotifyContext): DueNotification[] {
   const marked = Boolean(tonight?.started_at || tonight?.ended_at);
   if (at(startMin) && !marked) add("fast_started", today, { fin });
   if (at(startMin + 60) && !marked) add("fast_confirm", today);
-  // Ayuno cumplido: el que terminó hace menos de 1 h y no se cortó
+  // Llegó a la hora de fin sin confirmar: "¿terminaste o seguís?" y, 2 h después, otro recordatorio.
+  // El ref incluye la extensión: si extendió, vuelve a preguntar al nuevo fin.
   for (const d of [shiftDate(today, -1), today]) {
     const r = ctx.fastRecords.get(d) ?? null;
     const w = fastWindow(d, cfg, r);
-    const diff = (now.getTime() - w.end.getTime()) / 60_000;
-    if (diff >= 0 && diff < CATCH_UP_MIN && r?.status !== "broken") {
-      const horas = Math.round((w.end.getTime() - w.start.getTime()) / 3_600_000) || baseDurationMinutes(cfg) / 60;
-      add("fast_done", d, { horas });
-    }
+    if (w.closed || r?.status === "broken") continue;
+    const diff = (now.getTime() - w.plannedEnd.getTime()) / 60_000;
+    const horas = Math.round((w.plannedEnd.getTime() - w.start.getTime()) / 3_600_000) || baseDurationMinutes(cfg) / 60;
+    const ref = `${d}+${r?.extra_hours ?? 0}`;
+    if (diff >= 0 && diff < CATCH_UP_MIN) add("fast_done", ref, { horas });
+    if (diff >= 120 && diff < 120 + CATCH_UP_MIN) add("fast_unconfirmed", ref);
   }
 
   // Fuerza pendiente: jueves (meta-1) y domingo (meta)

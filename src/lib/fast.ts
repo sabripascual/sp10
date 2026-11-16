@@ -23,12 +23,19 @@ export type FastConfig = {
 export type FastWindow = {
   date: string;
   start: Date;
+  /** Fin real si se cerró a mano; si no, el fin planeado. */
   end: Date;
+  /** Inicio + duración del protocolo + extensión. */
+  plannedEnd: Date;
+  /** true si tiene hora de fin confirmada (Terminar / Lo rompí). */
+  closed: boolean;
   record: FastDay | null;
 };
 
 export type FastState =
   | { phase: "fasting"; window: FastWindow }
+  /** Llegó a la hora de fin y no confirmó: sigue contando y pregunta "¿terminaste o seguís?". */
+  | { phase: "overtime"; window: FastWindow }
   | { phase: "eating"; previous: FastWindow; next: FastWindow; canExtend: boolean; canResume: boolean };
 
 export type DayMark = "ok" | "extended" | "event" | "broken" | "pending" | "none";
@@ -36,6 +43,8 @@ export type DayMark = "ok" | "extended" | "event" | "broken" | "pending" | "none
 /** Ventana después del fin del ayuno en la que todavía se puede extender. */
 const EXTEND_GRACE_MS = 2 * 60 * 60 * 1000;
 export const MAX_EXTRA_HOURS = 8;
+/** Cuánto espera la confirmación de fin; después lo da por terminado a la hora planeada. */
+export const OVERTIME_MS = 6 * 60 * 60 * 1000;
 
 function toMinutes(t: string) {
   const [h, m] = t.split(":").map(Number);
@@ -71,8 +80,9 @@ export function fastWindow(date: string, cfg: FastConfig, record: FastDay | null
   const start = record?.started_at ? new Date(record.started_at) : scheduledStart(date, cfg);
   const planned = baseDurationMinutes(cfg) + (record?.extra_hours ?? 0) * 60;
   const closedAt = record?.ended_at ?? record?.broken_at;
-  const end = closedAt ? new Date(closedAt) : new Date(start.getTime() + planned * 60_000);
-  return { date, start, end, record };
+  const plannedEnd = new Date(start.getTime() + planned * 60_000);
+  const end = closedAt ? new Date(closedAt) : plannedEnd;
+  return { date, start, end, plannedEnd, closed: Boolean(closedAt), record };
 }
 
 /** Resultado de terminar un ayuno a la hora `endAt`. */
@@ -98,6 +108,16 @@ export function getFastState(
   const next = candidates.find((w) => w.start > now)!;
 
   if (active) return { phase: "fasting", window: active };
+
+  // Pasó la hora de fin sin confirmar: el ayuno sigue hasta que digas "terminé"
+  const overtime = candidates.find(
+    (w) =>
+      !w.closed &&
+      w.record?.status !== "broken" &&
+      w.plannedEnd <= now &&
+      now.getTime() < w.plannedEnd.getTime() + OVERTIME_MS,
+  );
+  if (overtime) return { phase: "overtime", window: overtime };
 
   const previous = [...candidates]
     .filter((w) => w.end <= now)
@@ -152,4 +172,17 @@ export function fastStreak(
 export function lastNDays(now: Date, tz: string, n: number) {
   const today = localDate(now, tz);
   return Array.from({ length: n }, (_, i) => shiftDate(today, i - n + 1));
+}
+
+/** extra_hours para que el fin planeado quede `hours` después de ahora (o del fin actual si es más tarde). */
+export function extraHoursFor(window: FastWindow, now: Date, hours: number, cfg: FastConfig) {
+  const baseEnd = window.start.getTime() + baseDurationMinutes(cfg) * 60_000;
+  const from = Math.max(now.getTime(), window.plannedEnd.getTime());
+  const extra = Math.ceil((from + hours * 3_600_000 - baseEnd) / 3_600_000);
+  return Math.max(0, Math.min(extra, MAX_EXTRA_HOURS));
+}
+
+/** Duración real (o según horario) de un ayuno. */
+export function fastDuration(w: FastWindow) {
+  return w.end.getTime() - w.start.getTime();
 }

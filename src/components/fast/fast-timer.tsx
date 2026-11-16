@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { endFast, resumeFast, startFast } from "@/app/(tabs)/ayuno/actions";
+import { endFast, extendFast, resumeFast, startFast } from "@/app/(tabs)/ayuno/actions";
+import { EndAtSheet } from "./end-at-sheet";
 import type { FastView } from "@/lib/fast-data";
 import { cn } from "@/lib/utils";
 import { clock, hour, humanDuration } from "./format";
@@ -27,6 +28,8 @@ export function FastTimer({
   const [optimistic, setOptimistic] = useState<{ base: string; view: FastView } | null>(null);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [endAtOpen, setEndAtOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // El estado optimista vale hasta que llega una vista nueva del servidor.
   const serverKey = `${serverView.phase}|${serverView.startISO}|${serverView.endISO}`;
@@ -70,8 +73,12 @@ export function FastTimer({
         canResume: true,
         canExtend: false,
       },
-      endFast,
+      () => endFast(),
     );
+  };
+  const keepGoing = () => {
+    const t = Date.now();
+    run({ ...view, phase: "fasting", endISO: new Date(t + 3_600_000).toISOString(), canResume: false }, () => extendFast(1));
   };
   const undo = () => run({ ...view, phase: "fasting", canResume: false }, resumeFast);
 
@@ -80,7 +87,14 @@ export function FastTimer({
   let detail: string;
   let progress: number | null = null;
 
-  if (view.phase === "fasting") {
+  const isFasting = view.phase === "fasting" || view.phase === "overtime";
+
+  if (view.phase === "overtime") {
+    label = "Meta cumplida · ¿terminaste?";
+    big = clock(now - startMs);
+    progress = 1;
+    detail = `Llegaste a las ${hour(view.endISO, tz)}. Llevás ${humanDuration(now - end)} de yapa.`;
+  } else if (view.phase === "fasting") {
     label = view.extraHours > 0 ? `Ayunando · +${view.extraHours} h` : "Ayunando";
     big = clock(now - startMs);
     progress = Math.min((now - startMs) / (end - startMs), 1);
@@ -103,11 +117,11 @@ export function FastTimer({
         </button>
       )}
       <button
-        onClick={view.phase === "fasting" ? quickEnd : quickStart}
+        onClick={isFasting ? quickEnd : quickStart}
         disabled={pending}
         className="rounded-full bg-accent px-3.5 py-1.5 text-xs font-black text-accent-fg transition-transform active:scale-95 disabled:opacity-60"
       >
-        {view.phase === "fasting" ? "■ Terminar" : "▶ Empezar"}
+        {view.phase === "overtime" ? "■ Terminé" : isFasting ? "■ Terminar" : "▶ Empezar"}
       </button>
     </div>
   );
@@ -127,7 +141,7 @@ export function FastTimer({
         </div>
       )}
       <p className={cn("text-muted", compact ? "mt-2 text-sm" : "mt-3")}>{detail}</p>
-      {view.phase === "fasting" && <StageInfo elapsedMs={now - startMs} compact={compact} />}
+      {isFasting && <StageInfo elapsedMs={now - startMs} compact={compact} />}
       {streak !== undefined && (
         <p className={cn("flex items-center gap-2 border-t border-muted/30 font-bold", compact ? "mt-3 pt-3 text-sm" : "mt-4 pt-4")}>
           <span className={cn("text-xl font-black tabular-nums", streak > 0 && "text-accent")}>🔥 {streak}</span>
@@ -149,7 +163,25 @@ export function FastTimer({
       ) : (
         body
       )}
+      {view.phase === "overtime" && (
+        <div className="mt-4 space-y-2 rounded-xl bg-bg p-3">
+          <p className="text-sm font-bold">¿Terminaste o seguís? 🐶</p>
+          <div className="grid grid-cols-3 gap-2">
+            <button onClick={quickEnd} disabled={pending} className="h-11 rounded-xl bg-accent text-sm font-black text-accent-fg active:scale-95">
+              Terminé
+            </button>
+            <button onClick={() => setEndAtOpen(true)} disabled={pending} className="h-11 rounded-xl bg-surface text-sm font-bold active:scale-95">
+              A otra hora
+            </button>
+            <button onClick={keepGoing} disabled={pending} className="h-11 rounded-xl bg-surface text-sm font-bold active:scale-95">
+              Sigo +1 h
+            </button>
+          </div>
+        </div>
+      )}
+      {notice && <p className="mt-3 text-sm font-bold">{notice}</p>}
       {quick}
+      <EndAtSheet open={endAtOpen} onOpenChange={setEndAtOpen} timezone={tz} onDone={setNotice} />
     </div>
   );
 }

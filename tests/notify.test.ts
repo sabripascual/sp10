@@ -30,7 +30,14 @@ test("18:30 cierre de ventana, 19:00 empezá el ayuno, 20:00 ¿ya empezaste?", (
   assert.deepEqual(kinds(base(at("2026-11-16T20:05:00"), { fastRecords: r })), []);
 });
 
-test("11:00 ayuno cumplido; con +2 h a las 13:00", () => {
+test("13:00 sin confirmar: recordatorio; si ya terminó, nada", () => {
+  assert.deepEqual(kinds(base(at("2026-11-17T13:05:00"))), ["fast_unconfirmed"]);
+  const r = new Map([["2026-11-16", { date: "2026-11-16", status: "ok" as const, broken_at: null, extra_hours: 0, event_id: null, ended_at: at("2026-11-17T11:02:00").toISOString() }]]);
+  assert.deepEqual(kinds(base(at("2026-11-17T11:10:00"), { fastRecords: r })), []);
+  assert.deepEqual(kinds(base(at("2026-11-17T13:05:00"), { fastRecords: r })), []);
+});
+
+test("11:00 ¿terminaste?; con +2 h a las 13:00", () => {
   assert.deepEqual(kinds(base(at("2026-11-17T11:10:00"))), ["fast_done"]);
   const r = new Map([["2026-11-16", { date: "2026-11-16", status: "event" as const, broken_at: null, extra_hours: 2, event_id: "e" }]]);
   assert.deepEqual(kinds(base(at("2026-11-17T11:10:00"), { fastRecords: r })), []);

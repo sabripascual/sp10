@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { fromZonedTime } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
-import { closeOutcome, fastWindow, getFastState, localDate, shiftDate, MAX_EXTRA_HOURS } from "@/lib/fast";
+import { closeOutcome, extraHoursFor, fastWindow, getFastState, localDate, shiftDate, MAX_EXTRA_HOURS } from "@/lib/fast";
 import { EDITABLE_DAYS, loadFastRecords } from "@/lib/fast-data";
 
 export type FastActionResult = { error?: string };
@@ -25,7 +25,8 @@ function done() {
 /** "Empezar": arranca el próximo ayuno ahora mismo. */
 export async function startFast(): Promise<FastActionResult> {
   const { now, state } = await current();
-  if (state.phase !== "eating") return { error: "Ya estás ayunando." };
+  if (state.phase === "fasting") return { error: "Ya estás ayunando." };
+  if (state.phase === "overtime") return { error: "Primero contame a qué hora terminaste el ayuno anterior." };
   const supabase = await createClient();
   const { error } = await supabase.from("fast_days").upsert(
     { date: state.next.date, status: "ok", started_at: now.toISOString(), ended_at: null, broken_at: null, extra_hours: 0 },
@@ -34,12 +35,24 @@ export async function startFast(): Promise<FastActionResult> {
   return error ? { error: error.message } : done();
 }
 
-/** "Terminar": cierra el ayuno en curso ahora. Cumplido, extendido o cortado según las horas. */
-export async function endFast(): Promise<FastActionResult & { status?: string }> {
+/**
+ * "Terminar": cierra el ayuno en curso (o el que espera confirmación) ahora o a la hora
+ * que digas ("HH:MM", hoy o anoche). Queda cumplido, extendido o cortado según las horas reales.
+ */
+export async function endFast(atHHMM?: string): Promise<FastActionResult & { status?: string; hours?: number }> {
   const { profile, now, state } = await current();
-  if (state.phase !== "fasting") return { error: "No hay un ayuno en curso." };
+  if (state.phase !== "fasting" && state.phase !== "overtime") return { error: "No hay un ayuno en curso." };
   const w = state.window;
-  const outcome = closeOutcome(w.start, now, profile);
+
+  let endAt = now;
+  if (atHHMM) {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(atHHMM)) return { error: "Hora inválida." };
+    const today = localDate(now, profile.timezone);
+    endAt = fromZonedTime(`${today}T${atHHMM}:00`, profile.timezone);
+    if (endAt > now) endAt = fromZonedTime(`${shiftDate(today, -1)}T${atHHMM}:00`, profile.timezone);
+    if (endAt <= w.start) return { error: "Esa hora es anterior al inicio del ayuno." };
+  }
+  const outcome = closeOutcome(w.start, endAt, profile);
   const supabase = await createClient();
   const { error } = await supabase.from("fast_days").upsert(
     {
@@ -47,22 +60,31 @@ export async function endFast(): Promise<FastActionResult & { status?: string }>
       status: w.record?.status === "event" ? "event" : outcome.status,
       extra_hours: outcome.extra_hours,
       started_at: w.record?.started_at ?? null,
-      ended_at: now.toISOString(),
-      broken_at: outcome.status === "broken" ? now.toISOString() : null,
+      ended_at: endAt.toISOString(),
+      broken_at: outcome.status === "broken" ? endAt.toISOString() : null,
     },
     { onConflict: "user_id,date" },
   );
-  return error ? { error: error.message } : { ...done(), status: outcome.status };
+  const hours = Math.round(((endAt.getTime() - w.start.getTime()) / 3_600_000) * 10) / 10;
+  return error ? { error: error.message } : { ...done(), status: outcome.status, hours };
 }
 
 export async function extendFast(hours: number): Promise<FastActionResult> {
   if (hours !== 1 && hours !== 2) return { error: "Solo +1 h o +2 h." };
-  const { state } = await current();
+  const { profile, now, state } = await current();
   const target =
-    state.phase === "fasting" ? state.window : state.phase === "eating" && state.canExtend ? state.previous : null;
+    state.phase === "fasting" || state.phase === "overtime"
+      ? state.window
+      : state.phase === "eating" && state.canExtend
+        ? state.previous
+        : null;
   if (!target) return { error: "Este ayuno ya no se puede extender." };
 
-  const extra = Math.min((target.record?.extra_hours ?? 0) + hours, MAX_EXTRA_HOURS);
+  // En curso: suma horas al fin. Si ya pasó el fin ("¿terminaste?"), el nuevo fin queda a +N h desde ahora.
+  const extra =
+    state.phase === "overtime"
+      ? extraHoursFor(target, now, hours, profile)
+      : Math.min((target.record?.extra_hours ?? 0) + hours, MAX_EXTRA_HOURS);
   const supabase = await createClient();
   const { error } = await supabase.from("fast_days").upsert(
     {
@@ -135,8 +157,8 @@ export async function adjustStart(hhmm: string): Promise<FastActionResult> {
   if (startAt > now) startAt = fromZonedTime(`${shiftDate(today, -1)}T${hhmm}:00`, profile.timezone);
   if (now.getTime() - startAt.getTime() > 23 * 3_600_000) return { error: "Esa hora es muy vieja para este ayuno." };
 
-  const target = state.phase === "fasting" ? state.window : state.next;
-  const previous = state.phase === "fasting" ? null : state.previous;
+  const target = state.phase === "eating" ? state.next : state.window;
+  const previous = state.phase === "eating" ? state.previous : null;
   if (previous && startAt < previous.end) return { error: "Esa hora se pisa con el ayuno anterior." };
 
   const supabase = await createClient();

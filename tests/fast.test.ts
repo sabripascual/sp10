@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { closeOutcome, fastStreak, getFastState, type FastDay } from "../src/lib/fast";
+import { closeOutcome, extraHoursFor, fastStreak, getFastState, type FastDay } from "../src/lib/fast";
 
 const cfg = { fast_start: "19:00:00", fast_end: "11:00:00", timezone: "America/Argentina/Tucuman" };
 const at = (iso: string) => new Date(`${iso}-03:00`);
@@ -22,8 +22,8 @@ test("a las 9:00 sigue el ayuno de anoche", () => {
   if (s.phase === "fasting") assert.equal(s.window.date, "2026-11-15");
 });
 
-test("a las 14:00 está la ventana abierta y ya no se puede extender", () => {
-  const s = getFastState(at("2026-11-16T14:00:00"), cfg, new Map());
+test("a las 17:30 (6 h después sin confirmar) se da por terminado y la ventana está abierta", () => {
+  const s = getFastState(at("2026-11-16T17:30:00"), cfg, new Map());
   assert.equal(s.phase, "eating");
   if (s.phase === "eating") {
     assert.equal(s.next.date, "2026-11-16");
@@ -31,10 +31,25 @@ test("a las 14:00 está la ventana abierta y ya no se puede extender", () => {
   }
 });
 
-test("a las 11:30 se puede extender el ayuno que terminó solo", () => {
+test("a las 11:30 sin confirmar: sigue (overtime) y pregunta si terminaste", () => {
   const s = getFastState(at("2026-11-16T11:30:00"), cfg, new Map());
-  assert.equal(s.phase, "eating");
-  if (s.phase === "eating") assert.equal(s.canExtend, true);
+  assert.equal(s.phase, "overtime");
+  if (s.phase === "overtime") assert.equal(s.window.date, "2026-11-15");
+});
+
+test("Seguir +1 h en overtime corre el fin a 1 h desde ahora", () => {
+  const now = at("2026-11-16T11:40:00");
+  const s = getFastState(now, cfg, new Map());
+  if (s.phase !== "overtime") throw new Error("esperaba overtime");
+  const extra = extraHoursFor(s.window, now, 1, cfg); // 12:40 → 2 h extra (fin 13:00)
+  assert.equal(extra, 2);
+  const r = new Map([["2026-11-15", { date: "2026-11-15", status: "extended" as const, broken_at: null, extra_hours: extra, event_id: null }]]);
+  assert.equal(getFastState(now, cfg, r).phase, "fasting");
+});
+
+test("terminado a mano no queda en overtime", () => {
+  const r = new Map([["2026-11-15", { date: "2026-11-15", status: "ok" as const, broken_at: null, extra_hours: 0, event_id: null, ended_at: at("2026-11-16T11:05:00").toISOString() }]]);
+  assert.equal(getFastState(at("2026-11-16T11:30:00"), cfg, r).phase, "eating");
 });
 
 test("extendido +2 h, a las 12:00 sigue ayunando", () => {

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import type { FastView } from "@/lib/fast-data";
 import { humanDuration } from "./format";
+import { EndAtSheet } from "./end-at-sheet";
 
 const TOLERANCE_MS = 10 * 60_000;
 
@@ -15,10 +16,11 @@ export function FastActions({ view }: { view: FastView }) {
   const [message, setMessage] = useState<string | null>(null);
   const [confirmMissing, setConfirmMissing] = useState<number | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
+  const [endAtOpen, setEndAtOpen] = useState(false);
   const [adjustTime, setAdjustTime] = useState("");
 
   const openAdjust = () => {
-    const ref = view.phase === "fasting" ? new Date(view.startISO) : new Date();
+    const ref = view.phase === "eating" ? new Date() : new Date(view.startISO);
     setAdjustTime(formatInTimeZone(ref, view.timezone, "HH:mm"));
     setAdjustOpen(true);
   };
@@ -47,7 +49,7 @@ export function FastActions({ view }: { view: FastView }) {
     const elapsed = Date.now() - new Date(view.startISO).getTime();
     const missing = view.baseHours * 3_600_000 - elapsed;
     if (missing > TOLERANCE_MS) setConfirmMissing(missing);
-    else run(endFast);
+    else run(() => endFast());
   };
 
   const extendButtons = (
@@ -63,10 +65,13 @@ export function FastActions({ view }: { view: FastView }) {
 
   return (
     <div className="space-y-3">
-      {view.phase === "fasting" ? (
+      {view.phase === "overtime" ? null : view.phase === "fasting" ? (
         <>
           <Button variant="primary" size="lg" className="w-full" disabled={pending} onClick={onEnd}>
             Terminar ayuno
+          </Button>
+          <Button variant="ghost" className="w-full text-muted" disabled={pending} onClick={() => setEndAtOpen(true)}>
+            Ya terminé, pero a otra hora
           </Button>
           {view.canExtend && (
             <>
@@ -95,10 +100,12 @@ export function FastActions({ view }: { view: FastView }) {
       )}
 
       <Button variant="ghost" className="w-full text-muted" disabled={pending} onClick={openAdjust}>
-        🕐 {view.phase === "fasting" ? "Ajustar hora de inicio" : "¿Ya empezaste? Poné la hora"}
+        🕐 {view.phase === "eating" ? "¿Ya empezaste? Poné la hora" : "Ajustar hora de inicio"}
       </Button>
 
       {message && <p className="text-center text-sm">{message}</p>}
+
+      <EndAtSheet open={endAtOpen} onOpenChange={setEndAtOpen} timezone={view.timezone} onDone={setMessage} />
 
       <Sheet open={adjustOpen} onOpenChange={setAdjustOpen}>
         <SheetContent>
@@ -127,7 +134,7 @@ export function FastActions({ view }: { view: FastView }) {
           </SheetDescription>
           <div className="grid gap-3">
             <SheetClose asChild>
-              <Button variant="primary" size="lg" onClick={() => run(endFast)}>
+              <Button variant="primary" size="lg" onClick={() => run(() => endFast())}>
                 Sí, terminar
               </Button>
             </SheetClose>

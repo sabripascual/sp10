@@ -22,6 +22,8 @@ export type FastData = {
   state: FastState;
   streak: number;
   calendar: { date: string; mark: DayMark; editable: boolean }[];
+  /** Últimos ayunos terminados con sus horas (reales si se marcaron, si no según horario). */
+  history: { date: string; startISO: string; endISO: string; hours: number; mark: DayMark; confirmed: boolean }[];
 };
 
 /**
@@ -66,6 +68,22 @@ export async function getFastData(): Promise<FastData> {
       // se puede tocar cualquier ayuno que ya terminó
       editable: fastWindow(date, cfg, records.get(date) ?? null).end <= now,
     })),
+    history: lastNDays(now, profile.timezone, 14)
+      .reverse()
+      .map((date) => {
+        const w = fastWindow(date, cfg, records.get(date) ?? null);
+        return { date, w, mark: dayMark(date, now, cfg, records, since) };
+      })
+      .filter(({ w, mark }) => mark !== "none" && mark !== "pending" && w.end <= now)
+      .slice(0, 10)
+      .map(({ date, w, mark }) => ({
+        date,
+        startISO: w.start.toISOString(),
+        endISO: w.end.toISOString(),
+        hours: Math.round(((w.end.getTime() - w.start.getTime()) / 3_600_000) * 10) / 10,
+        mark,
+        confirmed: Boolean(w.record?.started_at || w.record?.ended_at || w.record?.broken_at),
+      })),
   };
 }
 
@@ -95,9 +113,7 @@ export function toView({ state, now, profile }: FastData): FastView {
     nextStartISO: (next ?? current).start.toISOString(),
     extraHours: current.record?.extra_hours ?? 0,
     canExtend:
-      state.phase === "fasting"
-        ? (current.record?.extra_hours ?? 0) < 8
-        : state.canExtend,
+      state.phase === "eating" ? state.canExtend : (current.record?.extra_hours ?? 0) < 8 || state.phase === "overtime",
     canResume: state.phase === "eating" && state.canResume,
     baseHours: baseDurationMinutes(profile) / 60,
     timezone: profile.timezone,

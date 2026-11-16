@@ -5,6 +5,7 @@ export type NotifyKind =
   | "window_closing"
   | "fast_started"
   | "fast_done"
+  | "fast_unconfirmed"
   | "strength_pending"
   | "event_tomorrow"
   | "compensation_today"
@@ -16,7 +17,8 @@ export const NOTIFY_KINDS: { kind: NotifyKind; label: string; when: string }[] =
   { kind: "window_closing", label: "Cierre de ventana", when: "30 min antes de la última comida" },
   { kind: "fast_started", label: "Empezá tu ayuno", when: "A la hora de la última comida" },
   { kind: "fast_confirm", label: "¿Ya empezaste?", when: "1 h después, si no lo marcaste" },
-  { kind: "fast_done", label: "Ayuno cumplido", when: "Cuando termina el ayuno" },
+  { kind: "fast_done", label: "¿Terminaste o seguís?", when: "A la hora de fin del ayuno" },
+  { kind: "fast_unconfirmed", label: "¿A qué hora terminaste?", when: "2 h después, si no contestaste" },
   { kind: "strength_pending", label: "Fierritos pendientes", when: "Jueves y domingo 10:00" },
   { kind: "event_tomorrow", label: "Derrape mañana", when: "Día previo, 10:00" },
   { kind: "compensation_today", label: "Compensación de hoy", when: "Día siguiente, 10:00" },
@@ -28,6 +30,7 @@ export const URLS: Record<NotifyKind, string> = {
   window_closing: "/ayuno",
   fast_started: "/ayuno",
   fast_done: "/ayuno",
+  fast_unconfirmed: "/ayuno",
   strength_pending: "/entrenos",
   event_tomorrow: "/",
   compensation_today: "/",
@@ -52,9 +55,13 @@ export const PHRASES: Record<NotifyKind, string[]> = {
     "¿Arrancaste el ayuno, {apodo}? Un toque y lo dejo anotado con tu hora",
   ],
   fast_done: [
-    "¡{horas} horas, {apodo}! Ya podés desayunar como la campeona que sos",
-    "{Apodo}, ayuno cumplido. Ni el Dibu ataja tanta constancia",
-    "¡Listo, {apodo}! {horas} horas al hilo. A comer rico",
+    "¡{horas} horas, {apodo}! ¿Terminaste o seguís? Contame y lo anoto",
+    "{Apodo}, llegaste a la meta de {horas} h 💪 ¿Cortás acá o lo estirás?",
+    "¡Meta cumplida, {apodo}! Tocá y decime si terminaste o seguís",
+  ],
+  fast_unconfirmed: [
+    "{Apodo}, ¿seguís ayunando? Si ya comiste, decime a qué hora y lo dejo anotado",
+    "¿A qué hora cortaste el ayuno, {apodo}? Un toque y queda con tus horas reales",
   ],
   strength_pending: [
     "{Apodo}, vas {hechas} de {meta} en fierritos y ya es {dia}. Hora de meterle fierro",

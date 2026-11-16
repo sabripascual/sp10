@@ -37,7 +37,7 @@ test("resumen de la semana", () => {
 
 test("semanas con fuerza cumplida", () => {
   const w = (strength: number, isCurrent = false): WeekSummary => ({
-    weekStart: "", isCurrent, strength, strengthGoal: 3, fastOk: 0, fastDays: 0, compensated: 0, pending: 0, runMinutes: 0,
+    weekStart: "", isCurrent, strength, strengthGoal: 3, fastOk: 0, fastDays: 0, compensated: 0, pending: 0, runMinutes: 0, otherWorkouts: 0,
   });
   assert.deepEqual(strengthWeekStreaks([w(3), w(3), w(1), w(3), w(3), w(1, true)]), { current: 2, max: 2 });
   assert.deepEqual(strengthWeekStreaks([w(3), w(3), w(3, true)]), { current: 3, max: 3 });
