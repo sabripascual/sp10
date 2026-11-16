@@ -44,3 +44,11 @@ body {
   font-family: var(--font-nunito), system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Confeti de la pantalla de festejo */
+@keyframes ringo-fall {
+  to {
+    transform: translateY(110vh) rotate(540deg);
+    opacity: 0.6;
+  }
+}

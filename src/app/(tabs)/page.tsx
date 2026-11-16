@@ -60,6 +60,7 @@ export default async function HoyPage() {
           runKcal={training.runKcal}
           today={training.today}
           weightKg={training.weightKg}
+          nicknames={profile.nicknames}
         />
 
         <Card className="flex items-center gap-5">

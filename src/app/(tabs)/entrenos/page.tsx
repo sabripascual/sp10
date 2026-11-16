@@ -23,6 +23,7 @@ export default async function EntrenosPage() {
           runKcal={runKcal}
           today={today}
           weightKg={weightKg}
+          nicknames={profile.nicknames}
         />
 
         {events.length > 0 && (

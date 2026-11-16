@@ -17,18 +17,12 @@ import {
 } from "@/lib/training-types";
 import { cn } from "@/lib/utils";
 import { Chips } from "./chips";
+import { Celebration } from "./celebration";
 
 const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "otro"];
 const MINUTES = [30, 45, 60, 75, 90, 120];
 const DEFAULT_ZONE: ZoneWork = { exercises: 3, reps: 12, rounds: 3 };
 
-const CHEERS: Record<WorkoutType, string> = {
-  fuerza: "¡Fierritos anotados! 💪🏻",
-  correr: "¡Carrera anotada! Sos otra.",
-  futbol: "¡Fútbol anotado! Ni el Dibu.",
-  padel: "¡Pádel anotado!",
-  otro: "¡Anotado!",
-};
 
 const inputClass = "h-12 w-full rounded-xl bg-bg px-4 text-base text-fg outline-none focus:ring-2 focus:ring-accent";
 
@@ -52,6 +46,7 @@ function Stepper({ label, value, onChange, step = 1 }: { label: string; value: n
 export function RegisterSheet({
   today,
   weightKg,
+  nicknames = [],
   initialType = null,
   label = "+ Registrar",
   variant = "primary",
@@ -60,6 +55,7 @@ export function RegisterSheet({
 }: {
   today: string;
   weightKg: number;
+  nicknames?: string[];
   initialType?: WorkoutType | null;
   label?: string;
   variant?: "primary" | "secondary";
@@ -75,6 +71,7 @@ export function RegisterSheet({
   const [note, setNote] = useState("");
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  const [party, setParty] = useState<{ emoji: string; apodo: string; detail: string } | null>(null);
 
   const reset = () => {
     setType(initialType);
@@ -108,11 +105,19 @@ export function RegisterSheet({
         details: type === "fuerza" ? { zones } : type === "correr" && kcal ? { kcal } : {},
       });
       if (res.error) return setMsg(res.error);
-      setMsg(CHEERS[type]);
-      setTimeout(() => {
-        setOpen(false);
-        reset();
-      }, 900);
+      const names = nicknames.length ? nicknames : ["crack"];
+      const zoneNames = ZONES.filter((z) => zones[z.key]).map((z) => z.label);
+      const detail = [
+        TYPE_LABEL[type],
+        minutes ? `${minutes} min` : null,
+        zoneNames.length ? zoneNames.join(", ") : null,
+        kcal ? `≈ ${kcal} kcal` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      setOpen(false);
+      setParty({ emoji: TYPE_EMOJI[type], apodo: names[Math.floor(Math.random() * names.length)], detail });
+      reset();
     });
 
   return (
@@ -247,6 +252,7 @@ export function RegisterSheet({
           )}
         </SheetContent>
       </Sheet>
+      {party && <Celebration {...party} onDone={() => setParty(null)} />}
     </>
   );
 }
