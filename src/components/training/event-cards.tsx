@@ -26,7 +26,7 @@ export function EventCard({ ev, firstMeal }: { ev: EventView; firstMeal: string 
       <Card className="space-y-4">
         <div>
           <CardTitle>
-            {ev.phase === "compensate" ? "Toca compensar" : "Compensación pendiente"} · {ev.name}
+            {ev.phase === "compensate" ? "Toca compensar el derrape" : "Derrape sin compensar"} · {ev.name}
           </CardTitle>
           <CardDescription className="mt-1">
             {ev.phase === "compensate"
@@ -44,7 +44,7 @@ export function EventCard({ ev, firstMeal }: { ev: EventView; firstMeal: string 
   if (ev.phase === "compensated") {
     return (
       <Card className={party ? "animate-in zoom-in-95 fade-in duration-500" : ""}>
-        <CardTitle>🎉 {ev.name}: compensado</CardTitle>
+        <CardTitle>✅ {ev.name}: derrape compensado</CardTitle>
         <CardDescription className="mt-1">
           {party ? "¡Bien ahí! Sumaste a la racha de compensados." : "Marca de compensado puesta."}
         </CardDescription>
@@ -64,12 +64,12 @@ export function EventCard({ ev, firstMeal }: { ev: EventView; firstMeal: string 
 
   return (
     <Card>
-      <CardTitle>🎉 {headline}</CardTitle>
+      <CardTitle>😈 {headline}</CardTitle>
       <CardDescription className="mt-1">
         {KIND_LABEL[ev.kind]} · Compensación: {COMPENSATION_LABEL[ev.compensation]}
       </CardDescription>
       <button className="mt-3 text-xs text-muted underline" disabled={pending} onClick={remove}>
-        Borrar evento
+        Borrar derrape
       </button>
     </Card>
   );

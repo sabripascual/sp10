@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, type Profile } from "@/lib/profile";
 import {
@@ -36,7 +37,8 @@ export function sinceDate(profile: Profile, records?: Map<string, FastDay>) {
 /** Cuántos días para atrás se pueden cargar o corregir. */
 export const EDITABLE_DAYS = 60;
 
-export async function loadFastRecords(profile: Profile, fromDate: string) {
+/** Cacheado por request: Hoy y el nivel semanal piden lo mismo. */
+export const loadFastRecords = cache(async function loadFastRecords(profile: Profile, fromDate: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("fast_days")
@@ -45,7 +47,7 @@ export async function loadFastRecords(profile: Profile, fromDate: string) {
     .order("date");
   if (error) throw new Error(`No pude leer los ayunos: ${error.message}`);
   return new Map((data as FastDay[]).map((r) => [r.date, r]));
-}
+});
 
 export async function getFastData(): Promise<FastData> {
   const profile = await getProfile();

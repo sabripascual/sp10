@@ -18,7 +18,7 @@ export const NOTIFY_KINDS: { kind: NotifyKind; label: string; when: string }[] =
   { kind: "fast_confirm", label: "¿Ya empezaste?", when: "1 h después, si no lo marcaste" },
   { kind: "fast_done", label: "Ayuno cumplido", when: "Cuando termina el ayuno" },
   { kind: "strength_pending", label: "Fierritos pendientes", when: "Jueves y domingo 10:00" },
-  { kind: "event_tomorrow", label: "Evento mañana", when: "Día previo, 10:00" },
+  { kind: "event_tomorrow", label: "Derrape mañana", when: "Día previo, 10:00" },
   { kind: "compensation_today", label: "Compensación de hoy", when: "Día siguiente, 10:00" },
   { kind: "body_check", label: "Control quincenal", when: "El día que toca, 9:30" },
   { kind: "weekly_summary", label: "Resumen semanal", when: "Domingo 20:00" },
@@ -63,11 +63,11 @@ export const PHRASES: Record<NotifyKind, string[]> = {
     "{Apodo}, hora de meterle fierro",
   ],
   event_tomorrow: [
-    "Mañana hay {evento}, {apodo}. Hoy metéle fierritos y lo disfrutás tranqui",
+    "Mañana se viene {evento}, {apodo}. Hoy metéle fierritos y derrapás tranqui",
     "{Apodo}, mañana es {evento}. ¿Unos fierritos hoy para llegar con todo?",
   ],
   compensation_today: [
-    "Ayer fue fiesta, hoy toca devolverle al cuerpo. Vos podés, {apodo}",
+    "Ayer hubo derrape, hoy le devolvemos al cuerpo. Vos podés, {apodo}",
     "{Apodo}, hoy compensamos lo de {evento}. Un toque y queda la marca",
   ],
   body_check: [

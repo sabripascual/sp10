@@ -16,6 +16,7 @@ export type WeekSummary = {
   compensated: number;
   pending: number;
   runMinutes: number;
+  otherWorkouts: number; // carrera, fútbol, pádel, etc. (todo lo que no es fierritos)
 };
 
 export function weekSummaries(input: {
@@ -49,6 +50,7 @@ export function weekSummaries(input: {
       compensated: evs.filter((e) => e.compensated_at).length,
       pending: evs.filter((e) => eventPhase(e, today) === "pending").length,
       runMinutes: done.filter((w) => w.type === "correr").reduce((a, w) => a + (w.minutes ?? 0), 0),
+      otherWorkouts: done.filter((w) => w.type !== "fuerza").length,
     });
   }
   return out;
@@ -56,7 +58,7 @@ export function weekSummaries(input: {
 
 export function summaryText(s: WeekSummary) {
   const parts = [`${s.strength}/${s.strengthGoal} fierritos`, `${s.fastOk}/${s.fastDays} ayuno`];
-  if (s.compensated) parts.push(`${s.compensated} ${s.compensated === 1 ? "evento compensado" : "eventos compensados"}`);
+  if (s.compensated) parts.push(`${s.compensated} ${s.compensated === 1 ? "derrape compensado" : "derrapes compensados"}`);
   if (s.pending) parts.push(`${s.pending} pendiente${s.pending === 1 ? "" : "s"}`);
   if (s.runMinutes) parts.push(`${s.runMinutes} min corridos`);
   return parts.join(", ");

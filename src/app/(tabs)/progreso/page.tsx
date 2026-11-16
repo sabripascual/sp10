@@ -19,7 +19,8 @@ function Stat({ value, label, sub, hot }: { value: number; label: string; sub: s
 const dm = (date: string) => `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
 
 export default async function ProgresoPage() {
-  const { profile, weeks, fast, strength, compensated, checks, zones } = await getProgressData();
+  const { profile, weeks: allWeeks, fast, strength, compensated, checks, zones } = await getProgressData();
+  const weeks = allWeeks.slice(-12);
   const current = weeks.at(-1)!;
   const past = weeks.slice(0, -1).reverse().filter((w) => w.fastDays > 0 || w.strength > 0 || w.runMinutes > 0);
 

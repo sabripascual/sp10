@@ -22,7 +22,7 @@ export function EventSheet({ today, className }: { today: string; className?: st
     start(async () => {
       const res = await createEvent({ name, date, kind, compensation: comp });
       if (res.error) return setMsg(res.error);
-      setMsg("¡Agendado! Disfrutá, que después compensamos.");
+      setMsg("¡Agendado! Derrapá tranqui, que después compensamos.");
       setTimeout(() => {
         setOpen(false);
         setName("");
@@ -41,18 +41,18 @@ export function EventSheet({ today, className }: { today: string; className?: st
           setOpen(true);
         }}
       >
-        🎉 Tengo un evento
+        😈 Se viene un derrape
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="max-h-[90dvh] overflow-y-auto">
           <div className="space-y-5">
             <div>
-              <SheetTitle>Tengo un evento</SheetTitle>
+              <SheetTitle>Derrape a la vista 😈</SheetTitle>
               <SheetDescription>Cero culpa: lo disfrutás y al otro día lo compensamos.</SheetDescription>
             </div>
             <input
               className={inputClass}
-              placeholder="Ej: Cumple de Juli"
+              placeholder="¿Qué se viene? Ej: Cumple de Juli"
               value={name}
               maxLength={80}
               onChange={(e) => setName(e.target.value)}

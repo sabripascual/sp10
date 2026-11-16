@@ -7,16 +7,19 @@ import { TrainingCard } from "@/components/training/training-card";
 import { getFastData, toView } from "@/lib/fast-data";
 import { randomNickname } from "@/lib/profile";
 import { getTrainingData } from "@/lib/training";
+import { getProgressData } from "@/lib/progress-data";
+import { LevelCard } from "@/components/progress/level-card";
 import { getBodyData } from "@/lib/body-data";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default async function HoyPage() {
   // Todo en paralelo: el perfil se pide una sola vez (React cache).
-  const [fast, training, body] = await Promise.all([
+  const [fast, training, body, progress] = await Promise.all([
     getFastData(),
     getTrainingData(),
     getBodyData(undefined, { withPhotos: false }),
+    getProgressData(),
   ]);
   const { profile, streak } = fast;
   const checkDue = body.nextDate <= body.today && body.checks.at(-1)?.date !== body.today;
@@ -30,6 +33,8 @@ export default async function HoyPage() {
     <>
       <PageHeader title={`Hola, ${apodo}`} subtitle="Esto es lo que toca hoy." />
       <div className="space-y-4">
+        <LevelCard last={progress.level.last} counts={progress.level.counts} current={progress.weeks.at(-1)!} />
+
         {toCompensate.map((ev) => (
           <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} />
         ))}

@@ -86,9 +86,9 @@ export async function createEvent(input: {
   compensation: Compensation;
 }): Promise<ActionResult> {
   const name = input.name.trim();
-  if (!name) return { error: "Ponele un nombre al evento." };
+  if (!name) return { error: "Ponele un nombre al derrape." };
   if (!DATE_RE.test(input.date)) return { error: "Fecha inválida." };
-  if (input.date < (await today())) return { error: "El evento tiene que ser hoy o más adelante." };
+  if (input.date < (await today())) return { error: "El derrape tiene que ser hoy o más adelante." };
   if (!["cena", "tragos", "ambos"].includes(input.kind)) return { error: "Tipo inválido." };
   if (!["fast", "workout", "both"].includes(input.compensation)) return { error: "Compensación inválida." };
 

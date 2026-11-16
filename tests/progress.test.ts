@@ -32,7 +32,7 @@ test("resumen de la semana", () => {
     weeks: 1,
   });
   // lun 16 a sáb 21 terminaron (6), el del dom 22 está en curso; el 18 cortado → 5/6
-  assert.equal(summaryText(s[0]), "3/3 fierritos, 5/6 ayuno, 1 evento compensado, 30 min corridos");
+  assert.equal(summaryText(s[0]), "3/3 fierritos, 5/6 ayuno, 1 derrape compensado, 30 min corridos");
 });
 
 test("semanas con fuerza cumplida", () => {

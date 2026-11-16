@@ -29,7 +29,7 @@ export default async function EntrenosPage() {
 
         {events.length > 0 && (
           <div className="space-y-3 pt-2">
-            <h2 className="text-lg font-extrabold">Eventos</h2>
+            <h2 className="text-lg font-extrabold">Derrapes 😈</h2>
             {events.map((ev) => (
               <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} />
             ))}

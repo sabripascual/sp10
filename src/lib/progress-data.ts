@@ -1,9 +1,11 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, type Profile } from "@/lib/profile";
 import { localDate, shiftDate } from "@/lib/fast";
 import { loadFastRecords, sinceDate } from "@/lib/fast-data";
 import type { BodyCheck } from "@/lib/body";
 import { weekStart } from "@/lib/week";
+import { levelHistory } from "@/lib/level";
 import {
   compensatedStreak,
   zoneStats,
@@ -13,7 +15,7 @@ import {
   type WeekSummary,
 } from "@/lib/progress";
 
-const WEEKS = 12;
+const WEEKS = 26; // historial de niveles; los gráficos usan las últimas 12
 
 export type ProgressData = {
   profile: Profile;
@@ -23,9 +25,10 @@ export type ProgressData = {
   compensated: { current: number; total: number };
   checks: BodyCheck[];
   zones: ReturnType<typeof zoneStats>;
+  level: ReturnType<typeof levelHistory>;
 };
 
-export async function getProgressData(): Promise<ProgressData> {
+export const getProgressData = cache(async function getProgressData(): Promise<ProgressData> {
   const profile = await getProfile();
   const now = new Date();
   const today = localDate(now, profile.timezone);
@@ -60,5 +63,6 @@ export async function getProgressData(): Promise<ProgressData> {
     compensated: compensatedStreak(eRes.data ?? [], today),
     checks: (cRes.data ?? []) as BodyCheck[],
     zones: zoneStats(wRes.data ?? []),
+    level: levelHistory(weeks, weekStart(since)),
   };
-}
+});
