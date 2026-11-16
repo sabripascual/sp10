@@ -6,6 +6,7 @@ import { endFast, resumeFast, startFast } from "@/app/(tabs)/ayuno/actions";
 import type { FastView } from "@/lib/fast-data";
 import { cn } from "@/lib/utils";
 import { clock, hour, humanDuration } from "./format";
+import { FAST_STAGES, fastStage } from "@/lib/fast-stages";
 import { useNow } from "./use-now";
 
 /**
@@ -126,6 +127,7 @@ export function FastTimer({
         </div>
       )}
       <p className={cn("text-muted", compact ? "mt-2 text-sm" : "mt-3")}>{detail}</p>
+      {view.phase === "fasting" && <StageInfo elapsedMs={now - startMs} compact={compact} />}
       {streak !== undefined && (
         <p className={cn("flex items-center gap-2 border-t border-muted/30 font-bold", compact ? "mt-3 pt-3 text-sm" : "mt-4 pt-4")}>
           <span className={cn("text-xl font-black tabular-nums", streak > 0 && "text-accent")}>🔥 {streak}</span>
@@ -148,6 +150,53 @@ export function FastTimer({
         body
       )}
       {quick}
+    </div>
+  );
+}
+
+/** Etapa del ayuno según el tiempo transcurrido (aprox.). */
+function StageInfo({ elapsedMs, compact }: { elapsedMs: number; compact: boolean }) {
+  const { index, current, next, msToNext } = fastStage(elapsedMs);
+  const nextText = next && msToNext !== null ? `Próxima: ${next.emoji} ${next.name} en ${humanDuration(msToNext)}` : "Llegaste a la última etapa";
+
+  if (compact) {
+    return (
+      <p className="mt-2 text-sm">
+        <span className="font-bold">
+          {current.emoji} {current.name}
+        </span>
+        <span className="text-muted"> · {next && msToNext !== null ? `${next.emoji} en ${humanDuration(msToNext)}` : "última etapa"}</span>
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-5 space-y-3 rounded-xl bg-bg p-4">
+      <div className="flex items-center gap-3">
+        <span className="text-4xl">{current.emoji}</span>
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted">Etapa {index + 1} de {FAST_STAGES.length}</p>
+          <p className="text-xl font-black leading-tight">{current.name}</p>
+          <p className="text-sm text-muted">{current.text}</p>
+        </div>
+      </div>
+      <ol className="grid grid-cols-7 gap-1">
+        {FAST_STAGES.map((st, i) => (
+          <li
+            key={st.name}
+            title={`${st.name} (${st.fromH} h)`}
+            className={cn(
+              "flex flex-col items-center gap-0.5 rounded-lg py-1.5",
+              i === index ? "bg-accent text-accent-fg" : i < index ? "bg-surface" : "opacity-40",
+            )}
+          >
+            <span className="text-lg leading-none">{st.emoji}</span>
+            <span className="text-[10px] font-bold">{st.fromH}h</span>
+          </li>
+        ))}
+      </ol>
+      <p className="text-sm font-bold">{nextText}</p>
+      <p className="text-[11px] text-muted">Tiempos aproximados: cada cuerpo tiene su ritmo.</p>
     </div>
   );
 }
