@@ -5,7 +5,7 @@ import { localDate, shiftDate } from "@/lib/fast";
 import { loadFastRecords, sinceDate } from "@/lib/fast-data";
 import type { BodyCheck } from "@/lib/body";
 import { weekStart } from "@/lib/week";
-import { levelHistory } from "@/lib/level";
+import { firstGradedWeek, levelHistory } from "@/lib/level";
 import {
   compensatedStreak,
   zoneStats,
@@ -63,6 +63,6 @@ export const getProgressData = cache(async function getProgressData(): Promise<P
     compensated: compensatedStreak(eRes.data ?? [], today),
     checks: (cRes.data ?? []) as BodyCheck[],
     zones: zoneStats(wRes.data ?? []),
-    level: levelHistory(weeks, weekStart(since)),
+    level: levelHistory(weeks, firstGradedWeek(since)),
   };
 });

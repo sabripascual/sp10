@@ -1,5 +1,5 @@
-import { LEVELS, type LevelKey } from "@/lib/level";
-import { summaryText, type WeekSummary } from "@/lib/progress";
+import { LEVELS, levelFor, scoreParts, weekScore, type LevelKey, type ScorePart } from "@/lib/level";
+import type { WeekSummary } from "@/lib/progress";
 import { cn } from "@/lib/utils";
 
 // Del gris al amarillo a medida que sube el nivel
@@ -13,7 +13,7 @@ export function LevelCard({
   counts,
   current,
 }: {
-  last: { weekStart: string; score: number; level: LevelKey } | null;
+  last: { weekStart: string; score: number; level: LevelKey; parts: ScorePart[] } | null;
   counts: Record<LevelKey, number>;
   current: WeekSummary;
 }) {
@@ -34,7 +34,7 @@ export function LevelCard({
           </div>
           <div className="min-w-0">
             <p className="text-xs font-bold text-muted">
-              Nivel {idx + 1} de 6 · semana del {dm(last!.weekStart)}
+              Nivel {idx + 1} de 6 · {last!.score} pts · semana del {dm(last!.weekStart)}
             </p>
             <p className="text-2xl font-black leading-tight">{lvl.name}</p>
             <p className="mt-1 text-sm text-muted">{lvl.blurb}</p>
@@ -45,10 +45,12 @@ export function LevelCard({
           <div className="grid size-24 shrink-0 place-items-center rounded-full bg-bg text-5xl">🐶</div>
           <div>
             <p className="text-xl font-black leading-tight">Tu primer nivel sale el lunes</p>
-            <p className="mt-1 text-sm text-muted">Cada lunes califico la semana que cerró: ayunos, fierritos, movimiento y derrapes.</p>
+            <p className="mt-1 text-sm text-muted">Califico semanas completas (lunes a domingo): ayunos, fierritos, movimiento y derrapes.</p>
           </div>
         </div>
       )}
+
+      {last && <Parts parts={last.parts} />}
 
       {/* Escalera de niveles con cuántas veces fuiste cada una */}
       <ol className="grid grid-cols-6 gap-1.5">
@@ -70,9 +72,41 @@ export function LevelCard({
         ))}
       </ol>
 
+      <CurrentWeek current={current} showParts={!last} />
+    </div>
+  );
+}
+
+/** Desglose compacto: puntos de cada parte, barrita y por qué. */
+function Parts({ parts }: { parts: ScorePart[] }) {
+  return (
+    <ul className="grid grid-cols-4 gap-1.5">
+      {parts.map((p) => (
+        <li key={p.key} className="space-y-1 rounded-lg bg-bg px-2 py-1.5">
+          <p className="text-[11px] font-black tabular-nums">
+            {p.emoji} {p.points}
+            <span className="font-bold text-muted">/{p.max}</span>
+          </p>
+          <span className="block h-1 overflow-hidden rounded-full bg-surface">
+            <span className="block h-full rounded-full bg-accent" style={{ width: `${(p.points / p.max) * 100}%` }} />
+          </span>
+          <p className="truncate text-[10px] leading-tight text-muted">{p.why}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Lo que vas sumando en la semana en curso. */
+function CurrentWeek({ current, showParts }: { current: WeekSummary; showParts: boolean }) {
+  const score = weekScore(current);
+  const lvl = levelFor(score);
+  return (
+    <div className="space-y-2">
       <p className="text-xs text-muted">
-        Esta semana vas: {summaryText(current)}. Se recalcula el lunes.
+        <span className="font-bold text-fg">Esta semana llevás {score} pts</span> {lvl.emoji} · el lunes se cierra y sale tu nivel.
       </p>
+      {showParts && <Parts parts={scoreParts(current)} />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { levelFor, levelHistory, weekScore } from "../src/lib/level";
+import { firstGradedWeek, levelFor, levelHistory, scoreParts, weekScore } from "../src/lib/level";
 import type { WeekSummary } from "../src/lib/progress";
 
 const w = (x: Partial<WeekSummary>): WeekSummary => ({
@@ -35,4 +35,21 @@ test("historial: solo semanas cerradas desde el inicio", () => {
   assert.equal(h.graded.length, 1);
   assert.equal(h.last?.level, "dios");
   assert.equal(h.counts.dios, 1);
+});
+
+test("se califica desde la primera semana completa", () => {
+  assert.equal(firstGradedWeek("2026-11-15"), "2026-11-16"); // empezó un domingo → arranca el lunes siguiente
+  assert.equal(firstGradedWeek("2026-11-16"), "2026-11-16"); // empezó un lunes → esa misma semana
+  assert.equal(firstGradedWeek("2026-11-18"), "2026-11-23"); // miércoles → el lunes siguiente
+});
+
+test("desglose de puntos con el porqué", () => {
+  const parts = scoreParts(w({ fastOk: 6, strength: 2, otherWorkouts: 1, pending: 1 }));
+  assert.deepEqual(parts.map((p) => [p.key, p.points, p.why]), [
+    ["ayuno", 30, "6/7 ayunos"],
+    ["fierritos", 23, "2/3 fierritos"],
+    ["movimiento", 5, "1/3 extra"],
+    ["derrapes", 8, "1 sin compensar"],
+  ]);
+  assert.equal(weekScore(w({ fastOk: 6, strength: 2, otherWorkouts: 1, pending: 1 })), 66);
 });
