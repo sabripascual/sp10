@@ -13,7 +13,16 @@ import { useNow } from "./use-now";
  * El cambio se ve al instante (optimista) y después confirma el servidor.
  * `compact` es la versión para la tarjeta de Hoy.
  */
-export function FastTimer({ view: serverView, compact = false }: { view: FastView; compact?: boolean }) {
+export function FastTimer({
+  view: serverView,
+  compact = false,
+  streak,
+}: {
+  view: FastView;
+  compact?: boolean;
+  /** Si viene, muestra la racha de ayuno dentro de la tarjeta. */
+  streak?: number;
+}) {
   const [optimistic, setOptimistic] = useState<{ base: string; view: FastView } | null>(null);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +126,14 @@ export function FastTimer({ view: serverView, compact = false }: { view: FastVie
         </div>
       )}
       <p className={cn("text-muted", compact ? "mt-2 text-sm" : "mt-3")}>{detail}</p>
+      {streak !== undefined && (
+        <p className={cn("flex items-center gap-2 border-t border-muted/30 font-bold", compact ? "mt-3 pt-3 text-sm" : "mt-4 pt-4")}>
+          <span className={cn("text-xl font-black tabular-nums", streak > 0 && "text-accent")}>🔥 {streak}</span>
+          <span className="text-muted">
+            {streak === 0 ? "Hoy arranca la racha" : `${streak === 1 ? "día" : "días"} de racha al hilo`}
+          </span>
+        </p>
+      )}
       {error && <p className="mt-2 text-sm font-bold text-fg">{error}</p>}
     </>
   );

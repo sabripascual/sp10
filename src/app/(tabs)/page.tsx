@@ -39,7 +39,7 @@ export default async function HoyPage() {
           <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} />
         ))}
 
-        <FastTimer view={toView(fast)} compact />
+        <FastTimer view={toView(fast)} compact streak={streak} />
 
         {soon.map((ev) => (
           <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} />
@@ -67,16 +67,6 @@ export default async function HoyPage() {
           weightKg={training.weightKg}
           nicknames={profile.nicknames}
         />
-
-        <Card className="flex items-center gap-5">
-          <p className="text-5xl font-black tabular-nums">{streak}</p>
-          <div>
-            <CardTitle>Racha de ayuno</CardTitle>
-            <CardDescription>
-              {streak === 0 ? "Hoy arranca la cuenta." : `${streak} ${streak === 1 ? "día" : "días"} al hilo. Sos una máquina.`}
-            </CardDescription>
-          </div>
-        </Card>
 
         <EventSheet today={training.today} className="w-full" />
       </div>
