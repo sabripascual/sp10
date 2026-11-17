@@ -9,6 +9,7 @@
   --fg: #ffffff;
   --accent: #ffe900;
   --accent-fg: #000000;
+  --event: #b794f6; /* violeta: días de derrape */
   --radius: 16px;
 }
 
@@ -19,6 +20,7 @@
   --color-fg: var(--fg);
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
+  --color-event: var(--event);
 
   /* alias estilo shadcn */
   --color-background: var(--bg);

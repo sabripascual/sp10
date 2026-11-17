@@ -7,10 +7,11 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import type { DayMark } from "@/lib/fast";
 import { cn } from "@/lib/utils";
 
+// Tres colores: blanco cumplido, amarillo extendido, violeta derrape. Cortado solo con borde.
 const styles: Record<DayMark, string> = {
   ok: "bg-fg text-bg",
-  extended: "bg-fg text-bg ring-2 ring-fg ring-offset-2 ring-offset-surface",
-  event: "bg-muted text-fg",
+  extended: "bg-accent text-accent-fg",
+  event: "bg-event text-bg",
   broken: "border border-muted text-muted",
   pending: "border border-dashed border-muted text-fg",
   none: "border border-muted/30 text-muted/60",
@@ -19,7 +20,7 @@ const styles: Record<DayMark, string> = {
 const legend: [DayMark, string][] = [
   ["ok", "Cumplido"],
   ["extended", "Extendido"],
-  ["event", "Evento"],
+  ["event", "Derrape"],
   ["broken", "Cortado"],
   ["none", "Sin cargar"],
 ];
