@@ -96,3 +96,18 @@ test("racha: el ayuno en curso no suma; uno cortado hoy la deja en 0", () => {
   const r = recs({ date: "2026-11-16", status: "broken", ended_at: at("2026-11-16T21:00:00").toISOString() });
   assert.equal(fastStreak(at("2026-11-16T22:00:00"), cfg, r, "2026-11-15"), 0);
 });
+
+test("Recién arranco a la 1 AM: el ayuno arranca ahora y el anterior queda perdido (0 h)", async () => {
+  const { dayMark, fastWindow, fastDuration } = await import("../src/lib/fast");
+  const now = at("2026-11-21T01:00:00");
+  const prevStart = at("2026-11-19T19:00:00").toISOString();
+  const r = new Map([
+    ["2026-11-19", { date: "2026-11-19", status: "broken" as const, broken_at: prevStart, extra_hours: 2, event_id: "e", ended_at: null }],
+    ["2026-11-20", { date: "2026-11-20", status: "ok" as const, broken_at: null, extra_hours: 0, event_id: null, started_at: now.toISOString() }],
+  ]);
+  const s = getFastState(at("2026-11-21T01:05:00"), cfg, r);
+  assert.equal(s.phase, "fasting");
+  if (s.phase === "fasting") assert.equal(s.window.end.toISOString(), at("2026-11-21T17:00:00").toISOString());
+  assert.equal(dayMark("2026-11-19", now, cfg, r, "2026-11-15"), "broken");
+  assert.equal(fastDuration(fastWindow("2026-11-19", cfg, r.get("2026-11-19")!)), 0);
+});

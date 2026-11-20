@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { endFast, extendFast, resumeFast, startFast } from "@/app/(tabs)/ayuno/actions";
 import { EndAtSheet } from "./end-at-sheet";
+import { RestartSheet } from "./restart-sheet";
 import type { FastView } from "@/lib/fast-data";
 import { cn } from "@/lib/utils";
 import { clock, hour, humanDuration } from "./format";
@@ -29,6 +30,7 @@ export function FastTimer({
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [endAtOpen, setEndAtOpen] = useState(false);
+  const [restartOpen, setRestartOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   // El estado optimista vale hasta que llega una vista nueva del servidor.
@@ -179,9 +181,26 @@ export function FastTimer({
           </div>
         </div>
       )}
+      {view.phase === "fasting" && (
+        <button
+          onClick={() => setRestartOpen(true)}
+          disabled={pending}
+          className="mt-3 text-xs font-bold text-muted underline underline-offset-2"
+        >
+          ↺ ¿Recién arrancás? Reiniciar desde ahora
+        </button>
+      )}
       {notice && <p className="mt-3 text-sm font-bold">{notice}</p>}
       {quick}
       <EndAtSheet open={endAtOpen} onOpenChange={setEndAtOpen} timezone={tz} onDone={setNotice} />
+      <RestartSheet
+        open={restartOpen}
+        onOpenChange={setRestartOpen}
+        prevDate={view.restartPrevDate}
+        baseHours={view.baseHours}
+        timezone={tz}
+        onDone={setNotice}
+      />
     </div>
   );
 }

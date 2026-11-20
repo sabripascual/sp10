@@ -167,3 +167,38 @@ export async function adjustStart(hhmm: string): Promise<FastActionResult> {
     .upsert({ date: target.date, started_at: startAt.toISOString(), ended_at: null, broken_at: null }, { onConflict: "user_id,date" });
   return error ? { error: error.message } : done();
 }
+
+/**
+ * "Recién arranco": el ayuno empieza AHORA (aunque el horario diga que arrancó antes)
+ * y, si querés, el ayuno anterior queda como perdido (cortado, 0 h).
+ */
+export async function restartFast(markPreviousLost: boolean): Promise<FastActionResult> {
+  const { profile, now, state } = await current();
+  const target = state.phase === "eating" ? state.next : state.window;
+  const prevDate = state.phase === "eating" ? state.previous.date : shiftDate(target.date, -1);
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("fast_days").upsert(
+    {
+      date: target.date,
+      status: target.record?.status === "event" ? "event" : "ok",
+      started_at: now.toISOString(),
+      ended_at: null,
+      broken_at: null,
+      extra_hours: target.record?.status === "event" ? (target.record?.extra_hours ?? 0) : 0,
+    },
+    { onConflict: "user_id,date" },
+  );
+  if (error) return { error: error.message };
+
+  if (markPreviousLost) {
+    const records = await loadFastRecords(profile, prevDate);
+    const prev = fastWindow(prevDate, profile, records.get(prevDate) ?? null);
+    const { error: prevError } = await supabase.from("fast_days").upsert(
+      { date: prevDate, status: "broken", ended_at: null, broken_at: prev.start.toISOString() },
+      { onConflict: "user_id,date" },
+    );
+    if (prevError) return { error: prevError.message };
+  }
+  return done();
+}

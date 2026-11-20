@@ -98,6 +98,8 @@ export type FastView = {
   canExtend: boolean;
   canResume: boolean;
   baseHours: number;
+  /** Ayuno que "Recién arranco" puede marcar como perdido (el anterior al que arranca). */
+  restartPrevDate: string;
   timezone: string;
   nowISO: string;
 };
@@ -116,6 +118,7 @@ export function toView({ state, now, profile }: FastData): FastView {
       state.phase === "eating" ? state.canExtend : (current.record?.extra_hours ?? 0) < 8 || state.phase === "overtime",
     canResume: state.phase === "eating" && state.canResume,
     baseHours: baseDurationMinutes(profile) / 60,
+    restartPrevDate: state.phase === "eating" ? state.previous.date : shiftDate(state.window.date, -1),
     timezone: profile.timezone,
     nowISO: now.toISOString(),
   };
