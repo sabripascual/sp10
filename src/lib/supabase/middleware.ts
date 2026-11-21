@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { SUPABASE_ANON_KEY, SUPABASE_URL, isAllowedEmail, isSupabaseConfigured } from "./env";
+import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "./env";
 
 const PUBLIC_PATHS = ["/login", "/restringido"];
 
@@ -49,10 +49,8 @@ export async function updateSession(request: NextRequest) {
   if (!user?.sub) {
     return isPublic ? response : redirectTo(request, "/login", response);
   }
-  if (!isAllowedEmail(user.email)) {
-    return path === "/restringido" ? response : redirectTo(request, "/restringido", response);
-  }
-  if (isPublic) {
+  // Logueada: el login la manda a Hoy (a /restringido llega si su cuenta está pausada)
+  if (path === "/login") {
     return redirectTo(request, "/", response);
   }
   return response;

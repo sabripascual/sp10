@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type Profile = {
   id: string;
-  role: "admin";
+  role: "admin" | "user" | "disabled";
   nicknames: string[];
   fast_start: string; // "HH:MM:SS"
   fast_end: string;
@@ -32,7 +32,11 @@ export const getProfile = cache(async function getProfile(): Promise<Profile> {
     .eq("id", userId)
     .maybeSingle();
   if (error) throw new Error(`No pude leer el perfil: ${error.message}`);
-  if (data) return data as Profile;
+  if (data) {
+    // Cuenta pausada desde el panel admin
+    if (data.role === "disabled") redirect("/restringido");
+    return data as Profile;
+  }
 
   const { data: created, error: insertError } = await supabase
     .from("profiles")

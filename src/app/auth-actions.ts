@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isAllowedEmail } from "@/lib/supabase/env";
 
 export type LoginState = { error?: string };
 
@@ -10,8 +9,6 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "Completá email y contraseña." };
-
-  if (!isAllowedEmail(email)) redirect("/restringido");
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });

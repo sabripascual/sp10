@@ -43,7 +43,7 @@ Objetivos de la usuaria: bajar de peso, construir un cuerpo atlético y sostener
 
 ## Usuaria y rutina
 
-Una sola usuaria (la dueña, con rol admin), que usa la app instalada en el iPhone. Su rutina define los valores por defecto.
+La dueña (rol admin) y sus amigas (rol user), cada una con su propia cuenta y sus datos. Usan la app instalada en el iPhone. Su rutina define los valores por defecto.
 
 ### Día típico
 
@@ -273,7 +273,7 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - Etapa 6, progreso: vistas v_week_summary y v_streaks, gráficos con Recharts y resumen del domingo.
 
 ## Decisiones tomadas
-- **Login**: email + contraseña de Supabase Auth (sin Google ni magic link). Registro público desactivado; el usuario se crea a mano en Supabase → Authentication → Add user. Además, `ALLOWED_EMAIL` corta cualquier otro email en el middleware (`src/middleware.ts`).
+- **Login**: email + contraseña de Supabase Auth (sin Google ni magic link). Registro público desactivado; las cuentas las crea un admin desde el Panel Ringo (o a mano en Supabase → Authentication → Add user). `ALLOWED_EMAIL` ya no se usa.
 - **Semana**: de lunes a domingo.
 - **Supabase**: plan gratis, proyecto propio `sp10` en **us-west-2 (Oregon)** (se pausó otro proyecto para liberar el lugar).
 - **Región Vercel**: funciones en `pdx1` (Portland), al lado de la base (`vercel.json`). Login y sesión se verifican con `auth.getClaims()` (JWT local, sin ida y vuelta al servidor de Auth); usar `getClaims()` en vez de `getUser()` salvo que haga falta el usuario fresco.
@@ -297,6 +297,7 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Pantallas simplificadas (v1.2)**: Entrenos = TrainingCard + "Esta semana" (solo si hay entrenos) + "Derrapes agendados" en filas (`EventList`: fecha, compensación, botón "✓ Compensé" cuando toca, borrar); el botón para agendar derrapes vive solo en Hoy. Cuerpo = tarjeta chica "Próximo control" + "+ Control", último control con medidas en filas (`Deltas compact`) y peso en una línea; "Antes / ahora" solo con 2+ controles con fotos; "Controles anteriores" solo desde el segundo control.
 - **Calendario de ayunos**: 3 colores por tipo: blanco = cumplido, amarillo (`accent`) = extendido, violeta (`--event` #b794f6, `bg-event`) = derrape; cortado solo con borde, sin cargar tenue, en curso punteado.
 - **Recién arranco (v1.2)**: mientras el ayuno figura en curso por horario, "↺ ¿Recién arrancás? Reiniciar desde ahora" (`RestartSheet` → `restartFast(markPreviousLost)`) pone `started_at = ahora` en el ayuno actual (en la ventana abierta, en el próximo) y, tildado por defecto, marca el ayuno anterior (`restartPrevDate`) como perdido: `status broken`, `broken_at = inicio` (queda 0 h, corta la racha).
+- **Multiusuario (v1.3)**: Ringo es una sola app para varias usuarias; cada una ve solo lo suyo por RLS (todas las tablas y las fotos ya estaban por `user_id`). Roles en `profiles.role`: `admin`, `user` (default de cuentas nuevas) y `disabled` (pausada → `getProfile` redirige a `/restringido`). Migración 0009: roles + trigger `protect_role` (nadie se cambia el rol desde la app; solo el service role). **Panel Ringo** en `/admin` (`src/lib/admin-data.ts`, `requireAdmin()` da 404 a no-admins; acceso desde Ajustes): cuentas totales, activas en 7 días, nuevas, % con avisos, entrenos por tipo en 30 días y, por cuenta, último uso, ayunos marcados, entrenos, controles, derrapes y avisos. **Solo métricas de uso: nunca pesos, medidas ni fotos.** Acciones (service role, solo admin): crear cuenta (email + contraseña inicial, usuaria o admin), pausar/reactivar, hacer/quitar admin, nueva contraseña; no se puede cambiar el propio rol. Sin contraseña admin por defecto en el código (sería pública en el repo): el admin es la cuenta de la dueña.
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
 ## Pendientes de la dueña

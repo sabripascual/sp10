@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { signOut } from "@/app/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,12 @@ export default async function AjustesPage() {
   return (
     <>
       <PageHeader title="Ajustes" />
+      {profile.role === "admin" && (
+        <Link href="/admin" className="mb-4 flex items-center justify-between rounded-2xl bg-accent px-5 py-4 font-black text-accent-fg">
+          🐶 Panel Ringo
+          <span aria-hidden>→</span>
+        </Link>
+      )}
       <Card id="avisos" className="mb-4 scroll-mt-20 space-y-4">
         <div>
           <CardTitle>Avisos</CardTitle>
