@@ -2,7 +2,7 @@
 import type { EventPhase, SocialEvent } from "@/lib/events";
 
 // Las claves internas no cambian ("fuerza" = Fierritos, "correr" = Carrera).
-export type WorkoutType = "fuerza" | "correr" | "futbol" | "padel" | "tenis" | "trekking" | "otro";
+export type WorkoutType = "fuerza" | "correr" | "futbol" | "padel" | "tenis" | "squash" | "trekking" | "otro";
 export type Feeling = "dificil" | "bien" | "excelente";
 
 export type Zone = "brazos" | "core" | "piernas";
@@ -33,6 +33,7 @@ export const TYPE_LABEL: Record<WorkoutType, string> = {
   futbol: "Fútbol",
   padel: "Pádel",
   tenis: "Tenis",
+  squash: "Squash",
   trekking: "Trekking",
   otro: "Otro",
 };
@@ -43,6 +44,7 @@ export const TYPE_EMOJI: Record<WorkoutType, string> = {
   futbol: "⚽",
   padel: "🏓",
   tenis: "🎾",
+  squash: "⚫",
   trekking: "🥾",
   otro: "✨",
 };

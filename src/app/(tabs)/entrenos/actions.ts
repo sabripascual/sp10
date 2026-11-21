@@ -9,7 +9,7 @@ import { ZONES, type Feeling, type WorkoutDetails, type WorkoutType, type Zone }
 
 export type ActionResult = { error?: string; ok?: boolean };
 
-const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "trekking", "otro"];
+const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "squash", "trekking", "otro"];
 const FEELINGS: Feeling[] = ["dificil", "bien", "excelente"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
