@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { setFastDay, type DayChoice } from "@/app/(tabs)/ayuno/actions";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { useState } from "react";
+import { FastDaySheet } from "./fast-day-sheet";
 import type { DayMark } from "@/lib/fast";
 import { cn } from "@/lib/utils";
 
@@ -21,15 +19,8 @@ const legend: [DayMark, string][] = [
   ["ok", "Cumplido"],
   ["extended", "Extendido"],
   ["event", "Derrape"],
-  ["broken", "Cortado"],
+  ["broken", "Cortado / no lo hice"],
   ["none", "Sin cargar"],
-];
-
-const choices: [DayChoice, string][] = [
-  ["ok", "Cumplido"],
-  ["extend1", "Extendido +1 h"],
-  ["extend2", "Extendido +2 h"],
-  ["broken", "Lo corté"],
 ];
 
 const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -39,19 +30,10 @@ function dayLabel(date: string) {
   return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
 }
 
-type Day = { date: string; mark: DayMark; editable: boolean };
+type Day = { date: string; mark: DayMark; editable: boolean; startISO: string; endISO: string };
 
-export function FastCalendar({ days }: { days: Day[] }) {
+export function FastCalendar({ days, timezone }: { days: Day[]; timezone: string }) {
   const [selected, setSelected] = useState<Day | null>(null);
-  const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
-  const choose = (choice: DayChoice) =>
-    start(async () => {
-      const res = await setFastDay(selected!.date, choice);
-      if (res.error) setError(res.error);
-      else setSelected(null);
-    });
 
   return (
     <div>
@@ -61,10 +43,7 @@ export function FastCalendar({ days }: { days: Day[] }) {
             <button
               type="button"
               disabled={!day.editable}
-              onClick={() => {
-                setError(null);
-                setSelected(day);
-              }}
+              onClick={() => setSelected(day)}
               aria-label={`Ayuno del ${dayLabel(day.date)}`}
               className={cn(
                 "grid aspect-square w-full place-items-center rounded-lg text-xs font-bold transition-transform active:scale-90 disabled:active:scale-100",
@@ -86,25 +65,7 @@ export function FastCalendar({ days }: { days: Day[] }) {
       </ul>
       <p className="mt-3 text-xs text-muted">Tocá un día para cargarlo o corregirlo.</p>
 
-      <Sheet open={selected !== null} onOpenChange={(o) => !o && setSelected(null)}>
-        <SheetContent>
-          <SheetTitle>Ayuno del {selected && dayLabel(selected.date)}</SheetTitle>
-          <SheetDescription className="mb-5">La noche que arrancó ese día. ¿Cómo te fue?</SheetDescription>
-          <div className="grid grid-cols-2 gap-3">
-            {choices.map(([choice, label]) => (
-              <Button key={choice} size="lg" className="bg-bg" disabled={pending} onClick={() => choose(choice)}>
-                {label}
-              </Button>
-            ))}
-          </div>
-          {selected?.mark !== "none" && (
-            <Button variant="ghost" className="mt-3 w-full text-muted" disabled={pending} onClick={() => choose("clear")}>
-              Borrar lo cargado
-            </Button>
-          )}
-          {error && <p className="mt-3 text-center text-sm">{error}</p>}
-        </SheetContent>
-      </Sheet>
+      <FastDaySheet fast={selected} timezone={timezone} onClose={() => setSelected(null)} />
     </div>
   );
 }

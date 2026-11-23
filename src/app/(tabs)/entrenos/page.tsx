@@ -22,6 +22,7 @@ export default async function EntrenosPage() {
           today={today}
           weightKg={weightKg}
           nicknames={profile.nicknames}
+          favorites={profile.favorite_sports}
           showRegisterAll
         />
 

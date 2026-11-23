@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import type { Profile } from "@/lib/profile";
 import { FastProtocolPicker } from "@/components/fast/fast-protocol";
+import { FavoriteSportsPicker } from "./favorite-sports";
 import { updateSettings, type SettingsState } from "./actions";
 
 const inputClass =
@@ -38,6 +39,14 @@ export function SettingsForm({ profile }: { profile: Profile }) {
           className={inputClass}
           required
         />
+      </Card>
+
+      <Card className="space-y-4">
+        <div>
+          <CardTitle>Tus deportes frecuentes</CardTitle>
+          <CardDescription>Hasta 4. Son los bloques de un toque en Hoy; el resto se carga desde Entrenos.</CardDescription>
+        </div>
+        <FavoriteSportsPicker initial={profile.favorite_sports} />
       </Card>
 
       <Card className="space-y-4">

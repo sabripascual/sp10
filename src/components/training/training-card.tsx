@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { TYPE_EMOJI, TYPE_LABEL, type DayPlan, type WorkoutType } from "@/lib/training-types";
+import { TYPE_EMOJI, TYPE_LABEL, favoritesOf, type DayPlan, type WorkoutType } from "@/lib/training-types";
 import { RegisterSheet } from "./register-sheet";
 import { WeekStrip } from "./week-strip";
 
@@ -31,6 +31,7 @@ export function TrainingCard({
   today,
   weightKg,
   nicknames,
+  favorites,
   showRegisterAll = false,
 }: {
   week: DayPlan[];
@@ -41,6 +42,8 @@ export function TrainingCard({
   today: string;
   weightKg: number;
   nicknames: string[];
+  /** Deportes frecuentes del perfil: los bloques que se muestran (hasta 4). */
+  favorites?: string[] | null;
   showRegisterAll?: boolean;
 }) {
   const all = week.flatMap((d) => d.workouts);
@@ -55,46 +58,48 @@ export function TrainingCard({
       <p className="text-sm font-bold uppercase tracking-wide text-muted">Entrenamientos · esta semana</p>
 
       <div className="grid grid-cols-2 gap-2">
-        <RegisterSheet {...sheet} initialType="fuerza">
-          <TileHead type="fuerza" />
-          <span className="block text-3xl font-black tabular-nums">
-            {strengthDone}
-            <span className="text-lg text-muted">/{goal}</span>
-          </span>
-          <span className="block h-1.5 overflow-hidden rounded-full bg-surface">
-            <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.min(strengthDone / goal, 1) * 100}%` }} />
-          </span>
-          <span className="block text-xs text-muted">{left === 0 ? "¡Meta cumplida!" : `Te ${left === 1 ? "falta 1" : `faltan ${left}`}`}</span>
-        </RegisterSheet>
-
-        <RegisterSheet {...sheet} initialType="correr">
-          <TileHead type="correr" />
-          <span className="block text-3xl font-black tabular-nums">
-            {runMinutes}
-            <span className="text-lg text-muted"> min</span>
-          </span>
-          <span className="block text-xs text-muted">
-            {runMinutes > 0 ? `${runKcal ? `≈ ${runKcal} kcal` : ""}${count("correr") > 1 ? ` · ${count("correr")} salidas` : ""}` : "Sin carreras todavía"}
-          </span>
-        </RegisterSheet>
-
-        {(["futbol", "padel"] as WorkoutType[]).map((t) => (
-          <RegisterSheet key={t} {...sheet} initialType={t}>
-            <TileHead type={t} />
-            <span className="block text-3xl font-black tabular-nums">
-              {count(t)}
-              <span className="text-lg text-muted"> {count(t) === 1 ? "vez" : "veces"}</span>
-            </span>
-            <span className="block text-xs text-muted">{mins(t) ? `${mins(t)} min` : times(count(t))}</span>
-          </RegisterSheet>
-        ))}
+        {favoritesOf(favorites).map((t) =>
+          t === "fuerza" ? (
+            <RegisterSheet key={t} {...sheet} initialType="fuerza">
+              <TileHead type="fuerza" />
+              <span className="block text-3xl font-black tabular-nums">
+                {strengthDone}
+                <span className="text-lg text-muted">/{goal}</span>
+              </span>
+              <span className="block h-1.5 overflow-hidden rounded-full bg-surface">
+                <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.min(strengthDone / goal, 1) * 100}%` }} />
+              </span>
+              <span className="block text-xs text-muted">{left === 0 ? "¡Meta cumplida!" : `Te ${left === 1 ? "falta 1" : `faltan ${left}`}`}</span>
+            </RegisterSheet>
+          ) : t === "correr" ? (
+            <RegisterSheet key={t} {...sheet} initialType="correr">
+              <TileHead type="correr" />
+              <span className="block text-3xl font-black tabular-nums">
+                {runMinutes}
+                <span className="text-lg text-muted"> min</span>
+              </span>
+              <span className="block text-xs text-muted">
+                {runMinutes > 0 ? `${runKcal ? `≈ ${runKcal} kcal` : ""}${count("correr") > 1 ? ` · ${count("correr")} salidas` : ""}` : "Sin carreras todavía"}
+              </span>
+            </RegisterSheet>
+          ) : (
+            <RegisterSheet key={t} {...sheet} initialType={t}>
+              <TileHead type={t} />
+              <span className="block text-3xl font-black tabular-nums">
+                {count(t)}
+                <span className="text-lg text-muted"> {count(t) === 1 ? "vez" : "veces"}</span>
+              </span>
+              <span className="block text-xs text-muted">{mins(t) ? `${mins(t)} min` : times(count(t))}</span>
+            </RegisterSheet>
+          ),
+        )}
       </div>
 
       <WeekStrip week={week} />
       {showRegisterAll ? (
         <RegisterSheet today={today} weightKg={weightKg} nicknames={nicknames} label="+ Registrar otro entreno" className="w-full" />
       ) : (
-        <p className="text-center text-xs text-muted">Tocá un bloque para sumarlo. Tenis, trekking y más, desde Entrenos.</p>
+        <p className="text-center text-xs text-muted">Tocá un bloque para sumarlo. Elegí tus deportes en Ajustes; el resto, desde Entrenos.</p>
       )}
     </div>
   );

@@ -21,7 +21,7 @@ export type FastData = {
   now: Date;
   state: FastState;
   streak: number;
-  calendar: { date: string; mark: DayMark; editable: boolean }[];
+  calendar: { date: string; mark: DayMark; editable: boolean; startISO: string; endISO: string }[];
   /** Últimos ayunos terminados con sus horas (reales si se marcaron, si no según horario). */
   history: { date: string; startISO: string; endISO: string; hours: number; mark: DayMark; confirmed: boolean }[];
 };
@@ -62,12 +62,17 @@ export async function getFastData(): Promise<FastData> {
     now,
     state: getFastState(now, cfg, records),
     streak: fastStreak(now, cfg, records, since),
-    calendar: lastNDays(now, profile.timezone, 30).map((date) => ({
-      date,
-      mark: dayMark(date, now, cfg, records, since),
-      // se puede tocar cualquier ayuno que ya terminó
-      editable: fastWindow(date, cfg, records.get(date) ?? null).end <= now,
-    })),
+    calendar: lastNDays(now, profile.timezone, 30).map((date) => {
+      const w = fastWindow(date, cfg, records.get(date) ?? null);
+      return {
+        date,
+        mark: dayMark(date, now, cfg, records, since),
+        // se puede tocar cualquier ayuno que ya terminó
+        editable: w.end <= now && fastWindow(date, cfg, null).end <= now,
+        startISO: w.start.toISOString(),
+        endISO: (w.end.getTime() > w.start.getTime() ? w.end : w.plannedEnd).toISOString(),
+      };
+    }),
     history: lastNDays(now, profile.timezone, 14)
       .reverse()
       .map((date) => {

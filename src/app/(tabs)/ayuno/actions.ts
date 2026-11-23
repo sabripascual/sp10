@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { fromZonedTime } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
-import { closeOutcome, extraHoursFor, fastWindow, getFastState, localDate, shiftDate, MAX_EXTRA_HOURS } from "@/lib/fast";
+import { closeOutcome, extraHoursFor, fastWindow, getFastState, resolveFastTimes, localDate, shiftDate, MAX_EXTRA_HOURS } from "@/lib/fast";
 import { EDITABLE_DAYS, loadFastRecords } from "@/lib/fast-data";
 
 export type FastActionResult = { error?: string };
@@ -135,7 +135,8 @@ export async function setFastDay(date: string, choice: DayChoice): Promise<FastA
     choice === "ok"
       ? { status: "ok", extra_hours: 0, broken_at: null, ended_at: null }
       : choice === "broken"
-        ? { status: "broken", broken_at: null, ended_at: null }
+        ? // "No lo hice": queda cortado con 0 h
+          { status: "broken", broken_at: fastWindow(date, profile, null).start.toISOString(), ended_at: null, started_at: null }
         : { status: "extended", extra_hours: choice === "extend1" ? 1 : 2, broken_at: null, ended_at: null };
 
   const { error } = await supabase
@@ -201,4 +202,36 @@ export async function restartFast(markPreviousLost: boolean): Promise<FastAction
     if (prevError) return { error: prevError.message };
   }
   return done();
+}
+
+/** Horas reales de un ayuno que ya pasó (inicio y fin): queda cumplido, extendido o cortado según las horas. */
+export async function setFastTimes(date: string, startHHMM: string, endHHMM: string): Promise<FastActionResult> {
+  const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !HHMM.test(startHHMM) || !HHMM.test(endHHMM))
+    return { error: "Revisá las horas." };
+  const profile = await getProfile();
+  const now = new Date();
+  const today = localDate(now, profile.timezone);
+  if (date < shiftDate(today, -EDITABLE_DAYS)) return { error: "Ese día es muy viejo para editarlo." };
+
+  const { start, end } = resolveFastTimes(date, startHHMM, endHHMM, profile.timezone);
+  if (end > now) return { error: "El fin no puede ser en el futuro." };
+  if (end.getTime() - start.getTime() > 36 * 3_600_000) return { error: "Más de 36 h: revisá las horas." };
+
+  const records = await loadFastRecords(profile, date);
+  const record = records.get(date) ?? null;
+  const outcome = closeOutcome(start, end, profile);
+  const supabase = await createClient();
+  const { error } = await supabase.from("fast_days").upsert(
+    {
+      date,
+      status: record?.status === "event" ? "event" : outcome.status,
+      extra_hours: outcome.extra_hours,
+      started_at: start.toISOString(),
+      ended_at: end.toISOString(),
+      broken_at: outcome.status === "broken" ? end.toISOString() : null,
+    },
+    { onConflict: "user_id,date" },
+  );
+  return error ? { error: error.message } : done();
 }

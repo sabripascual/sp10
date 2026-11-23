@@ -38,6 +38,16 @@ export const TYPE_LABEL: Record<WorkoutType, string> = {
   otro: "Otro",
 };
 
+export const ALL_TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "squash", "trekking", "otro"];
+export const DEFAULT_FAVORITES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel"];
+export const MAX_FAVORITES = 4;
+
+/** Deportes frecuentes válidos de un perfil (o los de siempre). */
+export function favoritesOf(raw: string[] | null | undefined): WorkoutType[] {
+  const list = (raw ?? []).filter((t): t is WorkoutType => ALL_TYPES.includes(t as WorkoutType)).slice(0, MAX_FAVORITES);
+  return list.length ? list : DEFAULT_FAVORITES;
+}
+
 export const TYPE_EMOJI: Record<WorkoutType, string> = {
   fuerza: "💪🏻",
   correr: "🏃‍♀️",

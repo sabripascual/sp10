@@ -47,7 +47,7 @@ export default async function AyunoPage() {
 
         <Card>
           <CardTitle className="mb-4">Últimos 30 días</CardTitle>
-          <FastCalendar days={data.calendar} />
+          <FastCalendar days={data.calendar} timezone={profile.timezone} />
         </Card>
       </div>
     </>

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { favoritesOf } from "@/lib/training-types";
 
 export type SettingsState = { ok?: boolean; error?: string };
 
@@ -15,6 +16,7 @@ export async function updateSettings(
   const fastEnd = String(formData.get("fast_end") ?? "");
   const strengthGoal = Number(formData.get("strength_goal"));
   const hideWeight = formData.get("hide_weight") === "on";
+  const favoriteSports = favoritesOf(String(formData.get("favorite_sports") ?? "").split(","));
   const bodyStart = String(formData.get("body_check_start") ?? "");
   if (bodyStart && !/^\d{4}-\d{2}-\d{2}$/.test(bodyStart)) return { error: "Revisá la fecha del primer control." };
   const nicknames = String(formData.get("nicknames") ?? "")
@@ -43,6 +45,7 @@ export async function updateSettings(
       hide_weight: hideWeight,
       nicknames,
       body_check_start: bodyStart || null,
+      favorite_sports: favoriteSports,
     })
     .eq("id", userId);
   if (error) return { error: `No se pudo guardar: ${error.message}` };

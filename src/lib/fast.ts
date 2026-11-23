@@ -186,3 +186,16 @@ export function extraHoursFor(window: FastWindow, now: Date, hours: number, cfg:
 export function fastDuration(w: FastWindow) {
   return w.end.getTime() - w.start.getTime();
 }
+
+/**
+ * Horas reales cargadas a mano para el ayuno de la noche `date`:
+ * el inicio es esa noche (si es antes del mediodía, se toma como de madrugada del día siguiente)
+ * y el fin es la primera vez que llega esa hora después del inicio.
+ */
+export function resolveFastTimes(date: string, startHHMM: string, endHHMM: string, tz: string) {
+  const startDay = Number(startHHMM.slice(0, 2)) < 12 ? shiftDate(date, 1) : date;
+  const start = fromZonedTime(`${startDay}T${startHHMM}:00`, tz);
+  let end = fromZonedTime(`${startDay}T${endHHMM}:00`, tz);
+  while (end <= start) end = new Date(end.getTime() + 24 * 3_600_000);
+  return { start, end };
+}

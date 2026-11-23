@@ -111,3 +111,13 @@ test("Recién arranco a la 1 AM: el ayuno arranca ahora y el anterior queda perd
   assert.equal(dayMark("2026-11-19", now, cfg, r, "2026-11-15"), "broken");
   assert.equal(fastDuration(fastWindow("2026-11-19", cfg, r.get("2026-11-19")!)), 0);
 });
+
+test("horas reales: 20:30 → 12:15 del día siguiente; inicio de madrugada", async () => {
+  const { resolveFastTimes } = await import("../src/lib/fast");
+  const a = resolveFastTimes("2026-11-22", "20:30", "12:15", cfg.timezone);
+  assert.equal(a.start.toISOString(), at("2026-11-22T20:30:00").toISOString());
+  assert.equal(a.end.toISOString(), at("2026-11-23T12:15:00").toISOString());
+  const b = resolveFastTimes("2026-11-22", "01:00", "17:00", cfg.timezone);
+  assert.equal(b.start.toISOString(), at("2026-11-23T01:00:00").toISOString());
+  assert.equal(b.end.toISOString(), at("2026-11-23T17:00:00").toISOString());
+});

@@ -66,6 +66,7 @@ export default async function HoyPage() {
           today={training.today}
           weightKg={training.weightKg}
           nicknames={profile.nicknames}
+          favorites={profile.favorite_sports}
         />
 
         <EventSheet today={training.today} className="w-full" />
