@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { formatInTimeZone } from "date-fns-tz";
 import { endFast } from "@/app/(tabs)/ayuno/actions";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,11 @@ export function EndAtSheet({
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  // Al abrir, arranca con la hora de ahora
+  useEffect(() => {
+    if (open) setTime(formatInTimeZone(new Date(), timezone, "HH:mm"));
+  }, [open, timezone]);
+
   const save = () =>
     start(async () => {
       const res = await endFast(time);
@@ -34,10 +39,7 @@ export function EndAtSheet({
   return (
     <Sheet
       open={open}
-      onOpenChange={(o) => {
-        if (o) setTime(formatInTimeZone(new Date(), timezone, "HH:mm"));
-        onOpenChange(o);
-      }}
+      onOpenChange={onOpenChange}
     >
       <SheetContent>
         <SheetTitle>¿A qué hora terminaste?</SheetTitle>

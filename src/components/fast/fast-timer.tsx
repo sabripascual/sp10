@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { endFast, extendFast, resumeFast, startFast } from "@/app/(tabs)/ayuno/actions";
+import { adjustStart, endFast, extendFast, resumeFast, startFast } from "@/app/(tabs)/ayuno/actions";
 import { EndAtSheet } from "./end-at-sheet";
 import { RestartSheet } from "./restart-sheet";
+import { StartAtSheet } from "./start-at-sheet";
 import type { FastView } from "@/lib/fast-data";
 import { cn } from "@/lib/utils";
 import { clock, hour, humanDuration } from "./format";
@@ -31,6 +32,7 @@ export function FastTimer({
   const [error, setError] = useState<string | null>(null);
   const [endAtOpen, setEndAtOpen] = useState(false);
   const [restartOpen, setRestartOpen] = useState(false);
+  const [startAtOpen, setStartAtOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   // El estado optimista vale hasta que llega una vista nueva del servidor.
@@ -181,18 +183,50 @@ export function FastTimer({
           </div>
         </div>
       )}
-      {view.phase === "fasting" && (
+      {view.phase === "fasting" && !view.startConfirmed && (
+        <div className="mt-4 space-y-2 rounded-xl bg-bg p-3">
+          <p className="text-sm font-bold">
+            Arrancó según tu horario ({hour(view.startISO, tz)}). ¿Fue así? 🐶
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() =>
+                run({ ...view, startConfirmed: true }, () => adjustStart(hour(view.startISO, tz)))
+              }
+              disabled={pending}
+              className="h-11 rounded-xl bg-accent text-sm font-black text-accent-fg active:scale-95"
+            >
+              Sí
+            </button>
+            <button onClick={() => setStartAtOpen(true)} disabled={pending} className="h-11 rounded-xl bg-surface text-xs font-bold leading-tight active:scale-95">
+              Empecé a<br />otra hora
+            </button>
+            <button onClick={() => setRestartOpen(true)} disabled={pending} className="h-11 rounded-xl bg-surface text-xs font-bold leading-tight active:scale-95">
+              Recién<br />arranco
+            </button>
+          </div>
+        </div>
+      )}
+      {(view.phase === "fasting" || view.phase === "overtime") && view.startConfirmed && (
         <button
-          onClick={() => setRestartOpen(true)}
+          onClick={() => setStartAtOpen(true)}
           disabled={pending}
           className="mt-3 text-xs font-bold text-muted underline underline-offset-2"
         >
-          ↺ ¿Recién arrancás? Reiniciar desde ahora
+          🕐 Cambiar hora de inicio
         </button>
       )}
       {notice && <p className="mt-3 text-sm font-bold">{notice}</p>}
       {quick}
       <EndAtSheet open={endAtOpen} onOpenChange={setEndAtOpen} timezone={tz} onDone={setNotice} />
+      <StartAtSheet
+        open={startAtOpen}
+        onOpenChange={setStartAtOpen}
+        currentStartISO={view.startISO}
+        baseHours={view.baseHours}
+        timezone={tz}
+        onDone={setNotice}
+      />
       <RestartSheet
         open={restartOpen}
         onOpenChange={setRestartOpen}

@@ -99,9 +99,11 @@ export function FastActions({ view }: { view: FastView }) {
         </>
       )}
 
-      <Button variant="ghost" className="w-full text-muted" disabled={pending} onClick={openAdjust}>
-        🕐 {view.phase === "eating" ? "¿Ya empezaste? Poné la hora" : "Ajustar hora de inicio"}
-      </Button>
+      {view.phase === "eating" && (
+        <Button variant="ghost" className="w-full text-muted" disabled={pending} onClick={openAdjust}>
+          🕐 ¿Ya empezaste? Poné la hora
+        </Button>
+      )}
 
       {message && <p className="text-center text-sm">{message}</p>}
 
