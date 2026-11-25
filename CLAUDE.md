@@ -310,6 +310,29 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Cambios sin guardar en Ajustes (v1.7)**: `SettingsForm` compara una foto del formulario (`FormData`) con la guardada; si hay diferencias muestra una barra fija "Tenés cambios sin guardar" (Descartar / Guardar) y, al tocar cualquier link interno (barra de abajo, arriba), frena la navegación con una ventana "¿Guardamos los cambios?" (Guardar y seguir / Descartar cambios / Seguir editando); también avisa al recargar o cerrar. Descartar = volver a montar el formulario con lo guardado (`key`). Foto de perfil y avisos se guardan solos (fuera del formulario). Los pickers serializan solo lo activo para que "volver a como estaba" no cuente como cambio.
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
+## Próxima sesión (acordado, sin desarrollar)
+
+Propuestas aprobadas por la dueña para desarrollar juntas. Antes de arrancar, confirmar las preguntas abiertas de cada punto.
+
+1. **Mensaje de bienvenida (WhatsApp)**: sumar el paso 5 de derrapes: "Agendá el derrape" en Hoy, aviso el día anterior, compensar hasta el domingo con lo que elegiste, marca ✅ y racha; si no, "sin compensar" y, si así lo elegiste, baja puntos.
+2. **Derrapes que restan, opcional** (en Ajustes → Tu semana ideal, "¿Los derrapes cuentan en tu nivel?"):
+   - 😇 No cuentan → objetivos 100 pts, los derrapes no tocan el nivel (se agendan y compensan igual).
+   - 😈 Restan → objetivos 85 + derrapes 15, −7,5 por cada uno sin compensar (como hoy).
+   - 🔥 Restan picante → −15 por cada uno sin compensar.
+   - La parte "Derrapes" de `LevelCard` solo aparece si cuentan; en el Club cada una con sus reglas.
+   - A confirmar: opción por defecto (¿Restan o No cuentan?).
+3. **Compensación configurable y automática**:
+   - Default en Ajustes ("Cómo compensás tus derrapes"): entreno (cualquier deporte + mínimo 30/45/60/90 min), ayuno +1/+2/+3 h (solo si hace ayuno) o las dos.
+   - Al agendar cada derrape viene precargada y se puede cambiar para ese derrape (detalle guardado en el evento; migración).
+   - Automática: si entre el día siguiente y el plazo (domingo) carga un entreno de ese deporte con esos minutos, o el ayuno de esa noche llega a las horas extra, se marca compensado solo ("¡Esaaa! Derrape compensado 😈✅"). Sigue el botón manual.
+   - Los derrapes existentes quedan como están.
+   - A confirmar: ¿el entreno que compensa suma también a la semana ideal? (recomendado: sí). ¿Hacemos la automática? (recomendado: sí).
+4. **Fierritos rápido o con detalle** (se descartaron las rutinas armadas a mano: dan pereza y cambian cada mes):
+   - ⚡ Rápido: "Fui a fierritos ✓" en un toque (minutos opcionales, precargados del último). Cuenta para metas, semana ideal y nivel.
+   - 📝 Con detalle: zonas como hoy + atajos "🔁 Repetir el último" y "📅 Usar uno anterior" (lista de los últimos fierritos con detalle; precarga y se ajusta). Sale del historial, sin tabla nueva.
+   - Preferencia en el perfil ("¿Cómo registrás tus fierritos?", migración chica): por defecto Con detalle para quien ya registró zonas y Rápido para cuentas nuevas. En el registro, link para cambiar en el momento ("+ Agregar detalle" / "Solo marcar que fui").
+   - Progreso: "fierritos por zona" usa solo los que tienen detalle y lo aclara.
+
 ## Pendientes de la dueña
 - Pasar el logo BRAVE en SVG para el footer (hoy es un wordmark de texto).
 
