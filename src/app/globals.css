@@ -38,6 +38,8 @@
 
 html {
   color-scheme: dark;
+  /* Nada puede empujar la pantalla de costado (en iOS eso desacomoda la botonera fija) */
+  overflow-x: clip;
 }
 
 body {

@@ -55,7 +55,7 @@ export async function joinClub(code: string, myName: string): Promise<ClubResult
   if (!mine) return { error: "Poné tu nombre en el club." };
   const db = createAdminClient();
   const { data: club } = await db.from("clubs").select("id, name").eq("invite_code", code.trim().toLowerCase()).maybeSingle();
-  if (!club) return { error: "Ese link de invitación no anda (capaz lo renovaron). Pedile uno nuevo a la dueña." };
+  if (!club) return { error: "Ese link de invitación no anda. Pedíselo de nuevo a quien te invitó." };
   const { data: rows } = await db.from("club_members").select("user_id").eq("club_id", club.id);
   if ((rows ?? []).some((r) => r.user_id === me.id)) return done({ ok: "Ya estabas en este club 😉", clubId: club.id });
   if ((rows ?? []).length >= CLUB_MAX_MEMBERS) return { error: `El club está lleno (máximo ${CLUB_MAX_MEMBERS}).` };
@@ -103,16 +103,6 @@ export async function renameClub(clubId: string, name: string): Promise<ClubResu
   const { error } = await db.from("clubs").update({ name: club }).eq("id", clubId);
   if (error) return { error: error.message };
   return done({ ok: "Nombre cambiado." });
-}
-
-/** La dueña renueva el link: el anterior deja de andar. */
-export async function renewInvite(clubId: string): Promise<ClubResult> {
-  const me = await getProfile();
-  const { db, ownerId } = await ownerOf(clubId);
-  if (ownerId !== me.id) return { error: "Solo la dueña puede renovar el link." };
-  const { error } = await db.from("clubs").update({ invite_code: newCode() }).eq("id", clubId);
-  if (error) return { error: error.message };
-  return done({ ok: "Link nuevo listo. El anterior ya no anda." });
 }
 
 /** Cambiar mi nombre en un club. */

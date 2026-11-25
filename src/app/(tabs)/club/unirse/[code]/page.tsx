@@ -13,7 +13,7 @@ export default async function UnirsePage({ params }: { params: Promise<{ code: s
     return (
       <Card className="mt-6 space-y-2">
         <CardTitle>Este link no anda 🤔</CardTitle>
-        <CardDescription>Capaz la dueña lo renovó. Pedile uno nuevo.</CardDescription>
+        <CardDescription>Revisá que esté completo o pedile el link de nuevo a quien te invitó.</CardDescription>
         <Link href="/club" className="block pt-2 text-sm underline">
           Ir al Club
         </Link>

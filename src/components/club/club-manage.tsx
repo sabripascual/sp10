@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Link2, X } from "lucide-react";
-import { createClub, joinClub, leaveClub, removeMember, renameClub, renameMe, renewInvite, type ClubResult } from "@/app/(tabs)/club/actions";
+import { createClub, joinClub, leaveClub, removeMember, renameClub, renameMe, type ClubResult } from "@/app/(tabs)/club/actions";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Avatar } from "@/components/shell/avatar";
@@ -179,11 +179,6 @@ export function ClubManage({
               Guardar
             </Button>
           </div>
-          {owner && (
-            <button type="button" disabled={pending} onClick={() => run(() => renewInvite(club.id))} className="block text-sm font-bold underline">
-              Renovar el link de invitación (el anterior deja de andar)
-            </button>
-          )}
           <button
             type="button"
             disabled={pending}
