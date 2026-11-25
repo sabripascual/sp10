@@ -17,13 +17,17 @@ export type NotifyKind =
   | "level_result"
   | "forecast"
   | "streak_milestone"
-  | "idle";
+  | "idle"
+  | "club_closing"
+  | "club_podium";
 
-export type CoachKind = "level_result" | "forecast" | "streak_milestone" | "idle";
+export type CoachKind = "level_result" | "forecast" | "streak_milestone" | "idle" | "club_closing" | "club_podium";
 
 /** Avisos generales: prendidos o apagados para todas desde el Panel Ringo. */
 export const COACH_KINDS: { kind: CoachKind; label: string; when: string }[] = [
-  { kind: "level_result", label: "Salió tu nivel", when: "Lunes 9:30: perrita de la semana, si subió o bajó y puesto en el Club" },
+  { kind: "level_result", label: "Salió tu figurita", when: "Lunes 9:30: tu perrita de la semana, si subiste o bajaste y tu puesto en el Club" },
+  { kind: "club_podium", label: "Cerró el ranking", when: "Lunes 12:30, solo del Club: quién ganó, tu puesto y a ver el podio" },
+  { kind: "club_closing", label: "Último sprint del Club", when: "Domingo 21:00, solo del Club: cuánto falta para cerrar y a cuánto estás de la de arriba" },
   { kind: "forecast", label: "Pronóstico", when: "Miércoles 13:00: si seguís así cerrás perrita…" },
   { kind: "streak_milestone", label: "Hitos de racha", when: "12:00, al llegar a 7/14/30/60/100 días de ayuno o 4/8/12 semanas de fierritos" },
   { kind: "idle", label: "¿Dónde andás?", when: "18:00, con 3 días sin anotar nada (máx. 1 por semana)" },
@@ -59,6 +63,8 @@ export const URLS: Record<NotifyKind, string> = {
   body_check: "/cuerpo/control",
   weekly_summary: "/progreso",
   level_result: "/club",
+  club_closing: "/club",
+  club_podium: "/club",
   forecast: "/",
   streak_milestone: "/progreso",
   idle: "/",
@@ -115,7 +121,13 @@ export const PHRASES: Record<NotifyKind, string[]> = {
     "{Apodo}, así cerró la semana: {resumen}. ¡A la próxima con todo!",
   ],
   // Los del coach arman la frase con {linea} (elegida según el caso en coach-notify.ts)
-  level_result: ["{emoji} {linea}{cambio}{puesto}"],
+  level_result: [
+    "🃏 ¡Salió tu figurita, {apodo}! Sos {nivel} {emoji}{puesto}. Entrá a verla y mandala al grupo 📲",
+    "🃏 Ding dong 🔔 Llegó tu figurita de la semana: {nivel} {emoji}{puesto}. {Apodo}, esto se comparte",
+    "🃏 Calificación del lunes: {nivel} {emoji}{puesto}. {cambio}Tocá y mirá tu figurita, {apodo}",
+  ],
+  club_closing: ["{linea}"],
+  club_podium: ["{linea}"],
   forecast: ["🔮 {linea}"],
   streak_milestone: ["{linea}"],
   idle: [
@@ -123,14 +135,28 @@ export const PHRASES: Record<NotifyKind, string[]> = {
   ],
 };
 
-/** Línea principal del "Salió tu nivel", según la perrita. {pts} = puntos. */
-export const LEVEL_LINES: Record<string, string[]> = {
-  dios: ["{Apodo}, cerraste la semana nivel DIOS con {pts} pts. ¿Te pedimos un autógrafo?", "Nivel dios, {apodo}: {pts} pts. Sos inalcanzable."],
-  crack: ["Perrita crack, {apodo}: {pts} pts. Ni el Dibu ataja tanta constancia.", "{Apodo}, semana de crack: {pts} pts. Así da gusto."],
-  motivada: ["{Apodo}, saliste perrita motivada con {pts} pts. Un empujoncito más y te codeás con las cracks."],
-  promedio: ["Perrita promedio de la humanidad, {apodo} ({pts} pts). Ni fu ni fa… ¿esta semana la rompemos?"],
-  vagoneta: ["{Apodo}, la semana pasada saliste perrita vagoneta. El sillón te quiere, pero el lunes es tuyo."],
-  pajera: ["Perrita pajera, {apodo}. Pasa en las mejores familias: hoy arrancamos de cero 🐶"],
+/** Domingo a la noche: el Club cierra a medianoche. {pos} {total} {gap} {arriba}. */
+export const CLOSING_LINES = {
+  first: [
+    "🚨 Faltan 3 horas para que cierre el Ringo Club y vas PRIMERA, {apodo}. Agarrate fuerte que te quieren bajar del trono 👑",
+    "👑 {Apodo}, vas primera y quedan 3 horas. Cerrá la app, apagá la luz y no dejes que nadie te toque la corona",
+  ],
+  chasing: [
+    "🚨 Últimas 3 horas del Ringo Club: vas {pos}ª y estás a {gap} pts de {arriba}. ¿Un entrenito de último momento, {apodo}? 😏",
+    "⏰ El Ringo Club cierra a medianoche y vas {pos}ª de {total}. Esto es como el último penal, {apodo}: a {arriba} le sacás {gap} pts y la pasás ⚽",
+  ],
+};
+
+/** Lunes al mediodía: cerró el ranking. {ganadora} {pos} {total}. */
+export const PODIUM_LINES = {
+  won: [
+    "🏆 ¡Cerró el ranking y GANASTE, {apodo}! 👑 Pasá a buscar tu corona por el podio, que la figurita dorada es tuya",
+    "🏆 Primera en el Ringo Club, {apodo}. Ya mandamos a hacer la estatua. Entrá a ver el podio 🌶️",
+  ],
+  rest: [
+    "🏆 Cerró el ranking, {apodo}: ganó {ganadora} 👑 y vos quedaste {pos}ª. Entrá a ver el podio y los premios 🌶️🚀🛋️",
+    "🍿 Ya está el podio de la semana: {ganadora} se llevó la corona y vos, el puesto {pos}. ¿Quién se ganó el sillón de oro? Entrá y enterate 🛋️",
+  ],
 };
 
 /** Pronóstico de mitad de semana. {nivel} {emoji} {pct} {falta}. */

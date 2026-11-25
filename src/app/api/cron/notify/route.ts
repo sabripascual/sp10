@@ -7,7 +7,9 @@ import { sinceDate } from "@/lib/fast-data";
 import { nextCheckDate } from "@/lib/body";
 import { isoDay, weekStart } from "@/lib/week";
 import { dueNotifications } from "@/lib/notify-rules";
-import { coachNotifications, LEVEL_AT } from "@/lib/coach-notify";
+import { CLOSING_AT, coachNotifications, LEVEL_AT, PODIUM_AT } from "@/lib/coach-notify";
+import { clubMembers, clubStanding } from "@/lib/club-data";
+import { closedRanking, liveRanking, type ClubMember } from "@/lib/club";
 import { getCoachPrefs } from "@/lib/app-settings";
 import { buildMessage, URLS, type NotifyKind } from "@/lib/phrases";
 import { profileGoals } from "@/lib/goals";
@@ -71,13 +73,16 @@ async function loadUser(db: ReturnType<typeof createAdminClient>, p: Profile, no
   };
 }
 
-/** ¿Es el rato del aviso de nivel del lunes? (ahí se arma el ranking del Club) */
-function isLevelWindow(now: Date, tz: string) {
-  if (isoDay(localDate(now, tz)) !== 1) return false;
+/** ¿Es el rato de algún aviso del Club? (lunes nivel y podio, domingo cierre). Ahí se arma el ranking. */
+function isClubWindow(now: Date, tz: string) {
+  const day = isoDay(localDate(now, tz));
   const [h, m] = formatInTimeZone(now, tz, "HH:mm").split(":").map(Number);
-  const [lh, lm] = LEVEL_AT.split(":").map(Number);
-  const diff = h * 60 + m - (lh * 60 + lm);
-  return diff >= 0 && diff < 30;
+  const near = (hhmm: string) => {
+    const [lh, lm] = hhmm.split(":").map(Number);
+    const diff = h * 60 + m - (lh * 60 + lm);
+    return diff >= 0 && diff < 30;
+  };
+  return (day === 1 && (near(LEVEL_AT) || near(PODIUM_AT))) || (day === 7 && near(CLOSING_AT));
 }
 
 /**
@@ -102,17 +107,21 @@ export async function POST(req: NextRequest) {
   const subsOf = new Map<string, Subscription[]>();
   for (const s of allSubs ?? []) subsOf.set(s.user_id, [...(subsOf.get(s.user_id) ?? []), s]);
 
-  // Se cargan los datos de quien tiene avisos y, el lunes del nivel, de las del Club (para el ranking).
+  // Se cargan los datos de quien tiene avisos.
   const list = (profiles ?? []) as Profile[];
   const loaded = new Map<string, Awaited<ReturnType<typeof loadUser>>>();
-  await Promise.all(
-    list
-      .filter((p) => subsOf.has(p.id) || (p.club_visible && p.club_name && isLevelWindow(now, p.timezone)))
-      .map(async (p) => loaded.set(p.id, await loadUser(db, p, now))),
-  );
-  const ranking = list
-    .filter((p) => p.club_visible && p.club_name && loaded.get(p.id)?.last)
-    .sort((a, b) => loaded.get(b.id)!.last!.score - loaded.get(a.id)!.last!.score);
+  await Promise.all(list.filter((p) => subsOf.has(p.id)).map(async (p) => loaded.set(p.id, await loadUser(db, p, now))));
+
+  // En el rato de los avisos del Club: ranking de la semana cerrada y en vivo (mismo cálculo que la pestaña Club).
+  let club: ClubMember[] = [];
+  if (isClubWindow(now, "America/Argentina/Tucuman")) {
+    const members = await clubMembers(db);
+    club = await Promise.all(
+      members.map(async (p) => ({ id: p.id, name: p.club_name!, avatar: null, isMe: false, ...(await clubStanding(db, p, now)) })),
+    );
+  }
+  const closedRank = closedRanking(club);
+  const liveRank = liveRanking(club);
 
   const report: Record<string, string[]> = {};
   for (const p of list) {
@@ -130,7 +139,8 @@ export async function POST(req: NextRequest) {
     const sent = new Set(sentLog.map((l) => `${l.kind}|${l.ref}`));
     const current = weekGoals(u.weeks.at(-1)!);
     const fasting = p.fasting_enabled !== false;
-    const rank = ranking.findIndex((r) => r.id === p.id);
+    const rank = closedRank.findIndex((r) => r.id === p.id);
+    const liveIdx = liveRank.findIndex((r) => r.id === p.id);
 
     const due = [
       ...dueNotifications({
@@ -154,7 +164,15 @@ export async function POST(req: NextRequest) {
         fasting,
         last: u.last,
         prev: u.prev,
-        club: rank >= 0 ? { pos: rank + 1, total: ranking.length } : null,
+        club: rank >= 0 ? { pos: rank + 1, total: closedRank.length, winner: closedRank[0].name } : null,
+        clubLive:
+          liveIdx >= 0
+            ? {
+                pos: liveIdx + 1,
+                total: liveRank.length,
+                above: liveIdx > 0 ? { name: liveRank[liveIdx - 1].name, gap: liveRank[liveIdx - 1].live.score - liveRank[liveIdx].live.score } : null,
+              }
+            : null,
         current,
         fastStreak: u.fastStreak,
         strengthRun: u.strengthRun,

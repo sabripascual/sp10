@@ -5,11 +5,13 @@ import { localDate, shiftDate } from "@/lib/fast";
 import { LEVELS, levelFor, type LevelKey } from "@/lib/level";
 import { missingText, type GoalItem } from "@/lib/goals";
 import { isoDay, weekStart } from "@/lib/week";
-import { FORECAST_LINES, LEVEL_LINES, MILESTONE_LINES, type CoachKind } from "@/lib/phrases";
+import { CLOSING_LINES, FORECAST_LINES, MILESTONE_LINES, PODIUM_LINES, type CoachKind } from "@/lib/phrases";
 import { isQuiet, type DueNotification } from "@/lib/notify-rules";
 
 const CATCH_UP_MIN = 30;
 export const LEVEL_AT = "09:30"; // lunes
+export const PODIUM_AT = "12:30"; // lunes
+export const CLOSING_AT = "21:00"; // domingo
 export const FORECAST_AT = "13:00"; // miércoles
 export const MILESTONE_AT = "12:00";
 export const IDLE_AT = "18:00";
@@ -29,8 +31,10 @@ export type CoachContext = {
   /** Nivel de la semana que cerró y de la anterior (null = no calificada). */
   last: { weekStart: string; score: number; level: LevelKey } | null;
   prev: { level: LevelKey } | null;
-  /** Puesto en el Ringo Club (si es miembro). */
-  club: { pos: number; total: number } | null;
+  /** Ringo Club (si es miembro): puesto en la semana que cerró y quién ganó. */
+  club: { pos: number; total: number; winner: string } | null;
+  /** Ringo Club en vivo (domingo a la noche): puesto y la de arriba. */
+  clubLive: { pos: number; total: number; above: { name: string; gap: number } | null } | null;
   /** Semana en curso. */
   current: { pct: number; items: GoalItem[] };
   fastStreak: number;
@@ -73,18 +77,34 @@ export function coachNotifications(ctx: CoachContext, rand: () => number = Math.
   // 1. Lunes: salió tu nivel
   if (day === 1 && at(LEVEL_AT) && ctx.last) {
     const lvl = levelInfo(ctx.last.level);
-    let linea = pick(LEVEL_LINES[lvl.key], rand).replaceAll("{pts}", String(ctx.last.score));
-    if (!ctx.prev) linea = `Tu primer nivel: ${linea.charAt(0).toLowerCase()}${linea.slice(1)}`;
     let cambio = "";
     if (ctx.prev && ctx.prev.level !== lvl.key) {
       const up = LEVELS.findIndex((l) => l.key === lvl.key) > LEVELS.findIndex((l) => l.key === ctx.prev!.level);
-      const from = levelInfo(ctx.prev.level).name.replace("Perrita ", "");
-      cambio = up
-        ? ` Subiste de ${from} a ${lvl.name.replace("Perrita ", "")}, esaaa 📈`
-        : " Bajaste un escalón, nada que unos fierritos no arreglen.";
+      cambio = up ? "Subiste de escalón, esaaa 📈 " : "Bajaste un escalón, nada que unos fierritos no arreglen. ";
     }
-    const puesto = ctx.club ? ` Quedaste ${ctx.club.pos}ª de ${ctx.club.total} en el Club 🏆` : "";
-    add("level_result", ctx.last.weekStart, { emoji: lvl.emoji, linea, cambio, puesto });
+    const puesto = ctx.club ? ` y quedaste ${ctx.club.pos}ª de ${ctx.club.total} en el Club` : "";
+    add("level_result", ctx.last.weekStart, { emoji: lvl.emoji, nivel: lvl.name.toLowerCase(), cambio, puesto });
+  }
+
+  // Lunes al mediodía: cerró el ranking (solo del Club)
+  if (day === 1 && at(PODIUM_AT) && ctx.club && ctx.last) {
+    const won = ctx.club.pos === 1;
+    const linea = pick(won ? PODIUM_LINES.won : PODIUM_LINES.rest, rand)
+      .replaceAll("{ganadora}", ctx.club.winner)
+      .replaceAll("{pos}", String(ctx.club.pos))
+      .replaceAll("{total}", String(ctx.club.total));
+    add("club_podium", ctx.last.weekStart, { linea });
+  }
+
+  // Domingo a la noche: último sprint (solo del Club, con al menos otra persona)
+  if (day === 7 && at(CLOSING_AT) && ctx.clubLive && ctx.clubLive.total >= 2) {
+    const { pos, total, above } = ctx.clubLive;
+    const linea = pick(pos === 1 || !above ? CLOSING_LINES.first : CLOSING_LINES.chasing, rand)
+      .replaceAll("{pos}", String(pos))
+      .replaceAll("{total}", String(total))
+      .replaceAll("{gap}", String(Math.max(1, above?.gap ?? 0)))
+      .replaceAll("{arriba}", above?.name ?? "");
+    add("club_closing", weekStart(today), { linea });
   }
 
   // 2. Miércoles: pronóstico

@@ -3,84 +3,109 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile, type Profile } from "@/lib/profile";
 import { localDate, shiftDate, type FastDay } from "@/lib/fast";
 import { sinceDate } from "@/lib/fast-data";
-import { weekStart } from "@/lib/week";
-import { profileGoals } from "@/lib/goals";
-import { firstGradedWeek, levelFor, weekScore, type LevelKey } from "@/lib/level";
+import { isoDay, weekStart } from "@/lib/week";
+import { missingText, profileGoals } from "@/lib/goals";
+import { firstGradedWeek, levelFor, weekScore } from "@/lib/level";
 import { weekGoals, weekSummaries } from "@/lib/progress";
 import { avatarUrl } from "@/lib/avatar";
+import type { ClubMember } from "@/lib/club";
 
-export type ClubMember = {
-  id: string;
-  name: string;
-  avatar: string | null;
-  isMe: boolean;
-  /** Nivel de la última semana cerrada (null = todavía no tiene una semana completa). */
-  level: LevelKey | null;
-  score: number | null;
-  /** Cómo va la semana en curso (% de su semana ideal). */
-  weekPct: number;
+export type ClubData = {
+  me: Profile;
+  joined: boolean;
+  /** Lunes de la semana que cerró. */
+  closedWeek: string;
+  isMonday: boolean;
+  /** Días que faltan para que cierre la semana en curso (incluye hoy). */
+  daysLeft: number;
+  members: ClubMember[];
+  /** Lo que te falta a vos esta semana ("1 fierrito y 2 ayunos"). Solo tuyo. */
+  myMissing: string;
 };
 
-export type ClubData = { me: Profile; joined: boolean; weekStart: string; members: ClubMember[] };
+type Db = ReturnType<typeof createAdminClient>;
 
 /**
- * Ranking del Ringo Club. Se calcula con service role (cada una solo puede leer lo suyo por RLS),
- * pero SOLO de quienes se sumaron, y devuelve únicamente nombre, foto de perfil, nivel, puntos y % de la semana.
+ * Nivel de una usuaria en la semana que cerró, la anterior y la en curso (hoy y ayer).
+ * Se usa en el Club y en el cron (avisos del Club). Solo devuelve puntos, niveles y %.
  */
-export async function getClubData(): Promise<ClubData> {
-  const me = await getProfile();
-  const now = new Date();
-  const today = localDate(now, me.timezone);
-  const lastWeek = shiftDate(weekStart(today), -7);
-  const from = shiftDate(lastWeek, -1);
-  const joined = Boolean(me.club_visible && me.club_name);
-  if (!joined) return { me, joined, weekStart: lastWeek, members: [] };
+export async function clubStanding(db: Db, p: Profile, now: Date) {
+  const today = localDate(now, p.timezone);
+  const current = weekStart(today);
+  const from = shiftDate(current, -15);
+  const [fasts, workouts, events] = await Promise.all([
+    db.from("fast_days").select("date, status, broken_at, extra_hours, event_id, started_at, ended_at").eq("user_id", p.id).order("date"),
+    db.from("workouts").select("date, type, minutes, status").eq("user_id", p.id).gte("date", from),
+    db.from("events").select("date, compensated_at").eq("user_id", p.id).gte("date", from),
+  ]);
+  const records = new Map(((fasts.data ?? []) as FastDay[]).map((r) => [r.date, r]));
+  const since = sinceDate(p, records);
+  const input = { cfg: p, since, records, workouts: workouts.data ?? [], events: events.data ?? [], goals: profileGoals(p), weeks: 3 };
+  const [prevW, closedW, liveW] = weekSummaries({ ...input, now });
+  const graded = firstGradedWeek(since);
+  const grade = (w: typeof closedW) => {
+    const score = weekScore(w);
+    return { score, level: levelFor(score).key, pct: weekGoals(w).pct };
+  };
+  // Ayer, dentro de la misma semana (el lunes no hay "ayer" en esta semana)
+  let liveYesterday: ClubMember["liveYesterday"] = null;
+  if (isoDay(today) !== 1) {
+    const y = weekSummaries({ ...input, now: new Date(now.getTime() - 86_400_000), weeks: 1 })[0];
+    const s = weekScore(y);
+    liveYesterday = { score: s, level: levelFor(s).key };
+  }
+  return {
+    closed: closedW.weekStart >= graded ? grade(closedW) : null,
+    prev: prevW.weekStart >= graded ? (({ score, level }) => ({ score, level }))(grade(prevW)) : null,
+    live: grade(liveW),
+    liveYesterday,
+    missing: missingText(weekGoals(liveW).items),
+  };
+}
 
-  const db = createAdminClient();
-  const { data: profiles, error } = await db
+/** Miembros del Club (sumadas con nombre, cuenta no pausada). */
+export async function clubMembers(db: Db) {
+  const { data, error } = await db
     .from("profiles")
     .select("*")
     .eq("club_visible", true)
     .not("club_name", "is", null)
     .neq("role", "disabled");
   if (error) throw new Error(`No pude leer el club: ${error.message}`);
-  const ids = (profiles ?? []).map((p) => p.id as string);
-  if (!ids.length) return { me, joined, weekStart: lastWeek, members: [] };
+  return (data ?? []) as Profile[];
+}
 
-  const [fasts, workouts, events] = await Promise.all([
-    db.from("fast_days").select("user_id, date, status, broken_at, extra_hours, event_id, started_at, ended_at").in("user_id", ids).gte("date", from),
-    db.from("workouts").select("user_id, date, type, minutes, status").in("user_id", ids).gte("date", lastWeek),
-    db.from("events").select("user_id, date, compensated_at").in("user_id", ids).gte("date", lastWeek),
-  ]);
-  for (const r of [fasts, workouts, events]) if (r.error) throw new Error(`No pude leer el club: ${r.error.message}`);
+/**
+ * Ringo Club. Se calcula con service role (cada una solo puede leer lo suyo por RLS),
+ * SOLO de quienes se sumaron, y devuelve únicamente nombre, foto de perfil, niveles, puntos y %.
+ */
+export async function getClubData(): Promise<ClubData> {
+  const me = await getProfile();
+  const now = new Date();
+  const today = localDate(now, me.timezone);
+  const closedWeek = shiftDate(weekStart(today), -7);
+  const base = { me, closedWeek, isMonday: isoDay(today) === 1, daysLeft: 8 - isoDay(today), myMissing: "" };
+  const joined = Boolean(me.club_visible && me.club_name);
+  if (!joined) return { ...base, joined, members: [] };
 
-  const members: ClubMember[] = (profiles as Profile[]).map((p) => {
-    const mine = <T extends { user_id: string }>(rows: T[] | null) => (rows ?? []).filter((r) => r.user_id === p.id);
-    const records = new Map(mine(fasts.data as (FastDay & { user_id: string })[]).map((r) => [r.date, r]));
-    const since = sinceDate(p, records);
-    const [closed, current] = weekSummaries({
-      now,
-      cfg: p,
-      since,
-      records,
-      workouts: mine(workouts.data),
-      events: mine(events.data),
-      goals: profileGoals(p),
-      weeks: 2,
-    });
-    const graded = closed.weekStart >= firstGradedWeek(since);
-    const score = graded ? weekScore(closed) : null;
-    return {
-      id: p.id,
-      name: p.club_name!,
-      avatar: avatarUrl(p.avatar_path),
-      isMe: p.id === me.id,
-      level: score === null ? null : levelFor(score).key,
-      score,
-      weekPct: weekGoals(current).pct,
-    };
-  });
-
-  members.sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.weekPct - a.weekPct || a.name.localeCompare(b.name));
-  return { me, joined, weekStart: lastWeek, members };
+  const db = createAdminClient();
+  const profiles = await clubMembers(db);
+  let myMissing = "";
+  const members: ClubMember[] = await Promise.all(
+    profiles.map(async (p) => {
+      const s = await clubStanding(db, p, now);
+      if (p.id === me.id) myMissing = s.missing;
+      return {
+        id: p.id,
+        name: p.club_name!,
+        avatar: avatarUrl(p.avatar_path),
+        isMe: p.id === me.id,
+        closed: s.closed,
+        prev: s.prev,
+        live: s.live,
+        liveYesterday: s.liveYesterday,
+      };
+    }),
+  );
+  return { ...base, joined, members, myMissing };
 }

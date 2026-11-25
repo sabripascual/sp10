@@ -72,7 +72,9 @@ export async function testCoach(kind: CoachKind): Promise<AdminResult> {
   const { data: subs } = await db.from("push_subscriptions").select("endpoint, p256dh, auth").eq("user_id", me.id);
   if (!subs?.length) return { error: "Activá los avisos en este celu primero (Ajustes → Avisos)." };
   const sample: Record<CoachKind, Record<string, string>> = {
-    level_result: { emoji: "⚡", linea: "Perrita crack, {apodo}: 78 pts. Ni el Dibu ataja tanta constancia.", cambio: " Subiste de motivada a crack, esaaa 📈", puesto: " Quedaste 2ª de 5 en el Club 🏆" },
+    level_result: { emoji: "⚡", nivel: "perrita crack", cambio: "Subiste de escalón, esaaa 📈 ", puesto: " y quedaste 2ª de 5 en el Club" },
+    club_podium: { linea: "🏆 Cerró el ranking, {apodo}: ganó Juli 👑 y vos quedaste 2ª. Entrá a ver el podio y los premios 🌶️🚀🛋️" },
+    club_closing: { linea: "🚨 Últimas 3 horas del Ringo Club: vas 2ª y estás a 6 pts de Juli. ¿Un entrenito de último momento, {apodo}? 😏" },
     forecast: { linea: "Pronóstico Ringo: si seguís así, {apodo}, cerrás la semana perrita crack ⚡. Que no se te suba a la cabeza 😏" },
     streak_milestone: { linea: "🔥 ¡7 días de ayuno seguidos, {apodo}! Esto ya es un estilo de vida" },
     idle: {},
