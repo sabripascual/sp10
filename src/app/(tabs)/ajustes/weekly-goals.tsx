@@ -54,7 +54,7 @@ export function WeeklyGoalsPicker({ initial, fasting = true }: { initial: Goals;
           ? `${active.length} objetivo${active.length === 1 ? "" : "s"}: cada uno pesa lo mismo en tu % semanal y en tu nivel.`
           : "Elegí al menos uno."}
       </p>
-      <input type="hidden" name="weekly_goals" value={JSON.stringify(fasting ? goals : { ...goals, ayuno: 0 })} />
+      <input type="hidden" name="weekly_goals" value={JSON.stringify(Object.fromEntries(keys.filter((k) => (goals[k] ?? 0) > 0).map((k) => [k, goals[k]])))} />
     </div>
   );
 }
