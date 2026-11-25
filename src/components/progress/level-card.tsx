@@ -1,4 +1,10 @@
-import { LEVELS, levelFor, scoreParts, weekScore, type LevelKey, type ScorePart } from "@/lib/level";
+import {
+  LEVELS,
+  levelFor,
+  weekScore,
+  type LevelKey,
+  type ScorePart,
+} from "@/lib/level";
 import { weekGoals, type WeekSummary } from "@/lib/progress";
 import { fmtCount, missingText } from "@/lib/goals";
 import Link from "next/link";
@@ -6,9 +12,17 @@ import { Avatar } from "@/components/shell/avatar";
 import { cn } from "@/lib/utils";
 
 // Del gris al amarillo a medida que sube el nivel
-const BADGE = ["bg-muted/40", "bg-muted/70", "bg-fg/25", "bg-accent/45", "bg-accent/75", "bg-accent"];
+const BADGE = [
+  "bg-muted/40",
+  "bg-muted/70",
+  "bg-fg/25",
+  "bg-accent/45",
+  "bg-accent/75",
+  "bg-accent",
+];
 
-const dm = (date: string) => `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
+const dm = (date: string) =>
+  `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
 
 /** "¿Cómo venís?": nivel de la semana pasada, escalera de niveles y cuántas veces fuiste cada perrita. */
 export function LevelCard({
@@ -18,7 +32,12 @@ export function LevelCard({
   avatar = null,
 }: {
   avatar?: string | null;
-  last: { weekStart: string; score: number; level: LevelKey; parts: ScorePart[] } | null;
+  last: {
+    weekStart: string;
+    score: number;
+    level: LevelKey;
+    parts: ScorePart[];
+  } | null;
   counts: Record<LevelKey, number>;
   current: WeekSummary;
 }) {
@@ -27,11 +46,19 @@ export function LevelCard({
 
   return (
     <div className="space-y-4 rounded-2xl bg-surface p-5">
-      <p className="text-sm font-bold uppercase tracking-wide text-muted">¿Cómo venís?</p>
+      <p className="text-sm font-bold uppercase tracking-wide text-muted">
+        ¿Cómo venís?
+      </p>
 
       {lvl ? (
         <div className="flex items-center gap-4">
-          <div className={cn("relative grid size-24 shrink-0 place-items-center rounded-full", BADGE[idx], avatar && "p-1")}>
+          <div
+            className={cn(
+              "relative grid size-24 shrink-0 place-items-center rounded-full",
+              BADGE[idx],
+              avatar && "p-1",
+            )}
+          >
             <Avatar url={avatar} className="size-full" emojiClass="text-5xl" />
             <span className="absolute -bottom-1 -right-1 grid size-10 place-items-center rounded-full bg-bg text-2xl ring-4 ring-surface">
               {lvl.emoji}
@@ -39,7 +66,8 @@ export function LevelCard({
           </div>
           <div className="min-w-0">
             <p className="text-xs font-bold text-muted">
-              Nivel {idx + 1} de 6 · {last!.score} pts · semana del {dm(last!.weekStart)}
+              Nivel {idx + 1} de 6 · {last!.score} pts · semana del{" "}
+              {dm(last!.weekStart)}
             </p>
             <p className="text-2xl font-black leading-tight">{lvl.name}</p>
             <p className="mt-1 text-sm text-muted">{lvl.blurb}</p>
@@ -47,66 +75,66 @@ export function LevelCard({
         </div>
       ) : (
         <div className="flex items-center gap-4">
-          <Avatar url={avatar} className="size-24 shrink-0 bg-bg" emojiClass="text-5xl" />
+          <Avatar
+            url={avatar}
+            className="size-24 shrink-0 bg-bg"
+            emojiClass="text-5xl"
+          />
           <div>
-            <p className="text-xl font-black leading-tight">Tu primer nivel sale el lunes</p>
-            <p className="mt-1 text-sm text-muted">Califico semanas completas (lunes a domingo) según tu semana ideal.</p>
+            <p className="text-xl font-black leading-tight">
+              Tu primer nivel sale el lunes
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              Califico semanas completas (lunes a domingo) según tu semana
+              ideal.
+            </p>
           </div>
         </div>
       )}
 
-      {last && <Parts parts={last.parts} />}
+      {/* Escalera de niveles con cuántas semanas fuiste cada una */}
+      <div className="space-y-2">
+        <p className="text-xs font-bold text-muted">
+          Tus semanas en cada nivel
+        </p>
+        <ol className="grid grid-cols-6 gap-1.5">
+          {LEVELS.map((l, i) => (
+            <li key={l.key} className="flex flex-col items-center gap-1">
+              <span
+                title={l.name}
+                className={cn(
+                  "grid size-11 place-items-center rounded-full text-xl",
+                  i === idx
+                    ? "bg-accent ring-4 ring-accent/30"
+                    : i < idx
+                      ? "bg-fg/15"
+                      : "bg-bg opacity-60",
+                )}
+              >
+                {l.emoji}
+              </span>
+              <span
+                className={cn(
+                  "text-[11px] font-bold tabular-nums leading-none",
+                  counts[l.key] ? "text-fg" : "text-muted",
+                )}
+              >
+                {counts[l.key]
+                  ? `${counts[l.key]} ${counts[l.key] === 1 ? "sem" : "sems"}`
+                  : "—"}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
 
-      {/* Escalera de niveles con cuántas veces fuiste cada una */}
-      <ol className="grid grid-cols-6 gap-1.5">
-        {LEVELS.map((l, i) => (
-          <li key={l.key} className="flex flex-col items-center gap-1">
-            <span
-              title={l.name}
-              className={cn(
-                "grid size-11 place-items-center rounded-full text-xl",
-                i === idx ? "bg-accent ring-4 ring-accent/30" : i < idx ? "bg-fg/15" : "bg-bg opacity-60",
-              )}
-            >
-              {l.emoji}
-            </span>
-            <span className={cn("text-[11px] font-bold tabular-nums", counts[l.key] ? "text-fg" : "text-muted")}>
-              ×{counts[l.key]}
-            </span>
-          </li>
-        ))}
-      </ol>
-
-      <CurrentWeek current={current} showParts={!last} />
+      <CurrentWeek current={current} />
     </div>
   );
 }
 
-/** Desglose compacto: puntos de cada parte, barrita y por qué. */
-function Parts({ parts }: { parts: ScorePart[] }) {
-  return (
-    <ul className="grid grid-cols-4 gap-1">
-      {parts.map((p) => (
-        <li key={p.key} className="space-y-1 rounded-lg bg-bg px-1.5 py-1.5">
-          <p className="whitespace-nowrap text-[10px] font-bold tracking-tight text-muted">
-            {p.emoji} {p.label}
-          </p>
-          <p className="text-sm font-black tabular-nums leading-none">
-            {p.points}
-            <span className="text-[11px] font-bold text-muted">/{p.max}</span>
-          </p>
-          <span className="block h-1 overflow-hidden rounded-full bg-surface">
-            <span className="block h-full rounded-full bg-accent" style={{ width: `${(p.points / p.max) * 100}%` }} />
-          </span>
-          <p className="text-[10px] leading-tight text-muted">{p.why}</p>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** Tu semana ideal: a qué % vas, cada objetivo y lo que falta. */
-function CurrentWeek({ current, showParts }: { current: WeekSummary; showParts: boolean }) {
+function CurrentWeek({ current }: { current: WeekSummary }) {
   const score = weekScore(current);
   const lvl = levelFor(score);
   const { items, pct } = weekGoals(current);
@@ -118,7 +146,10 @@ function CurrentWeek({ current, showParts }: { current: WeekSummary; showParts: 
         <p className="text-3xl font-black tabular-nums leading-none">{pct}%</p>
       </div>
       <span className="block h-2 overflow-hidden rounded-full bg-surface">
-        <span className="block h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+        <span
+          className="block h-full rounded-full bg-accent transition-all"
+          style={{ width: `${pct}%` }}
+        />
       </span>
       <ul className="flex flex-wrap gap-1.5">
         {items.map((g) => (
@@ -126,7 +157,9 @@ function CurrentWeek({ current, showParts }: { current: WeekSummary; showParts: 
             key={g.key}
             className={cn(
               "rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
-              g.done >= g.target ? "bg-accent text-accent-fg" : "bg-surface text-fg",
+              g.done >= g.target
+                ? "bg-accent text-accent-fg"
+                : "bg-surface text-fg",
             )}
           >
             {g.emoji} {fmtCount(g.done)}/{g.target}
@@ -137,12 +170,15 @@ function CurrentWeek({ current, showParts }: { current: WeekSummary; showParts: 
         {pct >= 100 ? (
           <span className="font-bold text-fg">¡Semana ideal cumplida! 👑</span>
         ) : (
-          <>Te falta: <span className="font-bold text-fg">{falta}</span>.</>
+          <>
+            Te falta: <span className="font-bold text-fg">{falta}</span>.
+          </>
         )}{" "}
         Llevás {score} pts {lvl.emoji}; el lunes sale tu nivel.{" "}
-        <Link href="/ajustes" className="underline">Cambiar objetivos</Link>
+        <Link href="/ajustes" className="underline">
+          Cambiar objetivos
+        </Link>
       </p>
-      {showParts && <Parts parts={scoreParts(current)} />}
     </div>
   );
 }

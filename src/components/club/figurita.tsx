@@ -266,21 +266,56 @@ async function drawFigurita(d: FiguritaData, withPhoto: boolean): Promise<Blob> 
   return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error("sin imagen"))), "image/png"));
 }
 
-/** Botón para mandar la figurita: compartir nativo (WhatsApp) o descargar. */
+/** Versión historia de Instagram (1080×1920): la figurita al centro, con aire arriba y abajo para los botones de IG. */
+async function drawStory(d: FiguritaData, withPhoto: boolean): Promise<Blob> {
+  const card = await createImageBitmap(await drawFigurita(d, withPhoto));
+  const W = 1080;
+  const H = 1920;
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext("2d")!;
+  const font = getComputedStyle(document.body).fontFamily || "sans-serif";
+  const f = (weight: number, size: number) => `${weight} ${size}px ${font}`;
+  const lvl = LEVELS.find((l) => l.key === d.level)!;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = "center";
+  ctx.fillStyle = YELLOW;
+  ctx.font = f(900, 30);
+  ctx.fillText("RINGO CLUB · SEMANA DEL " + d.week, W / 2, 300);
+  ctx.fillStyle = "#fff";
+  ctx.font = f(900, 72);
+  ctx.fillText("Mi figurita de la semana", W / 2, 385);
+  // la figurita (ya trae su fondo negro con confeti)
+  const cw = 900;
+  const ch = (card.height / card.width) * cw;
+  ctx.drawImage(card, (W - cw) / 2, 415, cw, ch);
+  ctx.fillStyle = "#fff";
+  ctx.font = f(900, 46);
+  ctx.fillText(`¿Y vos qué perrita sos? ${lvl.emoji}`, W / 2, 415 + ch + 60);
+  ctx.fillStyle = "#a3a3a3";
+  ctx.font = f(800, 30);
+  ctx.fillText("Pedime tu usuario y sumate al Ringo Club 🐶", W / 2, 415 + ch + 112);
+  return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error("sin imagen"))), "image/png"));
+}
+
+/** Botones para mandar la figurita: WhatsApp (formato posteo) e Instagram (formato historia). */
 export function ShareFigurita({ d, className }: { d: FiguritaData; className?: string }) {
-  const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const share = async () => {
-    setBusy(true);
+  const [busy, setBusyKind] = useState<"wa" | "ig" | null>(null);
+  const share = async (kind: "wa" | "ig") => {
+    setBusyKind(kind);
     setMsg(null);
     try {
+      const draw = kind === "ig" ? drawStory : drawFigurita;
       let blob: Blob;
       try {
-        blob = await drawFigurita(d, true);
+        blob = await draw(d, true);
       } catch {
-        blob = await drawFigurita(d, false); // la foto no se pudo usar: va con el perrito
+        blob = await draw(d, false); // la foto no se pudo usar: va con el perrito
       }
-      const file = new File([blob], `ringo-figurita-${d.week.replace("/", "-")}.png`, { type: "image/png" });
+      const file = new File([blob], `ringo-figurita${kind === "ig" ? "-historia" : ""}-${d.week.replace("/", "-")}.png`, { type: "image/png" });
       const text = `Salí ${LEVELS.find((l) => l.key === d.level)!.name.toLowerCase()} ${LEVELS.find((l) => l.key === d.level)!.emoji} en el Ringo Club 🐶`;
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], text });
@@ -289,24 +324,37 @@ export function ShareFigurita({ d, className }: { d: FiguritaData; className?: s
         a.href = URL.createObjectURL(blob);
         a.download = file.name;
         a.click();
-        setMsg("Te la bajé: mandala desde tu galería 📲");
+        setMsg(kind === "ig" ? "Te la bajé: subila a tu historia desde la galería 📲" : "Te la bajé: mandala desde tu galería 📲");
       }
     } catch (e) {
       if (!(e instanceof DOMException && e.name === "AbortError")) setMsg("No pude armar la imagen. Probá de nuevo.");
     } finally {
-      setBusy(false);
+      setBusyKind(null);
     }
   };
   return (
     <div className={cn("space-y-2", className)}>
       <button
         type="button"
-        onClick={share}
-        disabled={busy}
+        onClick={() => share("wa")}
+        disabled={busy !== null}
         className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-accent text-lg font-black text-accent-fg active:scale-[0.98] disabled:opacity-60"
       >
         <Share2 className="size-5" strokeWidth={2.75} />
-        {busy ? "Armando la figurita…" : "Mandala por WhatsApp"}
+        {busy === "wa" ? "Armando la figurita…" : "Mandala por WhatsApp"}
+      </button>
+      <button
+        type="button"
+        onClick={() => share("ig")}
+        disabled={busy !== null}
+        className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-surface font-extrabold active:scale-[0.98] disabled:opacity-60"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="5" />
+          <circle cx="12" cy="12" r="4" />
+          <circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" />
+        </svg>
+        {busy === "ig" ? "Armando la historia…" : "Subila a tu historia de Instagram"}
       </button>
       {msg && <p className="text-center text-sm font-bold">{msg}</p>}
     </div>
