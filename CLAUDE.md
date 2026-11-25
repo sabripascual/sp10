@@ -322,18 +322,41 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 
 ## Pendiente
 
-### Backlog (próxima sesión, a definir y desarrollar)
+### Backlog aprobado (cuando la dueña diga "ejecutar backlog", desarrollar en este orden)
 
-1. **Registro con aprobación del admin.** Que cualquiera pueda crearse una cuenta en Ringo (email + contraseña) desde el login ("Crear cuenta"), pero la cuenta queda **pendiente** hasta que la dueña la aprueba desde el Panel Ringo.
-   - Propuesta: nuevo rol `pending` (como `disabled`): `getProfile` lo manda a una pantalla "Tu cuenta está esperando aprobación 🐶"; en el Panel, sección "Solicitudes" con Aprobar / Rechazar; aviso push a la admin cuando llega una solicitud. Activar "sign ups" en Supabase Auth con confirmación de email apagada (la aprobación la reemplaza, y así no hace falta mandar mails para registrarse). Cuidado: el trigger `protect_role` ya impide que una usuaria se cambie el rol sola.
-2. **Recuperar contraseña.** Sugerencia en dos pasos:
-   - **Paso 1 (sin mails, lo más simple):** botón "Olvidé mi contraseña" en el login → la usuaria pone su email → le llega un **aviso push a la admin** ("Juli pidió nueva contraseña") → la admin la cambia desde el Panel (ya existe "Nueva contraseña") y se la pasa por WhatsApp. Cero infraestructura nueva.
-   - **Paso 2 (automático, por mail):** usar el "olvidé mi contraseña" de Supabase Auth (`resetPasswordForEmail` + pantalla para poner la nueva). Requiere SMTP propio porque el mail que trae Supabase de fábrica solo envía a los miembros del proyecto y con límite muy bajo: **Resend** (gratis hasta ~3.000 mails/mes) configurado en Supabase → Authentication → SMTP, con un dominio verificado (ej. de BRAVE). SMS/WhatsApp automático: descartado por ahora (Twilio y similares cobran por mensaje).
-   - A decidir: ¿arrancamos con el paso 1 y sumamos el 2 cuando haya dominio?
-3. **Clubes propios (varios Ringo Club).** Que cualquiera pueda **crear un club** e **invitar amigas** (link o código de invitación); cada club tiene **su propio ranking** solo con sus miembros (escalones en vivo, podio, premios, figurita y avisos del Club, por club).
-   - Propuesta de datos: tablas `clubs` (nombre, dueña, código de invitación) y `club_members` (club, usuaria, rol owner/member, nombre en el club); una usuaria puede estar en más de un club (selector de club en la pestaña). RLS: solo ves los clubes donde sos miembro; el ranking se sigue calculando con service role y solo con nombre/foto/nivel/puntos/%.
-   - Migración: crear el club de la dueña ("Ringo Club", owner = la dueña) y pasar a todas las que hoy tienen `club_visible` a ese club. Los avisos `club_podium` / `club_closing` y el puesto del lunes pasan a ser por club.
-   - A evaluar: límite de miembros, si la dueña del club puede sacar gente, y qué pasa con la figurita (¿puesto en cada club?).
+Todo aprobado por la dueña. Cada ítem termina con lint + build + tests en verde, commit y push a `main` y a la rama, y el SQL nuevo en `supabase/migrations/` (avisarle qué correr). Seguir las reglas de siempre: tono rioplatense sin culpa, avisos que llevan a la acción, el panel nunca muestra pesos/medidas/fotos.
+
+#### 1. Recuperar contraseña por WhatsApp + cambiar contraseña
+- **Login → "¿Olvidaste tu contraseña?"**: la persona pone su **email** y un **WhatsApp de recuperación** (precargado si ya lo dio). Respuesta siempre igual, exista o no la cuenta: "Listo, en breve te mandamos una contraseña nueva por WhatsApp 📲".
+- **Datos**: tabla `password_requests` (email, whatsapp, created_at, resolved_at, status) solo service role (RLS sin políticas). Anti-abuso: 1 pedido por email cada 10 min; si llegan muchos juntos, no spamear avisos.
+- **Aviso push a las admins**: "🔑 {email} pidió nueva contraseña" → lleva al Panel.
+- **Panel Ringo → "Pedidos de contraseña"**: email, WhatsApp, cuándo, si la cuenta existe. **"Generar contraseña"** (fácil de dictar, tipo `perrita-4821`, se activa ya) y **"Mandar por WhatsApp"** (abre `wa.me/<número>` con "¡Hola! Tu nueva contraseña de Ringo es … Entrá y cambiala 🐶"). El pedido queda resuelto.
+- **Cambiar contraseña**:
+  - Después de un reseteo (marca en el perfil, ej. `must_change_password`), al entrar se ofrece **"Entraste con una contraseña temporal. Elegí la tuya"** con "Cambiar" / "Ahora no" (vuelve a aparecer hasta que la cambie).
+  - En **Ajustes**: tarjeta "Cambiar contraseña" (nueva + repetir) y el **WhatsApp de recuperación** editable (`profiles.whatsapp`).
+
+#### 2. Crear cuenta con aprobación de la admin
+- **Login → "¿No tenés cuenta? Creala"**: nombre, email, contraseña y WhatsApp. Queda **pendiente**: pantalla "Tu cuenta está esperando aprobación 🐶 Te avisamos por WhatsApp" (también si intenta entrar antes).
+- **Rol nuevo `pending`** (como `disabled`, `getProfile` lo manda a la pantalla de espera; `protect_role` impide cambiárselo sola). Supabase Auth: habilitar sign ups con confirmación de email apagada (la aprobación la reemplaza).
+- **Aviso push a las admins**: "🐶 Nueva solicitud: {nombre} ({email})" → lleva al Panel.
+- **Panel → "Solicitudes"**: nombre, email, WhatsApp, fecha; **Aprobar** (rol `user` + botón "Avisarle por WhatsApp" con "¡Hola {nombre}! Ya podés entrar a Ringo: {link}") y **Rechazar** (borra la cuenta).
+
+#### 3. Panel Ringo: "Ringo en números" (solo admin)
+- **Usuarias**: totales, activas 7 y 30 días, nuevas por semana, pendientes de aprobar; **frecuencia de uso** (días por semana con algún registro: promedio y distribución 1-2 / 3-4 / 5-7).
+- **Clubes**: cuántos hay; por club: dueña, miembros, nivel promedio de la última semana y ganadora del podio.
+- **Ranking general**: **todas las usuarias de la app** (estén o no en un club), por puntaje de la última semana cerrada, con nivel de perrita y racha de semanas; arriba, cuántas en cada nivel (💤 → 👑).
+- **Tendencia**: nivel promedio de las últimas 8 semanas.
+- Solo la admin lo ve. Nunca pesos, medidas ni fotos.
+
+#### 4. Clubes propios (varios Ringo Club)
+- **Crear club**: en la pestaña Club, "+ Crear un club" (nombre). Quien lo crea es la **dueña**. Se genera un **link de invitación** para compartir por WhatsApp.
+- **Sumarse**: el link abre "{dueña} te invita a {club}" → nombre en ese club → **Sumarme** (si no tiene cuenta, primero se registra y queda pendiente de aprobación). **Tope: 30 miembros por club.** Se puede estar en **varios clubes**; selector de club arriba en la pestaña.
+- **Dentro de cada club**: lo mismo de hoy (escalones en vivo, podio del lunes, premios, "Así quedó cada una") solo con sus miembros.
+- **La dueña puede**: ver y renovar el link (el viejo deja de andar), **sacar gente**, cambiar el nombre. Cualquiera puede salir de un club.
+- **Datos**: `clubs` (nombre, owner, código de invitación) y `club_members` (club, usuaria, rol owner/member, nombre en el club). RLS: solo ves los clubes donde sos miembro; el ranking se calcula con service role y solo con nombre/foto/nivel/puntos/%.
+- **Migración**: crear **"Ringo Club"** con la dueña como owner y pasar a todas las que hoy tienen `club_visible` (con su `club_name`). Nadie pierde nada.
+- **Figurita (decidido)**: **una por semana y es tuya** (perrita, puntos y % salen de tu rutina, iguales en todos los clubes). Lo único que cambia es el **puesto**: toma el del club que estás mirando, y la banda de arriba dice el nombre del club ("LAS PIBAS DEL FÚTBOL · #07"). En varios clubes, se comparte la de cada uno.
+- **Avisos del Club** (`club_podium`, `club_closing`, puesto en `level_result`): por club, con el nombre del club; si está en varios, uno por club.
 
 ### Otros pendientes
 
