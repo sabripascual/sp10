@@ -77,7 +77,8 @@ export function summaryText(s: WeekSummary) {
   const parts = [`${g.pct}% de tu semana`, goalsText(g.items)];
   if (s.compensated) parts.push(`${s.compensated} ${s.compensated === 1 ? "derrape compensado" : "derrapes compensados"}`);
   if (s.missed) parts.push(`${s.missed} sin compensar`);
-  if (s.runMinutes) parts.push(`${s.runMinutes} min corridos`);
+  // Solo lo que es parte de tu rutina (semana ideal)
+  if (s.runMinutes && (s.goals.correr ?? 0) > 0) parts.push(`${s.runMinutes} min corridos`);
   return parts.join(", ");
 }
 

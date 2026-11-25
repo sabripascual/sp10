@@ -33,7 +33,8 @@ test("resumen de la semana", () => {
   });
   // lun 16 a sáb 21 terminaron (6), el del dom 22 está en curso; el 18 cortado → 5/6
   // ayunos 5/5 y fierritos 3/3 completos, fútbol 0/1 (el del lunes fue "no fui") → 67%
-  assert.equal(summaryText(s[0]), "67% de tu semana, 5/5 ayunos, 3/3 fierritos, 0/1 fútbol, 1 derrape compensado, 30 min corridos");
+  // los minutos de carrera no salen: correr no es parte de esta rutina
+  assert.equal(summaryText(s[0]), "67% de tu semana, 5/5 ayunos, 3/3 fierritos, 0/1 fútbol, 1 derrape compensado");
 });
 
 test("semanas con fuerza cumplida", () => {

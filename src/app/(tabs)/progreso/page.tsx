@@ -3,7 +3,8 @@ import { PageHeader } from "@/components/shell/page-header";
 import { MeasuresChart, RunChart, WeightChart } from "@/components/progress/charts";
 import { ZonesCard } from "@/components/progress/zones-card";
 import { getProgressData } from "@/lib/progress-data";
-import { summaryText } from "@/lib/progress";
+import { summaryText, weekGoals } from "@/lib/progress";
+import { profileGoals } from "@/lib/goals";
 import { cn } from "@/lib/utils";
 import { fastingOn } from "@/lib/profile";
 
@@ -23,17 +24,28 @@ export default async function ProgresoPage() {
   const { profile, weeks: allWeeks, fast, strength, compensated, checks, zones } = await getProgressData();
   const weeks = allWeeks.slice(-12);
   const current = weeks.at(-1)!;
-  const past = weeks.slice(0, -1).reverse().filter((w) => w.fastDays > 0 || w.strength > 0 || w.runMinutes > 0);
+  // Solo se muestra lo que es parte de TU rutina (Ajustes → Tu semana ideal)
+  const goals = profileGoals(profile);
+  const has = (k: keyof typeof goals) => (goals[k] ?? 0) > 0;
+  const showFast = fastingOn(profile) && has("ayuno");
+  const showStrength = has("fuerza");
+  const past = weeks
+    .slice(0, -1)
+    .reverse()
+    .filter((w) => weekGoals(w).items.some((i) => i.done > 0));
+  const stats = 1 + Number(showFast) + Number(showStrength);
 
   return (
     <>
       <PageHeader title="Progreso" subtitle="Constancia que se ve." />
       <div className="space-y-4">
-        <div className={cn("grid gap-2", fastingOn(profile) ? "grid-cols-3" : "grid-cols-2")}>
-          {fastingOn(profile) && (
+        <div className={cn("grid gap-2", stats === 3 ? "grid-cols-3" : stats === 2 ? "grid-cols-2" : "grid-cols-1")}>
+          {showFast && (
             <Stat value={fast.current} label="días de ayuno" sub={`Récord: ${fast.max}`} hot={fast.current > 0 && fast.current === fast.max} />
           )}
-          <Stat value={strength.current} label={`semanas de fierritos ${profile.strength_goal}/${profile.strength_goal}`} sub={`Récord: ${strength.max}`} />
+          {showStrength && (
+            <Stat value={strength.current} label={`semanas con ${goals.fuerza}/${goals.fuerza} fierritos`} sub={`Récord: ${strength.max}`} />
+          )}
           <Stat value={compensated.current} label="compensados seguidos" sub={`Total: ${compensated.total}`} />
         </div>
 
@@ -42,12 +54,14 @@ export default async function ProgresoPage() {
           <CardDescription className="text-base text-fg">{summaryText(current)}</CardDescription>
         </Card>
 
-        <ZonesCard zones={zones} checks={checks} />
+        {showStrength && profile.strength_mode === "detailed" && <ZonesCard zones={zones} checks={checks} />}
 
-        <Card className="space-y-3">
-          <CardTitle>Minutos de carrera por semana</CardTitle>
-          <RunChart weeks={weeks} />
-        </Card>
+        {has("correr") && (
+          <Card className="space-y-3">
+            <CardTitle>Minutos de carrera por semana</CardTitle>
+            <RunChart weeks={weeks} />
+          </Card>
+        )}
 
         <Card className="space-y-3">
           <CardTitle>Medidas</CardTitle>

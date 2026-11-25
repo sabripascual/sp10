@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
+import { UpdateBanner } from "@/components/pwa/update-banner";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -47,6 +48,7 @@ export default function RootLayout({
       <body className={`${nunito.variable} antialiased`}>
         {children}
         <ServiceWorkerRegister />
+        <UpdateBanner />
       </body>
     </html>
   );
