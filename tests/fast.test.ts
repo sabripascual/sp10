@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { closeOutcome, extraHoursFor, fastStreak, getFastState, type FastDay } from "../src/lib/fast";
+import { closeOutcome, extraHoursFor, fastStreak, getFastState, misfiledMoves, startDateFor, type FastDay } from "../src/lib/fast";
 
 const cfg = { fast_start: "19:00:00", fast_end: "11:00:00", timezone: "America/Argentina/Tucuman" };
 const at = (iso: string) => new Date(`${iso}-03:00`);
@@ -120,4 +120,52 @@ test("horas reales: 20:30 → 12:15 del día siguiente; inicio de madrugada", as
   const b = resolveFastTimes("2026-11-22", "01:00", "17:00", cfg.timezone);
   assert.equal(b.start.toISOString(), at("2026-11-23T01:00:00").toISOString());
   assert.equal(b.end.toISOString(), at("2026-11-23T17:00:00").toISOString());
+});
+
+// Bug: cortar el ayuno de esta noche y volver a "Empezar" lo guardaba como el de mañana
+// (después de terminarlo, la ventana abierta mostraba ~32 h hasta el próximo).
+const day = (date: string, extra: Partial<FastDay> = {}): FastDay => ({ date, status: "ok", broken_at: null, extra_hours: 0, event_id: null, ...extra });
+
+test("Empezar después de cortar el de esta noche: sigue siendo el de esta noche", () => {
+  const cut = day("2026-11-24", { status: "broken", broken_at: "2026-11-24T22:30:00Z", ended_at: "2026-11-24T22:30:00Z" });
+  const records = new Map([["2026-11-24", cut]]);
+  const now = new Date("2026-11-24T23:00:00Z"); // 20:00 en Argentina
+  assert.equal(startDateFor(now, cfg, records, "2026-11-25"), "2026-11-24");
+});
+
+test("Empezar antes de la hora: es el de esta noche; a la mañana después de cumplir, el de la noche", () => {
+  assert.equal(startDateFor(new Date("2026-11-24T21:00:00Z"), cfg, new Map(), "x"), "2026-11-24"); // 18:00
+  const done = day("2026-11-24", { started_at: "2026-11-24T22:00:00Z", ended_at: "2026-11-25T14:00:00Z" });
+  // 12:30 del 25, el del 24 cumplido: el próximo es el del 25
+  assert.equal(startDateFor(new Date("2026-11-25T15:30:00Z"), cfg, new Map([["2026-11-24", done]]), "x"), "2026-11-25");
+});
+
+test("Un cumplido nunca se pisa", () => {
+  const done = day("2026-11-24", { started_at: "2026-11-24T22:00:00Z", ended_at: "2026-11-25T14:00:00Z" });
+  // 11:30 del 25: el más cercano por horario sería el del 25 (19:00), que todavía no arrancó
+  assert.equal(startDateFor(new Date("2026-11-25T14:30:00Z"), cfg, new Map([["2026-11-24", done]]), "x"), "2026-11-25");
+});
+
+test("Arreglo: el ayuno guardado con la fecha de la noche siguiente se pasa a su noche", () => {
+  const records = new Map([
+    ["2026-11-24", day("2026-11-24", { status: "broken", broken_at: "2026-11-24T22:30:00Z" })],
+    ["2026-11-25", day("2026-11-25", { started_at: "2026-11-24T23:00:00Z", ended_at: "2026-11-25T13:00:00Z" })],
+  ]);
+  assert.deepEqual(misfiledMoves(records, cfg.timezone, "2026-11-01"), [["2026-11-25", "2026-11-24"]]);
+  // empezado temprano (antes del horario) el mismo día: está bien
+  const ok = new Map([["2026-11-25", day("2026-11-25", { started_at: "2026-11-25T20:00:00Z" })]]);
+  assert.deepEqual(misfiledMoves(ok, cfg.timezone, "2026-11-01"), []);
+  // la noche anterior tiene un ayuno cumplido: no se toca
+  const busy = new Map([
+    ["2026-11-24", day("2026-11-24", { started_at: "2026-11-24T22:00:00Z", ended_at: "2026-11-25T14:00:00Z" })],
+    ["2026-11-25", day("2026-11-25", { started_at: "2026-11-24T23:00:00Z" })],
+  ]);
+  assert.deepEqual(misfiledMoves(busy, cfg.timezone, "2026-11-01"), []);
+});
+
+test("Después de arreglarlo, la ventana abierta cierra esta noche (no en 32 h)", () => {
+  const records = new Map([["2026-11-24", day("2026-11-24", { started_at: "2026-11-24T23:00:00Z", ended_at: "2026-11-25T13:00:00Z" })]]);
+  const s = getFastState(new Date("2026-11-25T13:30:00Z"), cfg, records);
+  assert.equal(s.phase, "eating");
+  if (s.phase === "eating") assert.equal(s.next.start.toISOString(), "2026-11-25T22:00:00.000Z");
 });

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { fromZonedTime } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
-import { closeOutcome, extraHoursFor, fastWindow, getFastState, resolveFastTimes, localDate, shiftDate, MAX_EXTRA_HOURS } from "@/lib/fast";
+import { closeOutcome, extraHoursFor, fastWindow, getFastState, misfiledStart, resolveFastTimes, localDate, shiftDate, startDateFor, MAX_EXTRA_HOURS } from "@/lib/fast";
 import { EDITABLE_DAYS, loadFastRecords } from "@/lib/fast-data";
 
 export type FastActionResult = { error?: string };
@@ -14,7 +14,7 @@ async function current() {
   const now = new Date();
   const today = localDate(now, profile.timezone);
   const records = await loadFastRecords(profile, shiftDate(today, -2));
-  return { profile, now, state: getFastState(now, profile, records) };
+  return { profile, now, records, state: getFastState(now, profile, records) };
 }
 
 function done() {
@@ -24,12 +24,13 @@ function done() {
 
 /** "Empezar": arranca el próximo ayuno ahora mismo. */
 export async function startFast(): Promise<FastActionResult> {
-  const { now, state } = await current();
+  const { profile, now, records, state } = await current();
   if (state.phase === "fasting") return { error: "Ya estás ayunando." };
   if (state.phase === "overtime") return { error: "Primero contame a qué hora terminaste el ayuno anterior." };
+  const date = startDateFor(now, profile, records, state.next.date);
   const supabase = await createClient();
   const { error } = await supabase.from("fast_days").upsert(
-    { date: state.next.date, status: "ok", started_at: now.toISOString(), ended_at: null, broken_at: null, extra_hours: 0 },
+    { date, status: "ok", started_at: now.toISOString(), ended_at: null, broken_at: null, extra_hours: 0 },
     { onConflict: "user_id,date" },
   );
   return error ? { error: error.message } : done();
@@ -151,7 +152,7 @@ export async function setFastDay(date: string, choice: DayChoice): Promise<FastA
  */
 export async function adjustStart(hhmm: string): Promise<FastActionResult> {
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm)) return { error: "Hora inválida." };
-  const { profile, now, state } = await current();
+  const { profile, now, records, state } = await current();
   const today = localDate(now, profile.timezone);
 
   let startAt = fromZonedTime(`${today}T${hhmm}:00`, profile.timezone);
@@ -161,11 +162,13 @@ export async function adjustStart(hhmm: string): Promise<FastActionResult> {
   const target = state.phase === "eating" ? state.next : state.window;
   const previous = state.phase === "eating" ? state.previous : null;
   if (previous && startAt < previous.end) return { error: "Esa hora se pisa con el ayuno anterior." };
+  // En la ventana abierta, el ayuno es el de la noche en que arrancó (no siempre el próximo del horario)
+  const date = state.phase === "eating" ? startDateFor(startAt, profile, records, target.date) : target.date;
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("fast_days")
-    .upsert({ date: target.date, started_at: startAt.toISOString(), ended_at: null, broken_at: null }, { onConflict: "user_id,date" });
+    .upsert({ date, started_at: startAt.toISOString(), ended_at: null, broken_at: null }, { onConflict: "user_id,date" });
   return error ? { error: error.message } : done();
 }
 
@@ -174,8 +177,9 @@ export async function adjustStart(hhmm: string): Promise<FastActionResult> {
  * y, si querés, el ayuno anterior queda como perdido (cortado, 0 h).
  */
 export async function restartFast(markPreviousLost: boolean): Promise<FastActionResult> {
-  const { profile, now, state } = await current();
-  const target = state.phase === "eating" ? state.next : state.window;
+  const { profile, now, records, state } = await current();
+  const date = state.phase === "eating" ? startDateFor(now, profile, records, state.next.date) : state.window.date;
+  const target = fastWindow(date, profile, records.get(date) ?? null);
   const prevDate = state.phase === "eating" ? state.previous.date : shiftDate(target.date, -1);
   const supabase = await createClient();
 
@@ -192,8 +196,8 @@ export async function restartFast(markPreviousLost: boolean): Promise<FastAction
   );
   if (error) return { error: error.message };
 
-  if (markPreviousLost) {
-    const records = await loadFastRecords(profile, prevDate);
+  // si arranca de nuevo el de esta noche (que estaba cortado), no hay otro anterior que marcar
+  if (markPreviousLost && prevDate !== target.date) {
     const prev = fastWindow(prevDate, profile, records.get(prevDate) ?? null);
     const { error: prevError } = await supabase.from("fast_days").upsert(
       { date: prevDate, status: "broken", ended_at: null, broken_at: prev.start.toISOString() },
@@ -214,17 +218,21 @@ export async function setFastTimes(date: string, startHHMM: string, endHHMM: str
   const today = localDate(now, profile.timezone);
   if (date < shiftDate(today, -EDITABLE_DAYS)) return { error: "Ese día es muy viejo para editarlo." };
 
-  const { start, end } = resolveFastTimes(date, startHHMM, endHHMM, profile.timezone);
-  if (end > now) return { error: "El fin no puede ser en el futuro." };
+  const records = await loadFastRecords(profile, shiftDate(date, -1));
+  let record = records.get(date) ?? null;
+  let { start, end } = resolveFastTimes(date, startHHMM, endHHMM, profile.timezone);
+  // Ayuno guardado con la fecha de la noche siguiente: se pasa a la noche en que arrancó.
+  const misfiled = misfiledStart(date, record, profile.timezone);
+  const saveDate = misfiled ? shiftDate(date, -1) : date;
+  if (misfiled) ({ start, end } = resolveFastTimes(saveDate, startHHMM, endHHMM, profile.timezone));
+  if (end > now) return { error: `Las ${endHHMM} de ese día todavía no llegaron. Revisá las horas.` };
   if (end.getTime() - start.getTime() > 36 * 3_600_000) return { error: "Más de 36 h: revisá las horas." };
-
-  const records = await loadFastRecords(profile, date);
-  const record = records.get(date) ?? null;
+  if (misfiled && records.get(saveDate)?.status === "event") record = { ...record!, status: "event" };
   const outcome = closeOutcome(start, end, profile);
   const supabase = await createClient();
   const { error } = await supabase.from("fast_days").upsert(
     {
-      date,
+      date: saveDate,
       status: record?.status === "event" ? "event" : outcome.status,
       extra_hours: outcome.extra_hours,
       started_at: start.toISOString(),
@@ -233,5 +241,10 @@ export async function setFastTimes(date: string, startHHMM: string, endHHMM: str
     },
     { onConflict: "user_id,date" },
   );
-  return error ? { error: error.message } : done();
+  if (error) return { error: error.message };
+  if (misfiled) {
+    const { error: delError } = await supabase.from("fast_days").delete().eq("date", date);
+    if (delError) return { error: delError.message };
+  }
+  return done();
 }

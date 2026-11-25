@@ -199,3 +199,47 @@ export function resolveFastTimes(date: string, startHHMM: string, endHHMM: strin
   while (end <= start) end = new Date(end.getTime() + 24 * 3_600_000);
   return { start, end };
 }
+
+/**
+ * Fecha (la noche) a la que pertenece un ayuno que arranca AHORA con "Empezar".
+ * Es la del horario más cercano: si a las 20:00 cortaste el de esta noche y volvés a
+ * empezar, sigue siendo el de esta noche (no el de mañana). Solo se pisa un ayuno que
+ * todavía no arrancó o que quedó cortado; uno cumplido nunca.
+ */
+export function startDateFor(now: Date, cfg: FastConfig, records: Map<string, FastDay>, fallback: string) {
+  const today = localDate(now, cfg.timezone);
+  const dist = (d: string) => Math.abs(now.getTime() - scheduledStart(d, cfg).getTime());
+  const dates = [shiftDate(today, -1), today, shiftDate(today, 1)].sort((a, b) => dist(a) - dist(b));
+  for (const d of dates) {
+    const w = fastWindow(d, cfg, records.get(d) ?? null);
+    if (w.start > now) return d;
+    const cut = w.record?.status === "broken" || (w.closed && closeOutcome(w.start, w.end, cfg).status === "broken");
+    if (cut && w.end <= now) return d;
+  }
+  return fallback;
+}
+
+/**
+ * Un ayuno guardado con la fecha de la noche siguiente (arrancó la noche anterior a `date`).
+ * Pasaba con "Empezar" después de cortar el de esa noche; se corrige al editarlo.
+ */
+export function misfiledStart(date: string, record: FastDay | null, tz: string) {
+  if (!record?.started_at) return false;
+  const s = new Date(record.started_at);
+  return localDate(s, tz) === shiftDate(date, -1) && Number(formatInTimeZone(s, tz, "HH")) >= 12;
+}
+
+/**
+ * Ayunos guardados con la fecha de la noche siguiente que hay que pasar a la noche en que
+ * arrancaron (solo si esa noche está libre o quedó cortada). Devuelve [de, a].
+ */
+export function misfiledMoves(records: Map<string, FastDay>, tz: string, fromDate: string): [string, string][] {
+  const moves: [string, string][] = [];
+  for (const [date, r] of records) {
+    if (date < fromDate || !misfiledStart(date, r, tz)) continue;
+    const prevDate = shiftDate(date, -1);
+    const prev = records.get(prevDate);
+    if (!prev || prev.status === "broken" || (!prev.started_at && !prev.ended_at && !prev.broken_at)) moves.push([date, prevDate]);
+  }
+  return moves;
+}

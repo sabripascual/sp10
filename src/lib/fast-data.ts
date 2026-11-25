@@ -8,6 +8,7 @@ import {
   getFastState,
   lastNDays,
   localDate,
+  misfiledMoves,
   shiftDate,
   type DayMark,
   type FastDay,
@@ -48,7 +49,21 @@ export const loadFastRecords = cache(async function loadFastRecords(profile: Pro
     .gte("date", fromDate)
     .order("date");
   if (error) throw new Error(`No pude leer los ayunos: ${error.message}`);
-  return new Map((data as FastDay[]).map((r) => [r.date, r]));
+  const records = new Map((data as FastDay[]).map((r) => [r.date, r]));
+
+  // Arreglo de un bug viejo: ayunos guardados con la fecha de la noche siguiente.
+  const moves = misfiledMoves(records, profile.timezone, shiftDate(localDate(new Date(), profile.timezone), -14));
+  for (const [from, to] of moves) {
+    const r = records.get(from)!;
+    const prev = records.get(to);
+    const fixed: FastDay = { ...r, date: to, status: prev?.status === "event" || r.status === "event" ? "event" : r.status, event_id: r.event_id ?? prev?.event_id ?? null };
+    const { error: upErr } = await supabase.from("fast_days").upsert(fixed, { onConflict: "user_id,date" });
+    if (upErr) continue;
+    await supabase.from("fast_days").delete().eq("date", from);
+    records.delete(from);
+    records.set(to, fixed);
+  }
+  return moves.length ? new Map([...records].sort(([a], [b]) => a.localeCompare(b))) : records;
 });
 
 export async function getFastData(): Promise<FastData> {
