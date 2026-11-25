@@ -15,11 +15,13 @@ export async function updateSettings(
 ): Promise<SettingsState> {
   const fastStart = String(formData.get("fast_start") ?? "");
   const fastEnd = String(formData.get("fast_end") ?? "");
+  const fastingEnabled = formData.get("fasting_enabled") === "on";
   let goals: Goals = {};
   try {
     const raw = JSON.parse(String(formData.get("weekly_goals") ?? "{}")) as Record<string, unknown>;
     for (const k of GOAL_KEYS) {
       const n = Number(raw[k]);
+      if (k === "ayuno" && !fastingEnabled) continue;
       if (Number.isInteger(n) && n > 0) goals[k] = Math.min(n, MAX_PER_GOAL);
     }
   } catch {
@@ -51,6 +53,7 @@ export async function updateSettings(
       fast_start: fastStart,
       fast_end: fastEnd,
       weekly_goals: goals,
+      fasting_enabled: fastingEnabled,
       // la meta de fierritos de siempre sigue al objetivo (si sacaste fierritos, queda la anterior)
       ...(goals.fuerza ? { strength_goal: goals.fuerza } : {}),
       hide_weight: hideWeight,

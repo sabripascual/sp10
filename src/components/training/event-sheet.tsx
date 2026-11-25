@@ -9,12 +9,12 @@ import { Chips } from "./chips";
 
 const inputClass = "h-12 w-full rounded-xl bg-bg px-4 text-base text-fg outline-none focus:ring-2 focus:ring-accent";
 
-export function EventSheet({ today, className }: { today: string; className?: string }) {
+export function EventSheet({ today, className, fasting = true }: { today: string; className?: string; fasting?: boolean }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [date, setDate] = useState(today);
   const [kind, setKind] = useState<EventKind>("cena");
-  const [comp, setComp] = useState<Compensation>("fast");
+  const [comp, setComp] = useState<Compensation>(fasting ? "fast" : "workout");
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -76,11 +76,15 @@ export function EventSheet({ today, className }: { today: string; className?: st
                 cols={1}
                 value={comp}
                 onChange={setComp}
-                options={[
-                  { value: "fast", label: "+2 h de ayuno" },
-                  { value: "workout", label: "Entreno extra (fierritos o 30 min de carrera)" },
-                  { value: "both", label: "Las dos" },
-                ]}
+                options={
+                  fasting
+                    ? [
+                        { value: "fast", label: "+2 h de ayuno" },
+                        { value: "workout", label: "Entreno extra (fierritos o 30 min de carrera)" },
+                        { value: "both", label: "Las dos" },
+                      ]
+                    : [{ value: "workout", label: "Entreno extra (fierritos o 30 min de carrera)" }]
+                }
               />
             </div>
             <Button variant="primary" size="lg" className="w-full" disabled={pending || !name.trim()} onClick={save}>

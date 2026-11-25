@@ -5,7 +5,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
 import { KeyGenerator } from "@/components/pwa/key-generator";
 import { PushSettings } from "@/components/pwa/push-settings";
-import { getProfile } from "@/lib/profile";
+import { fastingOn, getProfile } from "@/lib/profile";
 import { SettingsForm } from "./settings-form";
 import { AvatarPicker } from "./avatar-picker";
 import { avatarUrl } from "@/lib/avatar";
@@ -34,7 +34,7 @@ export default async function AjustesPage() {
           <CardTitle>Avisos</CardTitle>
           <CardDescription>Te escribo con apodo y onda. Activá los que quieras.</CardDescription>
         </div>
-        {vapid ? <PushSettings vapidPublicKey={vapid} prefs={profile.notify_prefs ?? {}} /> : <KeyGenerator />}
+        {vapid ? <PushSettings vapidPublicKey={vapid} prefs={profile.notify_prefs ?? {}} fasting={fastingOn(profile)} /> : <KeyGenerator />}
       </Card>
       <SettingsForm profile={profile} />
       <form action={signOut} className="mt-8">

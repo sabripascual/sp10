@@ -5,6 +5,7 @@ import { ZonesCard } from "@/components/progress/zones-card";
 import { getProgressData } from "@/lib/progress-data";
 import { summaryText } from "@/lib/progress";
 import { cn } from "@/lib/utils";
+import { fastingOn } from "@/lib/profile";
 
 function Stat({ value, label, sub, hot }: { value: number; label: string; sub: string; hot?: boolean }) {
   return (
@@ -28,8 +29,10 @@ export default async function ProgresoPage() {
     <>
       <PageHeader title="Progreso" subtitle="Constancia que se ve." />
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-2">
-          <Stat value={fast.current} label="días de ayuno" sub={`Récord: ${fast.max}`} hot={fast.current > 0 && fast.current === fast.max} />
+        <div className={cn("grid gap-2", fastingOn(profile) ? "grid-cols-3" : "grid-cols-2")}>
+          {fastingOn(profile) && (
+            <Stat value={fast.current} label="días de ayuno" sub={`Récord: ${fast.max}`} hot={fast.current > 0 && fast.current === fast.max} />
+          )}
           <Stat value={strength.current} label={`semanas de fierritos ${profile.strength_goal}/${profile.strength_goal}`} sub={`Récord: ${strength.max}`} />
           <Stat value={compensated.current} label="compensados seguidos" sub={`Total: ${compensated.total}`} />
         </div>

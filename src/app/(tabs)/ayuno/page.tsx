@@ -1,5 +1,7 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { fastingOn, getProfile } from "@/lib/profile";
 import { protocolLabel } from "@/lib/fast-protocol";
 import { FastActions } from "@/components/fast/fast-actions";
 import { FastCalendar } from "@/components/fast/fast-calendar";
@@ -8,6 +10,7 @@ import { FastHistory } from "@/components/fast/fast-history";
 import { getFastData, toView } from "@/lib/fast-data";
 
 export default async function AyunoPage() {
+  if (!fastingOn(await getProfile())) redirect("/alimentacion");
   const data = await getFastData();
   const view = toView(data);
   const { profile, streak } = data;

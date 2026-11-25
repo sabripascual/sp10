@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import type { Profile } from "@/lib/profile";
@@ -15,15 +15,28 @@ const inputClass =
 
 export function SettingsForm({ profile }: { profile: Profile }) {
   const [state, action, pending] = useActionState<SettingsState, FormData>(updateSettings, {});
+  const [fasting, setFasting] = useState(profile.fasting_enabled !== false);
 
   return (
     <form action={action} className="space-y-4">
       <Card className="space-y-4">
         <div>
           <CardTitle>Ayuno</CardTitle>
-          <CardDescription>Elegí tu ventana. Mismo horario todos los días.</CardDescription>
+          <CardDescription>{fasting ? "Elegí tu ventana. Mismo horario todos los días." : "Apagado: no te muestro nada del ayuno."}</CardDescription>
         </div>
-        <FastProtocolPicker start={profile.fast_start.slice(0, 5)} end={profile.fast_end.slice(0, 5)} />
+        <label className="flex items-center justify-between gap-4">
+          <span className="font-bold">Hago ayuno intermitente</span>
+          <input
+            name="fasting_enabled"
+            type="checkbox"
+            checked={fasting}
+            onChange={(e) => setFasting(e.target.checked)}
+            className="size-6 accent-[#ffe900]"
+          />
+        </label>
+        <div className={fasting ? "space-y-4" : "hidden"}>
+          <FastProtocolPicker start={profile.fast_start.slice(0, 5)} end={profile.fast_end.slice(0, 5)} />
+        </div>
       </Card>
 
       <Card className="space-y-4">
@@ -33,7 +46,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
             Lo mínimo que querés cumplir de lunes a domingo. Con esto te digo a qué % vas, te aviso jueves y domingo, y sale tu nivel.
           </CardDescription>
         </div>
-        <WeeklyGoalsPicker initial={goalsOf(profile.weekly_goals, profile.strength_goal)} />
+        <WeeklyGoalsPicker initial={goalsOf(profile.weekly_goals, profile.strength_goal)} fasting={fasting} />
       </Card>
 
       <Card className="space-y-4">

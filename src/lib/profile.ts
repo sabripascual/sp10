@@ -20,7 +20,11 @@ export type Profile = {
   club_visible?: boolean;
   club_name?: string | null;
   avatar_path?: string | null;
+  fasting_enabled?: boolean;
 };
+
+/** ¿Usa la parte de ayuno? (sin la columna todavía = sí) */
+export const fastingOn = (p: { fasting_enabled?: boolean | null }) => p.fasting_enabled !== false;
 
 export const DEFAULT_NICKNAMES = ["crack", "reina", "bebita", "diosa", "amorrrr"];
 

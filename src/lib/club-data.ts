@@ -4,7 +4,7 @@ import { getProfile, type Profile } from "@/lib/profile";
 import { localDate, shiftDate, type FastDay } from "@/lib/fast";
 import { sinceDate } from "@/lib/fast-data";
 import { weekStart } from "@/lib/week";
-import { goalsOf } from "@/lib/goals";
+import { profileGoals } from "@/lib/goals";
 import { firstGradedWeek, levelFor, weekScore, type LevelKey } from "@/lib/level";
 import { weekGoals, weekSummaries } from "@/lib/progress";
 import { avatarUrl } from "@/lib/avatar";
@@ -65,7 +65,7 @@ export async function getClubData(): Promise<ClubData> {
       records,
       workouts: mine(workouts.data),
       events: mine(events.data),
-      goals: goalsOf(p.weekly_goals, p.strength_goal),
+      goals: profileGoals(p),
       weeks: 2,
     });
     const graded = closed.weekStart >= firstGradedWeek(since);

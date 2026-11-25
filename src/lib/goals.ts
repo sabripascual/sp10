@@ -20,17 +20,27 @@ export const GOAL_LABEL: Record<GoalKey, { emoji: string; label: string; one: st
   ) as Record<Exclude<GoalKey, "ayuno">, { emoji: string; label: string; one: string; many: string }>),
 };
 
-/** Objetivos válidos del perfil. Sin configurar: 5 ayunos y la meta de fierritos de siempre. */
-export function goalsOf(raw: unknown, strengthGoal = 3): Goals {
+/**
+ * Objetivos válidos del perfil. Sin configurar: 5 ayunos y la meta de fierritos de siempre.
+ * Si no hace ayuno (fasting = false), el ayuno no cuenta.
+ */
+export function goalsOf(raw: unknown, strengthGoal = 3, fasting = true): Goals {
   const out: Goals = {};
+  const fierritos = Math.min(Math.max(strengthGoal, 1), MAX_PER_GOAL);
   if (raw && typeof raw === "object") {
     for (const k of GOAL_KEYS) {
+      if (k === "ayuno" && !fasting) continue;
       const n = Number((raw as Record<string, unknown>)[k]);
       if (Number.isInteger(n) && n > 0) out[k] = Math.min(n, MAX_PER_GOAL);
     }
   }
   if (Object.keys(out).length) return out;
-  return { ayuno: 5, fuerza: Math.min(Math.max(strengthGoal, 1), MAX_PER_GOAL) };
+  return fasting ? { ayuno: 5, fuerza: fierritos } : { fuerza: fierritos };
+}
+
+/** Objetivos de un perfil, respetando si hace ayuno. */
+export function profileGoals(p: { weekly_goals?: unknown; strength_goal: number; fasting_enabled?: boolean | null }) {
+  return goalsOf(p.weekly_goals, p.strength_goal, p.fasting_enabled !== false);
 }
 
 export type WeekCounts = { fastOk: number; byType: Record<string, number> };

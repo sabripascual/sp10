@@ -28,6 +28,9 @@ export const NOTIFY_KINDS: { kind: NotifyKind; label: string; when: string }[] =
   { kind: "weekly_summary", label: "Resumen semanal", when: "Domingo 20:00" },
 ];
 
+/** Avisos que solo tienen sentido si hace ayuno. */
+export const FAST_KINDS: NotifyKind[] = ["window_closing", "fast_started", "fast_confirm", "fast_done", "fast_unconfirmed"];
+
 export const URLS: Record<NotifyKind, string> = {
   window_closing: "/ayuno",
   fast_started: "/ayuno",

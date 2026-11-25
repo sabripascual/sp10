@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { removeSubscription, saveSubscription, sendTestPush, updateNotifyPrefs } from "@/app/(tabs)/ajustes/push-actions";
 import { Button } from "@/components/ui/button";
-import { NOTIFY_KINDS, type NotifyKind } from "@/lib/phrases";
+import { FAST_KINDS, NOTIFY_KINDS, type NotifyKind } from "@/lib/phrases";
 import { cn } from "@/lib/utils";
 
 type Status = "loading" | "unsupported" | "install" | "denied" | "off" | "on";
@@ -24,7 +24,15 @@ function urlBase64ToUint8Array(base64: string) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
-export function PushSettings({ vapidPublicKey, prefs }: { vapidPublicKey: string; prefs: Record<string, boolean> }) {
+export function PushSettings({
+  vapidPublicKey,
+  prefs,
+  fasting = true,
+}: {
+  vapidPublicKey: string;
+  prefs: Record<string, boolean>;
+  fasting?: boolean;
+}) {
   const [status, setStatus] = useState<Status>("loading");
   const [msg, setMsg] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -130,7 +138,7 @@ export function PushSettings({ vapidPublicKey, prefs }: { vapidPublicKey: string
       {msg && <p className="text-sm font-bold">{msg}</p>}
 
       <ul className="divide-y divide-muted/30">
-        {NOTIFY_KINDS.map(({ kind, label, when }) => {
+        {NOTIFY_KINDS.filter(({ kind }) => fasting || !FAST_KINDS.includes(kind)).map(({ kind, label, when }) => {
           const on = local[kind] !== false;
           return (
             <li key={kind}>

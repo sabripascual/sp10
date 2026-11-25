@@ -6,15 +6,16 @@ import { GOAL_KEYS, GOAL_LABEL, MAX_PER_GOAL, type GoalKey, type Goals } from "@
 import { cn } from "@/lib/utils";
 
 /** "Tu semana ideal": cuántas veces por semana de cada cosa. En 0 no cuenta. */
-export function WeeklyGoalsPicker({ initial }: { initial: Goals }) {
+export function WeeklyGoalsPicker({ initial, fasting = true }: { initial: Goals; fasting?: boolean }) {
   const [goals, setGoals] = useState<Goals>(initial);
   const set = (k: GoalKey, n: number) => setGoals((g) => ({ ...g, [k]: Math.max(0, Math.min(n, MAX_PER_GOAL)) }));
-  const active = GOAL_KEYS.filter((k) => (goals[k] ?? 0) > 0);
+  const keys = GOAL_KEYS.filter((k) => fasting || k !== "ayuno");
+  const active = keys.filter((k) => (goals[k] ?? 0) > 0);
 
   return (
     <div className="space-y-3">
       <ul className="divide-y divide-muted/30">
-        {GOAL_KEYS.map((k) => {
+        {keys.map((k) => {
           const n = goals[k] ?? 0;
           return (
             <li key={k} className="flex items-center gap-3 py-2">
@@ -53,7 +54,7 @@ export function WeeklyGoalsPicker({ initial }: { initial: Goals }) {
           ? `${active.length} objetivo${active.length === 1 ? "" : "s"}: cada uno pesa lo mismo en tu % semanal y en tu nivel.`
           : "Elegí al menos uno."}
       </p>
-      <input type="hidden" name="weekly_goals" value={JSON.stringify(goals)} />
+      <input type="hidden" name="weekly_goals" value={JSON.stringify(fasting ? goals : { ...goals, ayuno: 0 })} />
     </div>
   );
 }

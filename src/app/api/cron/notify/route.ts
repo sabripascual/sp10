@@ -6,7 +6,7 @@ import { nextCheckDate } from "@/lib/body";
 import { weekDates } from "@/lib/week";
 import { dueNotifications } from "@/lib/notify-rules";
 import { buildMessage, URLS, type NotifyKind } from "@/lib/phrases";
-import { goalProgress, goalsOf, goalsText } from "@/lib/goals";
+import { goalProgress, goalsText, profileGoals } from "@/lib/goals";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     const fastOk = elapsed.filter((d) => ["ok", "extended", "event"].includes(dayMark(d, now, p, records, created))).length;
     const byType: Record<string, number> = {};
     for (const w of done) byType[w.type] = (byType[w.type] ?? 0) + 1;
-    const goals = goalProgress(goalsOf(p.weekly_goals, p.strength_goal), { fastOk, byType });
+    const goals = goalProgress(profileGoals(p), { fastOk, byType });
 
     // Resumen de la semana (para el domingo)
     const compensated = (events.data ?? []).filter((e) => e.compensated_at && e.date >= week[0]).length;
@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
       prefs: (p.notify_prefs ?? {}) as Partial<Record<NotifyKind, boolean>>,
       fastRecords: records,
       goals,
+      fasting: p.fasting_enabled !== false,
       events: events.data ?? [],
       bodyNextDate: nextCheckDate(checkDates, p.body_check_start, today),
       bodyDoneToday: checkDates.some((c) => c.date === today),

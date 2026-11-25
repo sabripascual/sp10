@@ -1,8 +1,10 @@
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { TopBar } from "@/components/shell/top-bar";
 import { Footer } from "@/components/shell/footer";
+import { fastingOn, getProfile } from "@/lib/profile";
 
-export default function TabsLayout({ children }: { children: React.ReactNode }) {
+export default async function TabsLayout({ children }: { children: React.ReactNode }) {
+  const profile = await getProfile();
   return (
     <>
       <TopBar />
@@ -10,7 +12,7 @@ export default function TabsLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Footer />
       </main>
-      <BottomNav />
+      <BottomNav fasting={fastingOn(profile)} />
     </>
   );
 }

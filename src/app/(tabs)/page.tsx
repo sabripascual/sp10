@@ -5,7 +5,7 @@ import { EventCard } from "@/components/training/event-cards";
 import { EventSheet } from "@/components/training/event-sheet";
 import { TrainingCard } from "@/components/training/training-card";
 import { getFastData, toView } from "@/lib/fast-data";
-import { randomNickname } from "@/lib/profile";
+import { fastingOn, randomNickname } from "@/lib/profile";
 import { getTrainingData } from "@/lib/training";
 import { getProgressData } from "@/lib/progress-data";
 import { LevelCard } from "@/components/progress/level-card";
@@ -36,7 +36,7 @@ export default async function HoyPage() {
       <div className="space-y-4">
         <LevelCard last={progress.level.last} counts={progress.level.counts} current={progress.weeks.at(-1)!} avatar={avatarUrl(profile.avatar_path)} />
 
-        <FastTimer view={toView(fast)} compact streak={streak} />
+        {fastingOn(profile) && <FastTimer view={toView(fast)} compact streak={streak} />}
 
         {checkDue && (
           <Card className="space-y-3">
@@ -67,7 +67,7 @@ export default async function HoyPage() {
           <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} today={training.today} />
         ))}
 
-        <EventSheet today={training.today} className="w-full" />
+        <EventSheet today={training.today} className="w-full" fasting={fastingOn(profile)} />
       </div>
     </>
   );
