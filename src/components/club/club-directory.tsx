@@ -39,8 +39,8 @@ export function ClubDirectory({ clubs, defaultName }: { clubs: DirectoryClub[]; 
           </div>
 
           {c.isMember ? (
-            <Link href={`/club?c=${c.id}`} className="inline-block text-sm font-bold underline">
-              Ya estás: entrar
+            <Link href={`/club?c=${c.id}`} className="inline-block text-sm font-bold">
+              ✅ Ya sos miembro · <span className="underline">ver el club</span>
             </Link>
           ) : c.visibility === "private" ? (
             <p className="text-xs text-muted">Solo con invitación: pedile el link a la dueña.</p>

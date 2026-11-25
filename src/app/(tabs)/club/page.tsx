@@ -57,14 +57,13 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
     <>
       <PageHeader title={club.name} subtitle={isMonday ? `Cerró la semana del ${dm(closedWeek)} 🏁` : "¿Quién es la perrita más picante?"} />
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <ClubSwitcher clubs={clubs} current={club.id} />
-          </div>
-          <Link href="/club/explorar" className="shrink-0 rounded-full bg-surface px-4 py-2 text-sm font-extrabold">
-            🔎 Explorar clubes
-          </Link>
-        </div>
+        <Link
+          href="/club/explorar"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent font-black text-accent-fg active:scale-[0.98]"
+        >
+          🔎 Explorar clubes
+        </Link>
+        <ClubSwitcher clubs={clubs} current={club.id} />
 
         {mine?.closed && (
           <FiguritaReveal
