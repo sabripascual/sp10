@@ -12,7 +12,22 @@ export type NotifyKind =
   | "compensation_last"
   | "fast_confirm"
   | "body_check"
-  | "weekly_summary";
+  | "weekly_summary"
+  // Avisos del coach: los maneja solo el admin (Panel Ringo), no se ven en Ajustes
+  | "level_result"
+  | "forecast"
+  | "streak_milestone"
+  | "idle";
+
+export type CoachKind = "level_result" | "forecast" | "streak_milestone" | "idle";
+
+/** Avisos generales: prendidos o apagados para todas desde el Panel Ringo. */
+export const COACH_KINDS: { kind: CoachKind; label: string; when: string }[] = [
+  { kind: "level_result", label: "Salió tu nivel", when: "Lunes 9:30: perrita de la semana, si subió o bajó y puesto en el Club" },
+  { kind: "forecast", label: "Pronóstico", when: "Miércoles 13:00: si seguís así cerrás perrita…" },
+  { kind: "streak_milestone", label: "Hitos de racha", when: "12:00, al llegar a 7/14/30/60/100 días de ayuno o 4/8/12 semanas de fierritos" },
+  { kind: "idle", label: "¿Dónde andás?", when: "18:00, con 3 días sin anotar nada (máx. 1 por semana)" },
+];
 
 export const NOTIFY_KINDS: { kind: NotifyKind; label: string; when: string }[] = [
   { kind: "window_closing", label: "Cierre de ventana", when: "30 min antes de la última comida" },
@@ -43,6 +58,10 @@ export const URLS: Record<NotifyKind, string> = {
   fast_confirm: "/ayuno",
   body_check: "/cuerpo/control",
   weekly_summary: "/progreso",
+  level_result: "/club",
+  forecast: "/",
+  streak_milestone: "/progreso",
+  idle: "/",
 };
 
 export const PHRASES: Record<NotifyKind, string[]> = {
@@ -95,6 +114,51 @@ export const PHRASES: Record<NotifyKind, string[]> = {
     "Semana cerrada, {apodo}: {resumen}. Sos una máquina",
     "{Apodo}, así cerró la semana: {resumen}. ¡A la próxima con todo!",
   ],
+  // Los del coach arman la frase con {linea} (elegida según el caso en coach-notify.ts)
+  level_result: ["{emoji} {linea}{cambio}{puesto}"],
+  forecast: ["🔮 {linea}"],
+  streak_milestone: ["{linea}"],
+  idle: [
+    "Hola, {apodo} perdida 👀 No se te cae una anotación en Ringo esta semana. No te reto, solo quiero saber si estás viva o te tragó la cama 🛏️",
+  ],
+};
+
+/** Línea principal del "Salió tu nivel", según la perrita. {pts} = puntos. */
+export const LEVEL_LINES: Record<string, string[]> = {
+  dios: ["{Apodo}, cerraste la semana nivel DIOS con {pts} pts. ¿Te pedimos un autógrafo?", "Nivel dios, {apodo}: {pts} pts. Sos inalcanzable."],
+  crack: ["Perrita crack, {apodo}: {pts} pts. Ni el Dibu ataja tanta constancia.", "{Apodo}, semana de crack: {pts} pts. Así da gusto."],
+  motivada: ["{Apodo}, saliste perrita motivada con {pts} pts. Un empujoncito más y te codeás con las cracks."],
+  promedio: ["Perrita promedio de la humanidad, {apodo} ({pts} pts). Ni fu ni fa… ¿esta semana la rompemos?"],
+  vagoneta: ["{Apodo}, la semana pasada saliste perrita vagoneta. El sillón te quiere, pero el lunes es tuyo."],
+  pajera: ["Perrita pajera, {apodo}. Pasa en las mejores familias: hoy arrancamos de cero 🐶"],
+};
+
+/** Pronóstico de mitad de semana. {nivel} {emoji} {pct} {falta}. */
+export const FORECAST_LINES = {
+  done: ["{Apodo}, ya cumpliste tu semana ideal y es miércoles. Lo que venga es de yapa 👑"],
+  up: [
+    "Pronóstico Ringo: si seguís así, {apodo}, cerrás la semana perrita {nivel} {emoji}. Que no se te suba a la cabeza 😏",
+    "{Apodo}, vas {pct}% y es miércoles. A este ritmo te van a pedir doping",
+  ],
+  mid: [
+    "{Apodo}, vas {pct}%: si mantenés, cerrás perrita {nivel} {emoji}. Con {falta} te asegurás subir",
+    "Mitad de semana, {apodo}. Venís bien, pero el nivel dios no se regala: te falta {falta}",
+  ],
+  down: [
+    "El pronóstico dice perrita {nivel} {emoji}… pero los pronósticos se equivocan, {apodo}. Te falta {falta} y quedan 4 días",
+    "{Apodo}, miércoles y {pct}%. Tranqui, Argentina remontó peores. {falta} y das vuelta el partido ⚽",
+  ],
+};
+
+export const MILESTONE_LINES = {
+  ayuno: [
+    "🔥 ¡{n} días de ayuno seguidos, {apodo}! Esto ya es un estilo de vida",
+    "🔥 {Apodo}, {n} días seguidos de ayuno. La racha está on fire y vos también",
+  ],
+  fierritos: [
+    "💪🏻 {n} semanas seguidas cumpliendo los fierritos. {Apodo}, los brazos ya se enteraron",
+    "💪🏻 {Apodo}, {n} semanas seguidas de fierritos. El gym ya te pone en la foto de la entrada",
+  ],
 };
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -113,7 +177,9 @@ export function buildMessage(
   const phraseId = ids[Math.floor(rand() * ids.length)];
   const names = nicknames.length ? nicknames : ["crack"];
   const apodo = names[Math.floor(rand() * names.length)];
-  let body = bank[phraseId].replaceAll("{apodo}", apodo).replaceAll("{Apodo}", cap(apodo));
+  // Primero las variables (pueden traer {apodo} adentro, como {linea}) y después el apodo
+  let body = bank[phraseId];
   for (const [k, v] of Object.entries(vars)) body = body.replaceAll(`{${k}}`, String(v));
+  body = body.replaceAll("{apodo}", apodo).replaceAll("{Apodo}", cap(apodo));
   return { phraseId, body };
 }

@@ -2,6 +2,8 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
 import { AccountList } from "@/components/admin/account-list";
 import { CreateAccount } from "@/components/admin/create-account";
+import { CoachNotify } from "@/components/admin/coach-notify";
+import { getCoachPrefs } from "@/lib/app-settings";
 import { getAdminStats, requireAdmin } from "@/lib/admin-data";
 import { TYPE_EMOJI, TYPE_LABEL, type WorkoutType } from "@/lib/training-types";
 
@@ -18,7 +20,7 @@ function Stat({ value, label }: { value: number | string; label: string }) {
 
 export default async function AdminPage() {
   const me = await requireAdmin();
-  const s = await getAdminStats();
+  const [s, coach] = await Promise.all([getAdminStats(), getCoachPrefs()]);
   const pct = (n: number) => (s.total ? `${Math.round((n / s.total) * 100)}%` : "—");
 
   return (
@@ -54,6 +56,14 @@ export default async function AdminPage() {
             <CardDescription>Tocá una para pausarla, hacerla admin o cambiarle la contraseña.</CardDescription>
           </div>
           <AccountList accounts={s.accounts} meId={me.id} />
+        </Card>
+
+        <Card className="space-y-2">
+          <div>
+            <CardTitle>Avisos generales</CardTitle>
+            <CardDescription>Los manda Ringo a todas. Las usuarias no los ven en Ajustes: se prenden o apagan solo desde acá.</CardDescription>
+          </div>
+          <CoachNotify prefs={coach} />
         </Card>
 
         <Card className="space-y-3">
