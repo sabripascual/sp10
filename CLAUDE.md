@@ -349,7 +349,7 @@ Todo aprobado por la dueña. Cada ítem termina con lint + build + tests en verd
 - Solo la admin lo ve. Nunca pesos, medidas ni fotos.
 
 #### 4. Clubes propios (varios Ringo Club)
-- **Crear club**: en la pestaña Club, "+ Crear un club" (nombre). Quien lo crea es la **dueña**. Se genera un **link de invitación** para compartir por WhatsApp.
+- **Crear club**: en la pestaña Club, "+ Crear un club" con **nombre del club** (obligatorio, lo elige quien lo crea; la dueña lo puede cambiar después). Quien lo crea es la **dueña**. Se genera un **link de invitación** para compartir por WhatsApp.
 - **Sumarse**: el link abre "{dueña} te invita a {club}" → nombre en ese club → **Sumarme** (si no tiene cuenta, primero se registra y queda pendiente de aprobación). **Tope: 30 miembros por club.** Se puede estar en **varios clubes**; selector de club arriba en la pestaña.
 - **Dentro de cada club**: lo mismo de hoy (escalones en vivo, podio del lunes, premios, "Así quedó cada una") solo con sus miembros.
 - **La dueña puede**: ver y renovar el link (el viejo deja de andar), **sacar gente**, cambiar el nombre. Cualquiera puede salir de un club.
@@ -357,6 +357,20 @@ Todo aprobado por la dueña. Cada ítem termina con lint + build + tests en verd
 - **Migración**: crear **"Ringo Club"** con la dueña como owner y pasar a todas las que hoy tienen `club_visible` (con su `club_name`). Nadie pierde nada.
 - **Figurita (decidido)**: **una por semana y es tuya** (perrita, puntos y % salen de tu rutina, iguales en todos los clubes). Lo único que cambia es el **puesto**: toma el del club que estás mirando, y la banda de arriba dice el nombre del club ("LAS PIBAS DEL FÚTBOL · #07"). En varios clubes, se comparte la de cada uno.
 - **Avisos del Club** (`club_podium`, `club_closing`, puesto en `level_result`): por club, con el nombre del club; si está en varios, uno por club.
+
+#### 5. Progreso armado según tu semana ideal
+La pantalla se construye a partir de la semana ideal de cada una (una sección por objetivo, en su orden). Ya existe la base: hoy Progreso esconde lo que no es rutina (v1.9).
+1. **Arriba, constancia general**: barras con el **% de la semana ideal en las últimas 12 semanas** (línea en 100 %); números grandes: **semanas seguidas cumpliendo la semana ideal** (+ récord), **promedio de las últimas 4** y **mejor semana**.
+2. **Una tarjeta por objetivo configurado** (solo esos): gráfico de 12 semanas hecho vs. meta (barra con la meta marcada), **semanas seguidas cumpliendo ese objetivo**, y lo propio del tipo:
+   - Ayuno: racha de días, récord y horas promedio.
+   - Fierritos: semanas cumplidas; si es detallado, zonas con el cambio de la medida asociada (brazos → brazo, core → cintura, piernas → pierna).
+   - Carrera: veces, minutos por semana y kcal aproximadas.
+   - Bici, fútbol, pádel y resto: veces y minutos por semana.
+3. **Otros entrenos** fuera de la semana ideal: una línea "También hiciste: 2 de tenis, 1 de trekking" (dato, sin sección).
+4. **Derrapes** (métrica personal): compensados seguidos, total y sin compensar recientes; aclara que no cuentan para nivel ni ranking.
+5. **Cuerpo**: medidas y tendencia de peso como hoy (respeta número oculto).
+6. **Semanas anteriores**: cada una con %, perrita y chips de sus objetivos ("Semana del 16/11 · 72 % · 🔥 motivada · 5/5 ayunos · 1/2 fierritos · 1/1 fútbol"), con los objetivos que tenía esa semana (historial).
+- Si cambia la semana ideal, Progreso se adapta solo; sacar un deporte esconde su tarjeta sin borrar su historia.
 
 ### Otros pendientes
 
