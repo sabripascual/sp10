@@ -1,180 +1,103 @@
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
 import { MeasuresChart, WeightChart } from "@/components/progress/charts";
 import { ZonesCard } from "@/components/progress/zones-card";
-import { WeekBars } from "@/components/progress/week-bars";
+import { Dots } from "@/components/progress/dots";
 import { getProgressData } from "@/lib/progress-data";
-import {
-  goalSeries,
-  idealStats,
-  otherWorkouts,
-  weekGoals,
-} from "@/lib/progress";
-import {
-  GOAL_KEYS,
-  GOAL_LABEL,
-  fmtCount,
-  profileGoals,
-  type GoalKey,
-} from "@/lib/goals";
+import { goalSeries, idealStats, otherWorkouts, weekGoals } from "@/lib/progress";
+import { GOAL_KEYS, GOAL_LABEL, fmtCount, profileGoals, type GoalKey } from "@/lib/goals";
 import { levelFor, weekScore } from "@/lib/level";
 import { TYPE_LABEL, type WorkoutType } from "@/lib/training-types";
 import { fastingOn } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 
-const dm = (date: string) =>
-  `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
+const dm = (date: string) => `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
 const comma = (n: number) => String(n).replace(".", ",");
+const DOT_WEEKS = 8;
 
-function Big({
-  value,
-  label,
-  sub,
-  hot,
-}: {
-  value: string | number;
-  label: string;
-  sub?: string;
-  hot?: boolean;
-}) {
-  return (
-    <div className="rounded-xl bg-bg p-3">
-      <p
-        className={cn(
-          "text-3xl font-black tabular-nums leading-none",
-          hot && "text-accent",
-        )}
-      >
-        {value}
-      </p>
-      <p className="mt-1.5 text-xs font-bold leading-tight">{label}</p>
-      {sub && <p className="text-[11px] text-muted">{sub}</p>}
-    </div>
-  );
-}
+type Data = Awaited<ReturnType<typeof getProgressData>>;
 
 export default async function ProgresoPage() {
-  const data = await getProgressData();
-  const { profile, fast, compensated, checks, zones, fastAvgHours } = data;
-  const weeks = data.weeks.slice(-12);
+  return <ProgresoView data={await getProgressData()} />;
+}
+
+/** La pantalla con los datos ya cargados (separada para poder probarla). */
+export function ProgresoView({ data }: { data: Data }) {
+  const { profile, compensated, checks } = data;
+  const weeks = data.weeks.slice(-(DOT_WEEKS + 1)); // 8 cerradas + la en curso
   const current = weeks.at(-1)!;
 
   // Tu semana ideal de hoy define qué se muestra (en su orden); cada semana se mide con los objetivos que tenía
   const goals = profileGoals(profile, current.weekStart);
-  const keys = GOAL_KEYS.filter(
-    (k) => (goals[k] ?? 0) > 0 && (k !== "ayuno" || fastingOn(profile)),
-  );
-  const ideal = idealStats(weeks);
+  const keys = GOAL_KEYS.filter((k) => (goals[k] ?? 0) > 0 && (k !== "ayuno" || fastingOn(profile)));
+  const ideal = idealStats(data.weeks.slice(-12));
+  const now = weekGoals(current);
   const others = otherWorkouts(weeks, keys);
-  const missed12 = weeks.reduce((a, w) => a + w.missed, 0);
-  const past = weeks
-    .slice(0, -1)
+  const closed = ideal.series.filter((s) => !s.isCurrent).slice(-DOT_WEEKS);
+  const past = data.weeks
+    .slice(-13, -1)
     .reverse()
     .filter((w) => weekGoals(w).items.some((i) => i.done > 0));
 
   return (
     <>
-      <PageHeader
-        title="Progreso"
-        subtitle="Tu constancia, según tu semana ideal."
-      />
+      <PageHeader title="Progreso" subtitle="Tu constancia, según tu semana ideal." />
       <div className="space-y-4">
-        {/* 1. Constancia general */}
-        <Card className="space-y-4">
-          <div>
-            <CardTitle>Tu semana ideal, semana a semana</CardTitle>
-            <CardDescription>
-              % cumplido de tus objetivos (la raya es el 100 %).
-            </CardDescription>
-          </div>
-          <WeekBars
-            items={ideal.series.map((s) => ({
-              weekStart: s.weekStart,
-              value: s.pct,
-              target: s.hasGoals ? 100 : undefined,
-              isCurrent: s.isCurrent,
-            }))}
-            format={(n) => `${n}%`}
-          />
-          <div className="grid grid-cols-3 gap-2">
-            <Big
-              value={ideal.streak.current}
-              label="semanas seguidas al 100 %"
-              sub={`Récord: ${ideal.streak.max}`}
-              hot={ideal.streak.current > 0}
-            />
-            <Big
-              value={ideal.avg4 === null ? "—" : `${ideal.avg4}%`}
-              label="promedio últimas 4"
-            />
-            <Big
-              value={ideal.best === null ? "—" : `${ideal.best}%`}
-              label="tu mejor semana"
-            />
-          </div>
+        {/* Constancia general */}
+        <Card className="space-y-3">
+          <p className="text-sm font-bold text-muted">Esta semana vas</p>
+          <p className="text-6xl font-black tabular-nums leading-none">{now.pct}%</p>
+          <p className="text-sm text-muted">
+            {ideal.avg4 !== null && <>Promedio últimas 4: <strong className="text-fg">{ideal.avg4}%</strong> · </>}
+            <strong className="text-fg">{ideal.streak.current}</strong> {ideal.streak.current === 1 ? "semana seguida" : "semanas seguidas"} al 100 %
+          </p>
+          {closed.length > 0 && (
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <Dots weeks={closed.map((s) => ({ weekStart: s.weekStart, ratio: s.hasGoals ? s.pct / 100 : null }))} size="size-4" />
+              <span className="text-[11px] text-muted">últimas {closed.length} semanas</span>
+            </div>
+          )}
         </Card>
 
-        {/* 2. Una tarjeta por objetivo */}
-        {keys.length === 0 && (
+        {/* Objetivos: lista compacta, el detalle se abre al tocar */}
+        {keys.length === 0 ? (
           <Card>
             <CardTitle>Armá tu semana ideal</CardTitle>
             <CardDescription className="mt-1">
-              Elegí qué querés cumplir cada semana y acá ves tu progreso en cada
-              cosa.{" "}
+              Elegí qué querés cumplir cada semana y acá ves cómo venís en cada cosa.{" "}
               <Link href="/ajustes" className="underline">
                 Ir a Ajustes
               </Link>
             </CardDescription>
           </Card>
+        ) : (
+          <div className="overflow-hidden rounded-2xl bg-surface">
+            <p className="px-5 pt-4 text-sm font-bold uppercase tracking-wide text-muted">Tus objetivos</p>
+            <ul className="divide-y divide-muted/30">
+              {keys.map((k) => (
+                <GoalRow key={k} k={k} data={data} weeks={weeks} />
+              ))}
+            </ul>
+            {others.length > 0 && (
+              <p className="border-t border-muted/30 px-5 py-3 text-xs text-muted">
+                También hiciste (últimas 4 semanas):{" "}
+                {others.map(([t, n]) => `${n} de ${(TYPE_LABEL[t as WorkoutType] ?? t).toLowerCase()}`).join(", ")}
+              </p>
+            )}
+          </div>
         )}
-        {keys.map((k) => (
-          <GoalCard
-            key={k}
-            k={k}
-            data={data}
-            weeks={weeks}
-            fastAvgHours={fastAvgHours}
-            fast={fast}
-            zones={zones}
-            checks={checks}
-          />
-        ))}
 
-        {/* 3. Otros entrenos */}
-        {others.length > 0 && (
+        {/* Derrapes: una línea */}
+        {(compensated.total > 0 || compensated.current > 0) && (
           <p className="rounded-2xl bg-surface px-5 py-4 text-sm">
-            <span className="font-bold">También hiciste</span>{" "}
-            <span className="text-muted">(últimas 4 semanas):</span>{" "}
-            {others
-              .map(
-                ([t, n]) =>
-                  `${n} de ${(TYPE_LABEL[t as WorkoutType] ?? t).toLowerCase()}`,
-              )
-              .join(", ")}
+            😈 <strong>{compensated.total}</strong> {compensated.total === 1 ? "derrape compensado" : "derrapes compensados"} ·{" "}
+            <strong>{compensated.current}</strong> seguidos <span className="text-muted">· no cuentan para tu nivel</span>
           </p>
         )}
 
-        {/* 4. Derrapes */}
-        <Card className="space-y-3">
-          <div>
-            <CardTitle>Derrapes 😈</CardTitle>
-            <CardDescription>
-              Para vos: no cuentan para tu nivel ni para el ranking.
-            </CardDescription>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <Big
-              value={compensated.current}
-              label="compensados seguidos"
-              hot={compensated.current > 0}
-            />
-            <Big value={compensated.total} label="compensados en total" />
-            <Big value={missed12} label="sin compensar (12 sem)" />
-          </div>
-        </Card>
-
-        {/* 5. Cuerpo */}
+        {/* Cuerpo */}
         <Card className="space-y-3">
           <CardTitle>Medidas</CardTitle>
           <MeasuresChart checks={checks} />
@@ -183,27 +106,27 @@ export default async function ProgresoPage() {
           <div>
             <CardTitle>Tendencia de peso</CardTitle>
             <CardDescription>
-              Promedio de los últimos 3 controles
-              {profile.hide_weight ? ", sin números (número oculto)." : "."}
+              Promedio de los últimos 3 controles{profile.hide_weight ? ", sin números (número oculto)." : "."}
             </CardDescription>
           </div>
           <WeightChart checks={checks} hidden={profile.hide_weight} />
         </Card>
 
-        {/* 6. Semanas anteriores */}
+        {/* Semanas anteriores, cerradas */}
         {past.length > 0 && (
-          <Card className="space-y-3">
-            <CardTitle>Semanas anteriores</CardTitle>
-            <ul className="divide-y divide-muted/30">
+          <details className="group rounded-2xl bg-surface">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 font-bold">
+              Ver semanas anteriores
+              <ChevronDown className="size-5 text-muted transition-transform group-open:rotate-180" />
+            </summary>
+            <ul className="divide-y divide-muted/30 px-5 pb-2">
               {past.map((w) => {
                 const g = weekGoals(w);
                 const lvl = levelFor(weekScore(w));
                 return (
                   <li key={w.weekStart} className="space-y-1.5 py-3">
                     <p className="flex items-center justify-between text-sm">
-                      <span className="font-bold">
-                        Semana del {dm(w.weekStart)}
-                      </span>
+                      <span className="font-bold">Semana del {dm(w.weekStart)}</span>
                       <span className="font-black">
                         {g.pct}% {lvl.emoji}
                       </span>
@@ -214,9 +137,7 @@ export default async function ProgresoPage() {
                           key={i.key}
                           className={cn(
                             "rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums",
-                            i.done >= i.target
-                              ? "bg-accent text-accent-fg"
-                              : "bg-bg text-fg",
+                            i.done >= i.target ? "bg-accent text-accent-fg" : "bg-bg text-fg",
                           )}
                         >
                           {i.emoji} {fmtCount(i.done)}/{i.target}
@@ -227,33 +148,24 @@ export default async function ProgresoPage() {
                 );
               })}
             </ul>
-          </Card>
+          </details>
         )}
       </div>
     </>
   );
 }
 
-type Data = Awaited<ReturnType<typeof getProgressData>>;
+function Mini({ value, label }: { value: string | number; label: string }) {
+  return (
+    <div className="rounded-xl bg-bg px-3 py-2">
+      <p className="text-lg font-black tabular-nums leading-tight">{value}</p>
+      <p className="text-[11px] leading-tight text-muted">{label}</p>
+    </div>
+  );
+}
 
-/** Tarjeta de un objetivo: hecho vs. meta en 12 semanas, racha y lo propio del tipo. */
-function GoalCard({
-  k,
-  weeks,
-  fastAvgHours,
-  fast,
-  zones,
-  checks,
-  data,
-}: {
-  k: GoalKey;
-  weeks: Data["weeks"];
-  fastAvgHours: number | null;
-  fast: Data["fast"];
-  zones: Data["zones"];
-  checks: Data["checks"];
-  data: Data;
-}) {
+/** Una fila por objetivo: esta semana, racha y puntitos; al tocarla, el detalle. */
+function GoalRow({ k, data, weeks }: { k: GoalKey; data: Data; weeks: Data["weeks"] }) {
   const { series, streak } = goalSeries(weeks, k);
   const label = GOAL_LABEL[k];
   const thisWeek = series.at(-1)!;
@@ -262,76 +174,50 @@ function GoalCard({
   const minutes4 = last4.reduce((a, s) => a + s.minutes, 0);
   const sessions4 = last4.reduce((a, s) => a + s.sessions, 0);
   const kcal4 = weeks.slice(-5, -1).reduce((a, w) => a + w.runKcal, 0);
+  const done = thisWeek.target > 0 && thisWeek.done >= thisWeek.target;
 
   return (
-    <>
-      <Card className="space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <CardTitle>
-              {label.emoji} {label.label}
-            </CardTitle>
-            <CardDescription>
-              Esta semana: {fmtCount(thisWeek.done)} de {thisWeek.target}
-            </CardDescription>
-          </div>
-          <span className="shrink-0 rounded-full bg-bg px-3 py-1 text-xs font-black">
-            🔥 {streak.current} {streak.current === 1 ? "semana" : "semanas"}
+    <li>
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3">
+          <span className="w-7 text-center text-xl">{label.emoji}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold">{label.label}</span>
+            <span className="mt-1 block">
+              <Dots weeks={closed.map((s) => ({ weekStart: s.weekStart, ratio: s.target ? s.done / s.target : null }))} size="size-2.5" />
+            </span>
           </span>
+          <span className="shrink-0 text-right">
+            <span className={cn("block text-lg font-black tabular-nums leading-tight", done && "text-accent")}>
+              {fmtCount(thisWeek.done)}/{thisWeek.target}
+            </span>
+            <span className="block text-[11px] text-muted">{streak.current > 0 ? `🔥 ${streak.current} sem` : "esta semana"}</span>
+          </span>
+          <ChevronDown className="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="space-y-2 px-5 pb-4">
+          <div className="grid grid-cols-3 gap-2">
+            <Mini value={streak.max} label="récord de semanas" />
+            {k === "ayuno" ? (
+              <>
+                <Mini value={data.fast.current} label={`días seguidos (récord ${data.fast.max})`} />
+                <Mini value={data.fastAvgHours === null ? "—" : `${comma(data.fastAvgHours)} h`} label="duración promedio" />
+              </>
+            ) : k === "correr" ? (
+              <>
+                <Mini value={minutes4} label="min en 4 semanas" />
+                <Mini value={kcal4 ? `≈${kcal4}` : "—"} label="kcal en 4 semanas" />
+              </>
+            ) : (
+              <>
+                <Mini value={sessions4} label="veces en 4 semanas" />
+                <Mini value={minutes4 || "—"} label="min en 4 semanas" />
+              </>
+            )}
+          </div>
+          {k === "fuerza" && data.profile.strength_mode === "detailed" && <ZonesCard zones={data.zones} checks={data.checks} />}
         </div>
-        <WeekBars
-          items={series.map((s) => ({
-            weekStart: s.weekStart,
-            value: s.done,
-            target: s.target || undefined,
-            isCurrent: s.isCurrent,
-          }))}
-          format={fmtCount}
-        />
-        <div className="grid grid-cols-3 gap-2">
-          <Big value={streak.max} label="récord de semanas cumplidas" />
-          {k === "ayuno" ? (
-            <>
-              <Big
-                value={fast.current}
-                label="días seguidos de ayuno"
-                sub={`Récord: ${fast.max}`}
-                hot={fast.current > 0 && fast.current === fast.max}
-              />
-              <Big
-                value={fastAvgHours === null ? "—" : `${comma(fastAvgHours)} h`}
-                label="duración promedio"
-                sub="últimas 4 semanas"
-              />
-            </>
-          ) : k === "correr" ? (
-            <>
-              <Big
-                value={minutes4}
-                label="min corridos"
-                sub="últimas 4 semanas"
-              />
-              <Big
-                value={kcal4 ? `≈${kcal4}` : "—"}
-                label="kcal aprox."
-                sub="últimas 4 semanas"
-              />
-            </>
-          ) : (
-            <>
-              <Big value={sessions4} label="veces" sub="últimas 4 semanas" />
-              <Big
-                value={minutes4 || "—"}
-                label="minutos"
-                sub="últimas 4 semanas"
-              />
-            </>
-          )}
-        </div>
-      </Card>
-      {k === "fuerza" && data.profile.strength_mode === "detailed" && (
-        <ZonesCard zones={zones} checks={checks} />
-      )}
-    </>
+      </details>
+    </li>
   );
 }
