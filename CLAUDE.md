@@ -332,6 +332,7 @@ Propuestas aprobadas por la dueña para desarrollar juntas. Antes de arrancar, c
    - 📝 Con detalle: zonas como hoy + atajos "🔁 Repetir el último" y "📅 Usar uno anterior" (lista de los últimos fierritos con detalle; precarga y se ajusta). Sale del historial, sin tabla nueva.
    - Preferencia en el perfil ("¿Cómo registrás tus fierritos?", migración chica): por defecto Con detalle para quien ya registró zonas y Rápido para cuentas nuevas. En el registro, link para cambiar en el momento ("+ Agregar detalle" / "Solo marcar que fui").
    - Progreso: "fierritos por zona" usa solo los que tienen detalle y lo aclara.
+5. **Rediseño visual del Ringo Club** (a la dueña no le gusta cómo se ve hoy; quiere algo competitivo y gracioso). Opciones propuestas: (1) Podio + tribuna (top 3 en escalones con corona y confeti); (2) Carrera de perritas en vivo (foto avanzando por una pista según el % de la semana hacia un hueso 🦴); (3) Edificio de 6 pisos, uno por nivel, con ⬆️⬇️; (4) Figuritas tipo álbum del Mundial. Extras: premios de la semana con títulos cariñosos (🌶️ La más picante, 🚀 Remontada, 🐢 Tortuga sabia, 🛋️ Sillón de oro), etiqueta "¡Te pasó!", revelación animada del podio el lunes, compartir imagen del podio. Recomendado: carrera en vivo durante la semana + podio con premios el lunes; edificio en lugar de "Por nivel". A confirmar cuál va (se ofreció maqueta visual antes de desarrollar).
 
 ## Pendientes de la dueña
 - Pasar el logo BRAVE en SVG para el footer (hoy es un wordmark de texto).
