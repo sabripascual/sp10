@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { Minus, Plus } from "lucide-react";
 import { addWorkout } from "@/app/(tabs)/entrenos/actions";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { Chips } from "./chips";
 import { Celebration } from "./celebration";
 
-const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "squash", "trekking", "otro"];
+const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "squash", "trekking", "bici", "otro"];
 const MINUTES = [30, 45, 60, 75, 90, 120];
 const DEFAULT_ZONE: ZoneWork = { exercises: 3, reps: 12, rounds: 3 };
 
@@ -53,7 +53,10 @@ export function RegisterSheet({
   size = "lg",
   className,
   children,
+  autoOpen = false,
 }: {
+  /** Se abre sola al cargar (cuando venís desde un aviso). */
+  autoOpen?: boolean;
   today: string;
   weightKg: number;
   nicknames?: string[];
@@ -75,6 +78,17 @@ export function RegisterSheet({
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [party, setParty] = useState<{ emoji: string; apodo: string; detail: string } | null>(null);
+
+  useEffect(() => {
+    if (!autoOpen) return;
+    setOpen(true);
+    // Saca el ?registrar=… de la dirección para que no se vuelva a abrir al recargar
+    try {
+      window.history.replaceState(null, "", window.location.pathname);
+    } catch {
+      /* nada */
+    }
+  }, [autoOpen]);
 
   const reset = () => {
     setType(initialType);

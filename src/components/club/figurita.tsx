@@ -314,10 +314,21 @@ export function ShareFigurita({ d, className }: { d: FiguritaData; className?: s
 }
 
 /** Revelación del lunes: se abre sola la primera vez de la semana; después, con el botón. */
-export function FiguritaReveal({ d, weekKey, autoOpen }: { d: FiguritaData; weekKey: string; autoOpen: boolean }) {
+export function FiguritaReveal({ d, weekKey, autoOpen, force = false }: { d: FiguritaData; weekKey: string; autoOpen: boolean; force?: boolean }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!autoOpen) return;
+    if (force) {
+      // Viene del aviso: se abre siempre y se limpia la dirección
+      setOpen(true);
+      try {
+        localStorage.setItem(`ringo-figurita-${weekKey}`, "1");
+        window.history.replaceState(null, "", window.location.pathname);
+      } catch {
+        /* nada */
+      }
+      return;
+    }
     try {
       const k = `ringo-figurita-${weekKey}`;
       if (!localStorage.getItem(k)) {
@@ -327,7 +338,7 @@ export function FiguritaReveal({ d, weekKey, autoOpen }: { d: FiguritaData; week
     } catch {
       /* sin almacenamiento: no se abre sola */
     }
-  }, [autoOpen, weekKey]);
+  }, [autoOpen, weekKey, force]);
 
   return (
     <>

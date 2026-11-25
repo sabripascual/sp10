@@ -9,8 +9,10 @@ import { FiguritaReveal } from "@/components/club/figurita";
 
 const dm = (date: string) => `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
 
-export default async function ClubPage() {
-  const { me, joined, closedWeek, isMonday, daysLeft, members, myMissing } = await getClubData();
+export default async function ClubPage({ searchParams }: { searchParams: Promise<{ figurita?: string; tab?: string }> }) {
+  const [{ me, joined, closedWeek, isMonday, daysLeft, members, myMissing }, params] = await Promise.all([getClubData(), searchParams]);
+  // Desde un aviso: ?figurita=1 abre la figurita; ?tab=podio|vivo elige la pestaña
+  const startOnPodium = params.tab === "podio" ? true : params.tab === "vivo" ? false : isMonday;
 
   if (!joined) {
     return (
@@ -42,7 +44,8 @@ export default async function ClubPage() {
       <div className="space-y-4">
         {mine?.closed && (
           <FiguritaReveal
-            autoOpen={isMonday}
+            autoOpen={isMonday || params.figurita === "1"}
+            force={params.figurita === "1"}
             weekKey={closedWeek}
             d={{
               name: mine.name,
@@ -60,7 +63,7 @@ export default async function ClubPage() {
         )}
 
         <ClubTabs
-          startOnPodium={isMonday}
+          startOnPodium={startOnPodium}
           live={<LiveSteps members={members} daysLeft={daysLeft} myMissing={myMissing} />}
           podium={<Podium members={members} />}
         />

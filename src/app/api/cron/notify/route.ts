@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
         .from("notification_log")
         .insert({ user_id: p.id, kind: n.kind, ref: n.ref, phrase_id: msg.phraseId });
       if (logErr) continue;
-      const { expired } = await sendPush(subs, { title: "Ringo", body: msg.body, url: URLS[n.kind], tag: n.kind });
+      const { expired } = await sendPush(subs, { title: "Ringo", body: msg.body, url: n.url ?? URLS[n.kind], tag: n.kind });
       if (expired.length) await db.from("push_subscriptions").delete().in("endpoint", expired);
       report[p.id].push(n.kind);
     }

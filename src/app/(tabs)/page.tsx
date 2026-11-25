@@ -62,12 +62,13 @@ export default async function HoyPage() {
           favorites={profile.favorite_sports}
         />
 
-        {/* Derrapes: después de lo importante (ayuno y entrenos) */}
-        {[...toCompensate, ...soon].map((ev) => (
-          <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} today={training.today} />
-        ))}
-
-        <EventSheet today={training.today} className="w-full" fasting={fastingOn(profile)} />
+        {/* Derrapes: después de lo importante (ayuno y entrenos). Los avisos de derrapes llevan a #derrapes */}
+        <div id="derrapes" className="scroll-mt-20 space-y-4">
+          {[...toCompensate, ...soon].map((ev) => (
+            <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} today={training.today} />
+          ))}
+          <EventSheet today={training.today} className="w-full" fasting={fastingOn(profile)} />
+        </div>
       </div>
     </>
   );

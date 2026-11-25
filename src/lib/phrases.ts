@@ -50,24 +50,28 @@ export const NOTIFY_KINDS: { kind: NotifyKind; label: string; when: string }[] =
 /** Avisos que solo tienen sentido si hace ayuno. */
 export const FAST_KINDS: NotifyKind[] = ["window_closing", "fast_started", "fast_confirm", "fast_done", "fast_unconfirmed"];
 
+/**
+ * A dónde lleva cada aviso al tocarlo: siempre a la acción que pide.
+ * (week_goals y forecast calculan el suyo: registrar lo que falta.)
+ */
 export const URLS: Record<NotifyKind, string> = {
-  window_closing: "/ayuno",
-  fast_started: "/ayuno",
-  fast_done: "/ayuno",
+  window_closing: "/ayuno", // ver a qué hora cierra y empezar
+  fast_started: "/ayuno", // botón Empezar / confirmar hora
+  fast_confirm: "/ayuno", // "¿Fue así?" con la hora de inicio
+  fast_done: "/ayuno", // "¿Terminaste o seguís?"
   fast_unconfirmed: "/ayuno",
-  week_goals: "/",
-  event_tomorrow: "/",
-  compensation_today: "/",
-  compensation_last: "/",
-  fast_confirm: "/ayuno",
-  body_check: "/cuerpo/control",
+  week_goals: "/entrenos?registrar=any",
+  event_tomorrow: "/#derrapes",
+  compensation_today: "/#derrapes", // tarjeta "Listo, compensado"
+  compensation_last: "/#derrapes",
+  body_check: "/cuerpo/control", // el control en 3 pasos
   weekly_summary: "/progreso",
-  level_result: "/club",
-  club_closing: "/club",
-  club_podium: "/club",
-  forecast: "/",
+  level_result: "/club?figurita=1", // abre la figurita
+  forecast: "/entrenos?registrar=any",
   streak_milestone: "/progreso",
-  idle: "/",
+  idle: "/entrenos?registrar=any", // anotar algo ya
+  club_closing: "/club?tab=vivo",
+  club_podium: "/club?tab=podio",
 };
 
 export const PHRASES: Record<NotifyKind, string[]> = {

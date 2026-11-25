@@ -33,7 +33,10 @@ export function TrainingCard({
   nicknames,
   favorites,
   showRegisterAll = false,
+  openType = null,
 }: {
+  /** Venís desde un aviso: abre el registro de ese tipo ("any" = elegir tipo). */
+  openType?: WorkoutType | "any" | null;
   week: DayPlan[];
   strengthDone: number;
   goal: number;
@@ -50,7 +53,10 @@ export function TrainingCard({
   const left = Math.max(goal - strengthDone, 0);
   const count = (t: WorkoutType) => all.filter((w) => w.type === t).length;
   const mins = (t: WorkoutType) => all.filter((w) => w.type === t).reduce((a, w) => a + (w.minutes ?? 0), 0);
+  const favs = favoritesOf(favorites);
   const sheet = { today, weightKg, nicknames, className: tile };
+  const openHere = (t: WorkoutType) => openType === t;
+  const openAll = Boolean(openType) && !(openType !== "any" && favs.includes(openType as WorkoutType));
   const times = (n: number) => (n === 0 ? "Todavía nada" : n === 1 ? "1 vez" : `${n} veces`);
 
   return (
@@ -58,9 +64,9 @@ export function TrainingCard({
       <p className="text-sm font-bold uppercase tracking-wide text-muted">Entrenamientos · esta semana</p>
 
       <div className="grid grid-cols-2 gap-2">
-        {favoritesOf(favorites).map((t) =>
+        {favs.map((t) =>
           t === "fuerza" ? (
-            <RegisterSheet key={t} {...sheet} initialType="fuerza">
+            <RegisterSheet key={t} {...sheet} initialType="fuerza" autoOpen={openHere("fuerza")}>
               <TileHead type="fuerza" />
               <span className="block text-3xl font-black tabular-nums">
                 {strengthDone}
@@ -72,7 +78,7 @@ export function TrainingCard({
               <span className="block text-xs text-muted">{left === 0 ? "¡Meta cumplida!" : `Te ${left === 1 ? "falta 1" : `faltan ${left}`}`}</span>
             </RegisterSheet>
           ) : t === "correr" ? (
-            <RegisterSheet key={t} {...sheet} initialType="correr">
+            <RegisterSheet key={t} {...sheet} initialType="correr" autoOpen={openHere("correr")}>
               <TileHead type="correr" />
               <span className="block text-3xl font-black tabular-nums">
                 {runMinutes}
@@ -83,7 +89,7 @@ export function TrainingCard({
               </span>
             </RegisterSheet>
           ) : (
-            <RegisterSheet key={t} {...sheet} initialType={t}>
+            <RegisterSheet key={t} {...sheet} initialType={t} autoOpen={openHere(t)}>
               <TileHead type={t} />
               <span className="block text-3xl font-black tabular-nums">
                 {count(t)}
@@ -97,7 +103,15 @@ export function TrainingCard({
 
       <WeekStrip week={week} />
       {showRegisterAll ? (
-        <RegisterSheet today={today} weightKg={weightKg} nicknames={nicknames} label="+ Registrar otro entreno" className="w-full" />
+        <RegisterSheet
+          today={today}
+          weightKg={weightKg}
+          nicknames={nicknames}
+          label="+ Registrar otro entreno"
+          className="w-full"
+          autoOpen={openAll}
+          initialType={openAll && openType !== "any" ? (openType as WorkoutType) : null}
+        />
       ) : (
         <p className="text-center text-xs text-muted">Tocá un bloque para sumarlo. Elegí tus deportes en Ajustes; el resto, desde Entrenos.</p>
       )}

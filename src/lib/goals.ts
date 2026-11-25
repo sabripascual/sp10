@@ -14,8 +14,9 @@ export const GOAL_LABEL: Record<GoalKey, { emoji: string; label: string; one: st
   ...(Object.fromEntries(
     GOAL_KEYS.filter((k) => k !== "ayuno").map((k) => {
       const t = k as WorkoutType;
-      const name = t === "fuerza" ? "fierrito" : TYPE_LABEL[t].toLowerCase();
-      return [k, { emoji: TYPE_EMOJI[t], label: TYPE_LABEL[t], one: name, many: t === "fuerza" ? "fierritos" : t === "correr" ? "carreras" : name }];
+      const name = t === "fuerza" ? "fierrito" : t === "bici" ? "salida en bici" : TYPE_LABEL[t].toLowerCase();
+      const many = t === "fuerza" ? "fierritos" : t === "correr" ? "carreras" : t === "bici" ? "salidas en bici" : name;
+      return [k, { emoji: TYPE_EMOJI[t], label: TYPE_LABEL[t], one: name, many }];
     }),
   ) as Record<Exclude<GoalKey, "ayuno">, { emoji: string; label: string; one: string; many: string }>),
 };
@@ -73,4 +74,13 @@ export function missingText(items: GoalItem[]) {
 /** "5/5 ayunos, 1/2 fierritos, 1/1 fútbol" */
 export function goalsText(items: GoalItem[]) {
   return items.map((i) => `${i.done}/${i.target} ${i.target === 1 ? GOAL_LABEL[i.key].one : GOAL_LABEL[i.key].many}`).join(", ");
+}
+
+/** A dónde lleva un aviso de la semana: a registrar lo primero que falta (deporte), al ayuno, o a Hoy. */
+export function goalActionUrl(items: GoalItem[]) {
+  const missing = items.filter((i) => i.done < i.target);
+  const sport = missing.find((i) => i.key !== "ayuno");
+  if (sport) return `/entrenos?registrar=${sport.key}`;
+  if (missing.length) return "/ayuno";
+  return "/";
 }

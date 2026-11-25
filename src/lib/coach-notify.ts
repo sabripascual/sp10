@@ -3,7 +3,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 import { localDate, shiftDate } from "@/lib/fast";
 import { LEVELS, levelFor, type LevelKey } from "@/lib/level";
-import { missingText, type GoalItem } from "@/lib/goals";
+import { goalActionUrl, missingText, type GoalItem } from "@/lib/goals";
 import { isoDay, weekStart } from "@/lib/week";
 import { CLOSING_LINES, FORECAST_LINES, MILESTONE_LINES, PODIUM_LINES, type CoachKind } from "@/lib/phrases";
 import { isQuiet, type DueNotification } from "@/lib/notify-rules";
@@ -69,9 +69,9 @@ export function coachNotifications(ctx: CoachContext, rand: () => number = Math.
     return diff >= 0 && diff < CATCH_UP_MIN;
   };
   const out: DueNotification[] = [];
-  const add = (kind: CoachKind, ref: string, vars: Record<string, string | number>) => {
+  const add = (kind: CoachKind, ref: string, vars: Record<string, string | number>, url?: string) => {
     if (ctx.enabled[kind] === false || ctx.sent.has(`${kind}|${ref}`)) return;
-    out.push({ kind, ref, vars });
+    out.push({ kind, ref, vars, ...(url ? { url } : {}) });
   };
 
   // 1. Lunes: salió tu nivel
@@ -117,7 +117,7 @@ export function coachNotifications(ctx: CoachContext, rand: () => number = Math.
       .replaceAll("{emoji}", lvl.emoji)
       .replaceAll("{pct}", String(pct))
       .replaceAll("{falta}", missingText(items));
-    add("forecast", weekStart(today), { linea });
+    add("forecast", weekStart(today), { linea }, goalActionUrl(items));
   }
 
   // 3. Hitos de racha (una vez por hito)

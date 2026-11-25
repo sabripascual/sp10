@@ -10,7 +10,7 @@ import {
 } from "@/lib/fast";
 import { isoDay } from "@/lib/week";
 import type { NotifyKind } from "@/lib/phrases";
-import { missingText, type GoalItem } from "@/lib/goals";
+import { goalActionUrl, missingText, type GoalItem } from "@/lib/goals";
 
 export type NotifyContext = {
   now: Date;
@@ -37,6 +37,8 @@ export type DueNotification = {
   kind: NotifyKind;
   ref: string;
   vars: Record<string, string | number>;
+  /** A dónde lleva al tocarlo, si no es el de siempre (URLS). */
+  url?: string;
 };
 
 /** Cuánto tiempo después de la hora se acepta mandar (el cron corre cada 15 min). */
@@ -73,14 +75,10 @@ export function dueNotifications(ctx: NotifyContext): DueNotification[] {
   const day = isoDay(today);
   const out: DueNotification[] = [];
 
-  const add = (
-    kind: NotifyKind,
-    ref: string,
-    vars: Record<string, string | number> = {},
-  ) => {
+  const add = (kind: NotifyKind, ref: string, vars: Record<string, string | number> = {}, url?: string) => {
     if (ctx.prefs[kind] === false) return;
     if (ctx.sent.has(`${kind}|${ref}`)) return;
-    out.push({ kind, ref, vars });
+    out.push({ kind, ref, vars, ...(url ? { url } : {}) });
   };
   const at = (hhmm: string | number) => {
     const target = typeof hhmm === "number" ? hhmm : toMin(hhmm);
@@ -127,7 +125,7 @@ export function dueNotifications(ctx: NotifyContext): DueNotification[] {
         pct: ctx.goals.pct,
         falta: missingText(ctx.goals.items),
         dia: DAYS[day],
-      });
+      }, goalActionUrl(ctx.goals.items));
 
     for (const ev of ctx.events) {
       if (ev.date === shiftDate(today, 1))

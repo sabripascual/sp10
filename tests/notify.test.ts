@@ -88,3 +88,14 @@ test("domingo 10:00: último día para compensar un derrape de la semana", () =>
   ];
   assert.deepEqual(kinds(base(sun, { events })), ["compensation_last"]);
 });
+
+test("cada aviso lleva a su acción: falta un deporte → registrar ese deporte", async () => {
+  const { goalActionUrl, goalProgress: gp } = await import("../src/lib/goals");
+  assert.equal(goalActionUrl(gp({ ayuno: 5, fuerza: 2 }, { fastOk: 2, byType: { fuerza: 1 } }).items), "/entrenos?registrar=fuerza");
+  assert.equal(goalActionUrl(gp({ ayuno: 5, bici: 1 }, { fastOk: 2, byType: { bici: 1 } }).items), "/ayuno");
+  assert.equal(goalActionUrl(gp({ fuerza: 1 }, { fastOk: 0, byType: { fuerza: 1 } }).items), "/");
+  const thu = at("2026-11-19T10:00:00");
+  const items = gp({ ayuno: 5, bici: 2 }, { fastOk: 5, byType: {} }).items;
+  const due = dueNotifications(base(thu, { goals: { pct: 50, items } }));
+  assert.deepEqual(due.map((n) => [n.url, n.vars.falta]), [["/entrenos?registrar=bici", "2 salidas en bici"]]);
+});

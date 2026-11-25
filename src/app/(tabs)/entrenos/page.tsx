@@ -4,8 +4,11 @@ import { EventList } from "@/components/training/event-list";
 import { TrainingCard } from "@/components/training/training-card";
 import { WorkoutList } from "@/components/training/workout-list";
 import { getTrainingData } from "@/lib/training";
+import { ALL_TYPES, type WorkoutType } from "@/lib/training-types";
 
-export default async function EntrenosPage() {
+export default async function EntrenosPage({ searchParams }: { searchParams: Promise<{ registrar?: string }> }) {
+  const { registrar } = await searchParams;
+  const openType = registrar === "any" ? "any" : ALL_TYPES.includes(registrar as WorkoutType) ? (registrar as WorkoutType) : null;
   const { profile, today, week, strengthDone, runMinutes, runKcal, weightKg, events } = await getTrainingData();
   const workouts = week.flatMap((d) => d.workouts).reverse();
 
@@ -24,6 +27,7 @@ export default async function EntrenosPage() {
           nicknames={profile.nicknames}
           favorites={profile.favorite_sports}
           showRegisterAll
+          openType={openType}
         />
 
         {workouts.length > 0 && (
