@@ -1,4 +1,6 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { profileGoals } from "@/lib/goals";
+import { weekStart } from "@/lib/week";
 import { PageHeader } from "@/components/shell/page-header";
 import { EventList } from "@/components/training/event-list";
 import { TrainingCard } from "@/components/training/training-card";
@@ -19,7 +21,7 @@ export default async function EntrenosPage({ searchParams }: { searchParams: Pro
         <TrainingCard
           week={week}
           strengthDone={strengthDone}
-          goal={profile.strength_goal}
+          goal={profileGoals(profile, weekStart(today)).fuerza ?? profile.strength_goal}
           runMinutes={runMinutes}
           runKcal={runKcal}
           today={today}

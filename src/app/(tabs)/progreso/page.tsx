@@ -25,7 +25,7 @@ export default async function ProgresoPage() {
   const weeks = allWeeks.slice(-12);
   const current = weeks.at(-1)!;
   // Solo se muestra lo que es parte de TU rutina (Ajustes → Tu semana ideal)
-  const goals = profileGoals(profile);
+  const goals = profileGoals(profile, current.weekStart);
   const has = (k: keyof typeof goals) => (goals[k] ?? 0) > 0;
   const showFast = fastingOn(profile) && has("ayuno");
   const showStrength = has("fuerza");

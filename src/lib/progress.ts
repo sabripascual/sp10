@@ -32,7 +32,8 @@ export function weekSummaries(input: {
   records: Map<string, FastDay>;
   workouts: W[];
   events: E[];
-  goals: Goals;
+  /** Objetivos (los mismos para todas las semanas, o según la semana). */
+  goals: Goals | ((weekStart: string) => Goals);
   weeks: number;
 }): WeekSummary[] {
   const today = localDate(input.now, input.cfg.timezone);
@@ -47,13 +48,14 @@ export function weekSummaries(input: {
     const inWeek = <T extends { date: string }>(x: T) => x.date >= ws && x.date <= days[6];
     const done = input.workouts.filter((w) => inWeek(w) && w.status === "done");
     const evs = input.events.filter(inWeek);
+    const goalsAt = typeof input.goals === "function" ? input.goals(ws) : input.goals;
     const byType: Record<string, number> = {};
     for (const w of done) byType[w.type] = (byType[w.type] ?? 0) + (w.id && compensators.has(w.id) ? COMPENSATOR_WEIGHT : 1);
     out.push({
       weekStart: ws,
       isCurrent: ws === current,
       strength: done.filter((w) => w.type === "fuerza").length,
-      strengthGoal: input.goals.fuerza ?? 0,
+      strengthGoal: goalsAt.fuerza ?? 0,
       fastOk: counted.filter((m) => m !== "broken").length,
       fastDays: counted.length,
       compensated: evs.filter((e) => e.compensated_at).length,
@@ -61,7 +63,7 @@ export function weekSummaries(input: {
       runMinutes: done.filter((w) => w.type === "correr").reduce((a, w) => a + (w.minutes ?? 0), 0),
       otherWorkouts: done.filter((w) => w.type !== "fuerza").length,
       byType,
-      goals: input.goals,
+      goals: goalsAt,
     });
   }
   return out;

@@ -53,7 +53,7 @@ export const getProgressData = cache(async function getProgressData(): Promise<P
     records,
     workouts: wRes.data ?? [],
     events: eRes.data ?? [],
-    goals: profileGoals(profile),
+    goals: (ws) => profileGoals(profile, ws),
     weeks: WEEKS,
   });
 

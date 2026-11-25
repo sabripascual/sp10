@@ -43,7 +43,7 @@ export async function clubStanding(db: Db, p: Profile, now: Date) {
   ]);
   const records = new Map(((fasts.data ?? []) as FastDay[]).map((r) => [r.date, r]));
   const since = sinceDate(p, records);
-  const input = { cfg: p, since, records, workouts: workouts.data ?? [], events: events.data ?? [], goals: profileGoals(p), weeks: 3 };
+  const input = { cfg: p, since, records, workouts: workouts.data ?? [], events: events.data ?? [], goals: (ws: string) => profileGoals(p, ws), weeks: 3 };
   const [prevW, closedW, liveW] = weekSummaries({ ...input, now });
   const graded = firstGradedWeek(since);
   const grade = (w: typeof closedW) => {

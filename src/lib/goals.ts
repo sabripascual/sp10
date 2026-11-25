@@ -39,9 +39,40 @@ export function goalsOf(raw: unknown, strengthGoal = 3, fasting = true): Goals {
   return fasting ? { ayuno: 5, fuerza: fierritos } : { fuerza: fierritos };
 }
 
-/** Objetivos de un perfil, respetando si hace ayuno. */
-export function profileGoals(p: { weekly_goals?: unknown; strength_goal: number; fasting_enabled?: boolean | null }) {
-  return goalsOf(p.weekly_goals, p.strength_goal, p.fasting_enabled !== false);
+export type GoalsEntry = { from: string; goals: Goals };
+type GoalsProfile = { weekly_goals?: unknown; strength_goal: number; fasting_enabled?: boolean | null; goals_history?: unknown };
+
+/** Historial válido, ordenado por fecha. */
+export function goalsHistory(p: GoalsProfile): GoalsEntry[] {
+  const raw = Array.isArray(p.goals_history) ? p.goals_history : [];
+  return raw
+    .filter((e): e is GoalsEntry => Boolean(e && typeof e.from === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.from) && e.goals))
+    .sort((a, b) => a.from.localeCompare(b.from));
+}
+
+/**
+ * Objetivos de un perfil para la semana que arranca el lunes `weekStart` (sin fecha: los de hoy).
+ * Cada semana usa los que tenía en ese momento (historial); los cambios valen desde el lunes siguiente.
+ * Si no hace ayuno, el ayuno no cuenta.
+ */
+export function profileGoals(p: GoalsProfile, weekStart?: string) {
+  const fasting = p.fasting_enabled !== false;
+  const hist = goalsHistory(p);
+  if (!hist.length) return goalsOf(p.weekly_goals, p.strength_goal, fasting);
+  const ws = weekStart ?? new Date().toISOString().slice(0, 10);
+  const entry = [...hist].reverse().find((e) => e.from <= ws) ?? hist[0];
+  return goalsOf(entry.goals, p.strength_goal, fasting);
+}
+
+/** Cambio programado para un lunes que todavía no llegó (si hay). */
+export function pendingGoals(p: GoalsProfile, currentWeekStart: string) {
+  const next = goalsHistory(p).filter((e) => e.from > currentWeekStart).at(-1);
+  return next ?? null;
+}
+
+/** Iguales, sin importar el orden ni los ceros. */
+export function sameGoals(a: Goals, b: Goals) {
+  return GOAL_KEYS.every((k) => (a[k] ?? 0) === (b[k] ?? 0));
 }
 
 export type WeekCounts = { fastOk: number; byType: Record<string, number> };

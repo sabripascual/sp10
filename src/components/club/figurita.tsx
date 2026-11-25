@@ -293,8 +293,8 @@ async function drawStory(d: FiguritaData, withPhoto: boolean): Promise<Blob> {
   ctx.fillStyle = "#fff";
   ctx.font = f(900, 40);
   ctx.fillText("Ringo Club", W / 2, 415 + ch + 70);
-  // "Un producto de BRAVE Tech Studio" con el isotipo de BRAVE adelante
-  const line = "Un producto de BRAVE Tech Studio";
+  // "Una app de BRAVE Tech Studio" con el isotipo de BRAVE adelante
+  const line = "Una app de BRAVE Tech Studio";
   ctx.font = f(700, 30);
   const tw = ctx.measureText(line).width;
   const y = 415 + ch + 118;

@@ -99,3 +99,24 @@ test("el entreno que compensó un derrape cuenta la mitad para la semana ideal",
   assert.equal(s[0].byType.fuerza, 1.5);
   assert.equal(s[0].strength, 2); // las sesiones se cuentan igual
 });
+
+import { pendingGoals, profileGoals } from "../src/lib/goals";
+
+test("semana ideal con historial: cada semana con sus objetivos; los cambios desde el lunes siguiente", () => {
+  const p = {
+    strength_goal: 3,
+    weekly_goals: { ayuno: 5, fuerza: 1 },
+    goals_history: [
+      { from: "2000-01-01", goals: { ayuno: 5, fuerza: 3 } },
+      { from: "2026-11-30", goals: { ayuno: 5, fuerza: 1 } },
+    ],
+  };
+  assert.deepEqual(profileGoals(p, "2026-11-23"), { ayuno: 5, fuerza: 3 }); // esta semana: los de antes
+  assert.deepEqual(profileGoals(p, "2026-11-30"), { ayuno: 5, fuerza: 1 }); // desde el lunes
+  assert.equal(pendingGoals(p, "2026-11-23")?.from, "2026-11-30");
+  assert.equal(pendingGoals(p, "2026-11-30"), null);
+  // sin historial: como antes
+  assert.deepEqual(profileGoals({ strength_goal: 2, weekly_goals: { futbol: 1 } }), { futbol: 1 });
+  // sin ayuno, el ayuno no cuenta aunque esté en el historial
+  assert.deepEqual(profileGoals({ ...p, fasting_enabled: false }, "2026-11-23"), { fuerza: 3 });
+});

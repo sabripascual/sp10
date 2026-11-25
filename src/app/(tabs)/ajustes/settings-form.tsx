@@ -8,7 +8,7 @@ import type { Profile } from "@/lib/profile";
 import { FastProtocolPicker } from "@/components/fast/fast-protocol";
 import { FavoriteSportsPicker } from "./favorite-sports";
 import { WeeklyGoalsPicker } from "./weekly-goals";
-import { goalsOf } from "@/lib/goals";
+import { GOAL_KEYS, goalsText, goalProgress, pendingGoals, profileGoals } from "@/lib/goals";
 import { compPrefsOf, type CompPrefs } from "@/lib/events";
 import { CompPicker } from "@/components/training/comp-picker";
 import { cn } from "@/lib/utils";
@@ -21,13 +21,22 @@ const inputClass =
 const snapshot = (form: HTMLFormElement | null) =>
   form ? JSON.stringify([...new FormData(form).entries()].map(([k, v]) => [k, String(v)])) : "";
 
-export function SettingsForm({ profile }: { profile: Profile }) {
+export function SettingsForm({ profile, currentWeek }: { profile: Profile; currentWeek: string }) {
   // Descartar = volver a montar el formulario con lo guardado
   const [version, setVersion] = useState(0);
-  return <Form key={version} profile={profile} onDiscard={() => setVersion((v) => v + 1)} />;
+  return <Form key={version} profile={profile} currentWeek={currentWeek} onDiscard={() => setVersion((v) => v + 1)} />;
 }
 
-function Form({ profile, onDiscard }: { profile: Profile; onDiscard: () => void }) {
+/** "5 ayunos, 2 fierritos" */
+const summary = (g: Partial<Record<(typeof GOAL_KEYS)[number], number>>) =>
+  goalsText(goalProgress(g, { fastOk: 0, byType: {} }).items).replace(/0\//g, "") || "nada";
+
+const dm = (d: string) => `${Number(d.slice(8))}/${Number(d.slice(5, 7))}`;
+
+function Form({ profile, currentWeek, onDiscard }: { profile: Profile; currentWeek: string; onDiscard: () => void }) {
+  const goalsNow = profileGoals({ ...profile, fasting_enabled: true }, currentWeek);
+  const next = pendingGoals(profile, currentWeek);
+  const firstTime = !profile.weekly_goals && !(profile.goals_history ?? []).length;
   const [state, action, pending] = useActionState<SettingsState, FormData>(updateSettings, {});
   const [fasting, setFasting] = useState(profile.fasting_enabled !== false);
   const [comp, setComp] = useState<CompPrefs>(compPrefsOf(profile.derrape_comp, profile.fasting_enabled !== false));
@@ -122,7 +131,21 @@ function Form({ profile, onDiscard }: { profile: Profile; onDiscard: () => void 
             Lo mínimo que querés cumplir de lunes a domingo. Con esto te digo a qué % vas, te aviso jueves y domingo, y sale tu nivel.
           </CardDescription>
         </div>
-        <WeeklyGoalsPicker initial={goalsOf(profile.weekly_goals, profile.strength_goal)} fasting={fasting} />
+        {!firstTime && (
+          <p className="rounded-xl bg-bg p-3 text-xs leading-snug text-muted">
+            🔒 Los cambios valen <strong className="text-fg">desde el lunes que viene</strong>: esta semana se califica con los
+            objetivos que tenías, así nadie hace trampa en el ranking 😏
+            {next && (
+              <>
+                <br />
+                <span className="text-fg">
+                  Esta semana: {summary(goalsNow)}. Desde el lunes {dm(next.from)}: {summary(next.goals)}.
+                </span>
+              </>
+            )}
+          </p>
+        )}
+        <WeeklyGoalsPicker initial={next?.goals ?? goalsNow} fasting={fasting} />
       </Card>
 
       <Card className="space-y-4">
@@ -210,7 +233,7 @@ function Form({ profile, onDiscard }: { profile: Profile; onDiscard: () => void 
       </Card>
 
       {state.error && <p className="text-sm">{state.error}</p>}
-      {state.ok && <p className="text-sm text-muted">Guardado. Sos una máquina.</p>}
+      {state.ok && <p className="text-sm text-muted">{state.info ?? "Guardado. Sos una máquina."}</p>}
 
       <Button type="submit" variant="primary" size="lg" className="w-full" disabled={pending}>
         {pending ? "Guardando…" : "Guardar"}

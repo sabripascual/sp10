@@ -47,7 +47,7 @@ async function loadUser(db: ReturnType<typeof createAdminClient>, p: Profile, no
     records,
     workouts: workouts.data ?? [],
     events: events.data ?? [],
-    goals: profileGoals(p),
+    goals: (ws) => profileGoals(p, ws),
     weeks: WEEKS,
   });
   const graded = levelHistory(weeks, firstGradedWeek(since)).graded;

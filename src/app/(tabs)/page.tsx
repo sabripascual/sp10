@@ -1,4 +1,6 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { profileGoals } from "@/lib/goals";
+import { weekStart } from "@/lib/week";
 import { PageHeader } from "@/components/shell/page-header";
 import { FastTimer } from "@/components/fast/fast-timer";
 import { EventCard } from "@/components/training/event-cards";
@@ -54,7 +56,7 @@ export default async function HoyPage() {
         <TrainingCard
           week={training.week}
           strengthDone={training.strengthDone}
-          goal={profile.strength_goal}
+          goal={profileGoals(profile, weekStart(training.today)).fuerza ?? profile.strength_goal}
           runMinutes={training.runMinutes}
           runKcal={training.runKcal}
           today={training.today}

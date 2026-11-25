@@ -7,6 +7,8 @@ import { KeyGenerator } from "@/components/pwa/key-generator";
 import { PushSettings } from "@/components/pwa/push-settings";
 import { fastingOn, getProfile } from "@/lib/profile";
 import { SettingsForm } from "./settings-form";
+import { weekStart } from "@/lib/week";
+import { localDate } from "@/lib/fast";
 import { AvatarPicker } from "./avatar-picker";
 import { avatarUrl } from "@/lib/avatar";
 
@@ -36,7 +38,7 @@ export default async function AjustesPage() {
         </div>
         {vapid ? <PushSettings vapidPublicKey={vapid} prefs={profile.notify_prefs ?? {}} fasting={fastingOn(profile)} /> : <KeyGenerator />}
       </Card>
-      <SettingsForm profile={profile} />
+      <SettingsForm profile={profile} currentWeek={weekStart(localDate(new Date(), profile.timezone))} />
       <form action={signOut} className="mt-8">
         <Button type="submit" variant="ghost" className="w-full text-muted">
           Cerrar sesión
