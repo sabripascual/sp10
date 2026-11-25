@@ -312,6 +312,7 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Bici (v1.8)**: tipo `bici` 🚴‍♀️ "Bici" (migración 0017); en la semana ideal se cuenta como "salida/salidas en bici".
 - **Derrapes sin resta y compensación automática (v1.9)**: los derrapes **no restan**: el nivel son 100 pts de la semana ideal (`level.ts`); los derrapes son métrica personal (Progreso, racha de compensados) y no cuentan para nivel ni ranking (texto en `EventSheet` y Entrenos). Compensación configurable: default en Ajustes (`profiles.derrape_comp` = `{mode, sport|"any", minutes 0/30/45/60/90, fastHours 1-3}`, `compPrefsOf`; sin ayuno, solo entreno) y por derrape al agendarlo (`events.comp_detail`); `createEvent` pone `extra_hours = fastHours` si incluye ayuno. **Automática** (`src/lib/compensation-data.ts` → `autoCompensate`, lógica pura `workoutCompensates`/`compensationCheck`/`compFastDone` en `events.ts`): se corre al guardar un entreno (y la celebración dice "😈✅ Compensaste …") y al cargar Hoy/Entrenos (para el ayuno que terminó solo); marca `compensated_at` y `compensated_by` (el entreno). Un entreno no compensa dos derrapes. Los derrapes viejos sin detalle: fierritos o 30 min de carrera, +2 h. **El entreno que compensó cuenta la mitad** para la semana ideal (`COMPENSATOR_WEIGHT` en `progress.ts`; se ve como "1,5/2" con `fmtCount`). Migración 0018; las consultas con columnas nuevas tienen `withFallback` (`src/lib/db-fallback.ts`) para no romper si el SQL todavía no se corrió.
 - **Fierritos simple o detallado (v1.9)**: `profiles.strength_mode` (migración 0018: quien ya tenía zonas queda `detailed`, el resto y las nuevas `simple`). Se elige en Ajustes. Simple = día y tiempo como el resto. Detallado = zonas + "🔁 Repetir el último" y "📅 Usar uno anterior" (últimos 6 fierritos con zonas, `recentStrength` de `getTrainingData`).
+- **Footer BRAVE**: isotipo (`public/brave-logo.png`, recortado y con fondo transparente desde `design/brave-logo-original.jpg`) + "BRAVE" + copyright, en `components/shell/footer.tsx`.
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
 ## Pendiente
@@ -320,7 +321,7 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Alimentación** para quien hace dieta sin ayuno: por ahora nada (decisión de la dueña).
 
 ## Pendientes de la dueña
-- Pasar el logo BRAVE en SVG para el footer (hoy es un wordmark de texto).
+- (ninguno: el logo BRAVE ya está en el footer)
 
 ## Preguntas abiertas
 - (ninguna por ahora)
