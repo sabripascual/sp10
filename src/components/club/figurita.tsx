@@ -277,7 +277,6 @@ async function drawStory(d: FiguritaData, withPhoto: boolean): Promise<Blob> {
   const ctx = c.getContext("2d")!;
   const font = getComputedStyle(document.body).fontFamily || "sans-serif";
   const f = (weight: number, size: number) => `${weight} ${size}px ${font}`;
-  const lvl = LEVELS.find((l) => l.key === d.level)!;
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, W, H);
   ctx.textAlign = "center";
@@ -292,11 +291,27 @@ async function drawStory(d: FiguritaData, withPhoto: boolean): Promise<Blob> {
   const ch = (card.height / card.width) * cw;
   ctx.drawImage(card, (W - cw) / 2, 415, cw, ch);
   ctx.fillStyle = "#fff";
-  ctx.font = f(900, 46);
-  ctx.fillText(`¿Y vos qué perrita sos? ${lvl.emoji}`, W / 2, 415 + ch + 60);
-  ctx.fillStyle = "#a3a3a3";
-  ctx.font = f(800, 30);
-  ctx.fillText("Pedime tu usuario y sumate al Ringo Club 🐶", W / 2, 415 + ch + 112);
+  ctx.font = f(900, 40);
+  ctx.fillText("Ringo Club", W / 2, 415 + ch + 70);
+  // "Un producto de BRAVE Tech Studio" con el isotipo de BRAVE adelante
+  const line = "Un producto de BRAVE Tech Studio";
+  ctx.font = f(700, 30);
+  const tw = ctx.measureText(line).width;
+  const y = 415 + ch + 118;
+  let logoW = 0;
+  try {
+    const logo = await loadImage("/brave-logo.png");
+    logoW = (logo.width / logo.height) * 40;
+    const x0 = W / 2 - (tw + logoW + 12) / 2;
+    ctx.drawImage(logo, x0, y - 32, logoW, 40);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#a3a3a3";
+    ctx.fillText(line, x0 + logoW + 12, y);
+  } catch {
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#a3a3a3";
+    ctx.fillText(line, W / 2, y);
+  }
   return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error("sin imagen"))), "image/png"));
 }
 

@@ -95,7 +95,7 @@ export function LevelCard({
       {/* Escalera de niveles con cuántas semanas fuiste cada una */}
       <div className="space-y-2">
         <p className="text-xs font-bold text-muted">
-          Tus semanas en cada nivel
+          ¿Cuántas semanas estuviste en cada nivel?
         </p>
         <ol className="grid grid-cols-6 gap-1.5">
           {LEVELS.map((l, i) => (
@@ -119,9 +119,7 @@ export function LevelCard({
                   counts[l.key] ? "text-fg" : "text-muted",
                 )}
               >
-                {counts[l.key]
-                  ? `${counts[l.key]} ${counts[l.key] === 1 ? "sem" : "sems"}`
-                  : "—"}
+                {counts[l.key]}
               </span>
             </li>
           ))}
