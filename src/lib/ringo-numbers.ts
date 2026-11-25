@@ -153,7 +153,7 @@ export async function getRingoNumbers() {
       if (start > today) return null; // todavía no llegó esa semana
       if (!members.length) return null;
       const n = members.filter((p) => activeBetween(p.id, start, shiftDate(start, 7))).length;
-      return Math.round((n / members.length) * 100);
+      return { pct: Math.round((n / members.length) * 100), n };
     };
     return { weekStart: ws, n: members.length, w1: rate(1), w2: rate(2), w4: rate(4) };
   }).filter((c) => c.n > 0);
@@ -161,12 +161,14 @@ export async function getRingoNumbers() {
   // ── 3. Activación: lo básico completado ──
   const withPush = new Set((subs ?? []).map((s) => s.user_id as string));
   const inClub = new Set((memberships ?? []).map((m) => m.user_id as string));
-  const pctOf = (fn: (p: Profile) => boolean) => (active.length ? Math.round((active.filter(fn).length / active.length) * 100) : 0);
+  const total = active.length;
+  const part = (n: number) => ({ n, total, pct: total ? Math.round((n / total) * 100) : 0 });
+  const pctOf = (fn: (p: Profile) => boolean) => part(active.filter(fn).length);
   const activation = [
-    { key: "semana", label: "Armó su semana ideal", pct: pctOf((p) => Boolean(p.weekly_goals) || (p.goals_history?.length ?? 0) > 0) },
-    { key: "avisos", label: "Activó los avisos", pct: pctOf((p) => withPush.has(p.id)) },
-    { key: "foto", label: "Puso foto", pct: pctOf((p) => Boolean(p.avatar_path)) },
-    { key: "club", label: "Está en un club", pct: pctOf((p) => inClub.has(p.id)) },
+    { key: "semana", label: "Armó su semana ideal", ...pctOf((p) => Boolean(p.weekly_goals) || (p.goals_history?.length ?? 0) > 0) },
+    { key: "avisos", label: "Activó los avisos", ...pctOf((p) => withPush.has(p.id)) },
+    { key: "foto", label: "Puso foto", ...pctOf((p) => Boolean(p.avatar_path)) },
+    { key: "club", label: "Está en un club", ...pctOf((p) => inClub.has(p.id)) },
   ];
 
   // ── 4. Uso por función (últimos 28 días) ──
@@ -175,12 +177,12 @@ export async function getRingoNumbers() {
   const workoutUsers = used((workouts ?? []).map((w) => ({ user_id: w.user_id, d: w.date })));
   const eventUsers = used((events ?? []).map((e) => ({ user_id: e.user_id, d: String(e.created_at).slice(0, 10) })));
   const bodyUsers = used((checks ?? []).map((c) => ({ user_id: c.user_id, d: c.date })));
-  const share = (set: Set<string>) => (active.length ? Math.round((active.filter((p) => set.has(p.id)).length / active.length) * 100) : 0);
+  const share = (set: Set<string>) => part(active.filter((p) => set.has(p.id)).length);
   const features = [
-    { key: "entrenos", label: "Cargó entrenos", pct: share(workoutUsers) },
-    { key: "ayuno", label: "Marcó ayunos", pct: share(fastUsers), note: `${pctOf((p) => p.fasting_enabled !== false)}% lo tiene prendido` },
-    { key: "derrapes", label: "Agendó derrapes", pct: share(eventUsers) },
-    { key: "cuerpo", label: "Hizo un control", pct: share(bodyUsers) },
+    { key: "entrenos", label: "Cargó entrenos", ...share(workoutUsers) },
+    { key: "ayuno", label: "Marcó ayunos", ...share(fastUsers), note: `${pctOf((p) => p.fasting_enabled !== false).n} lo tienen prendido` },
+    { key: "derrapes", label: "Agendó derrapes", ...share(eventUsers) },
+    { key: "cuerpo", label: "Hizo un control", ...share(bodyUsers) },
   ];
 
   return {

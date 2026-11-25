@@ -38,7 +38,7 @@ export default async function AdminPage() {
           <Stat value={s.total} label="cuentas" />
           <Stat value={s.active7} label="activas esta semana" />
           <Stat value={s.new7} label="nuevas esta semana" />
-          <Stat value={pct(s.withPush)} label="con avisos activos" />
+          <Stat value={pct(s.withPush)} label={`con avisos activos · ${s.withPush} de ${s.total}`} />
         </div>
 
         {s.workoutsByType.length > 0 && (

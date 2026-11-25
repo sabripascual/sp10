@@ -8,13 +8,14 @@ const emoji = (k: LevelKey | null) => (k ? LEVELS.find((l) => l.key === k)!.emoj
 const comma = (n: number) => String(n).replace(".", ",");
 const dm = (d: string) => `${Number(d.slice(8))}/${Number(d.slice(5, 7))}`;
 
-function Bar({ label, pct, note }: { label: string; pct: number; note?: string }) {
+function Bar({ label, pct, n, total, note }: { label: string; pct: number; n: number; total: number; note?: string }) {
   return (
     <div className="space-y-1">
       <div className="flex items-baseline justify-between gap-2 text-xs">
         <span className="font-bold">{label}</span>
         <span className="font-black tabular-nums">
-          {pct}%{note && <span className="ml-1 font-normal text-muted">· {note}</span>}
+          {pct}% <span className="font-bold text-muted">· {n} de {total}</span>
+          {note && <span className="ml-1 font-normal text-muted">· {note}</span>}
         </span>
       </div>
       <span className="block h-2 overflow-hidden rounded-full bg-bg">
@@ -24,7 +25,14 @@ function Bar({ label, pct, note }: { label: string; pct: number; note?: string }
   );
 }
 
-const pctCell = (v: number | null) => (v === null ? "—" : `${v}%`);
+const pctCell = (v: { pct: number; n: number } | null) =>
+  v === null ? (
+    "—"
+  ) : (
+    <>
+      <span className="font-black">{v.pct}%</span> <span className="text-muted">({v.n})</span>
+    </>
+  );
 
 function Stat({ value, label }: { value: number | string; label: string }) {
   return (
@@ -122,7 +130,7 @@ export function RingoNumbers({ d }: { d: Data }) {
           Activación <span className="font-normal text-muted">· qué completaron</span>
         </p>
         {d.activation.map((a) => (
-          <Bar key={a.key} label={a.label} pct={a.pct} />
+          <Bar key={a.key} label={a.label} pct={a.pct} n={a.n} total={a.total} />
         ))}
       </div>
 
@@ -132,7 +140,7 @@ export function RingoNumbers({ d }: { d: Data }) {
           Uso por función <span className="font-normal text-muted">· últimos 28 días</span>
         </p>
         {d.features.map((f) => (
-          <Bar key={f.key} label={f.label} pct={f.pct} note={"note" in f ? f.note : undefined} />
+          <Bar key={f.key} label={f.label} pct={f.pct} n={f.n} total={f.total} note={"note" in f ? f.note : undefined} />
         ))}
       </div>
 

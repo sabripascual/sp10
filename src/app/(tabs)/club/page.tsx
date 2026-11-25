@@ -2,7 +2,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
 import { clubDirectory, clubRequests, getClubData } from "@/lib/club-data";
 import { ClubDirectory } from "@/components/club/club-directory";
-import { ChevronDown } from "lucide-react";
+import Link from "next/link";
 import { closedRanking, figuritaNumber } from "@/lib/club";
 import { ClubTabs } from "@/components/club/club-tabs";
 import { LiveSteps, Podium } from "@/components/club/club-views";
@@ -50,18 +50,21 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
   const ranked = closedRanking(members);
   const mine = ranked.find((m) => m.isMe);
   const pos = mine ? ranked.indexOf(mine) + 1 : 0;
-  const [h, directory, requests] = await Promise.all([
-    headers(),
-    clubDirectory(me.id),
-    club.role === "owner" ? clubRequests(club.id) : Promise.resolve([]),
-  ]);
+  const [h, requests] = await Promise.all([headers(), club.role === "owner" ? clubRequests(club.id) : Promise.resolve([])]);
   const inviteUrl = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}/club/unirse/${club.inviteCode}`;
 
   return (
     <>
       <PageHeader title={club.name} subtitle={isMonday ? `Cerró la semana del ${dm(closedWeek)} 🏁` : "¿Quién es la perrita más picante?"} />
       <div className="space-y-4">
-        <ClubSwitcher clubs={clubs} current={club.id} />
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <ClubSwitcher clubs={clubs} current={club.id} />
+          </div>
+          <Link href="/club/explorar" className="shrink-0 rounded-full bg-surface px-4 py-2 text-sm font-extrabold">
+            🔎 Explorar clubes
+          </Link>
+        </div>
 
         {mine?.closed && (
           <FiguritaReveal
@@ -97,15 +100,6 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
           requests={requests}
         />
 
-        <details className="group rounded-2xl bg-surface">
-          <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 font-bold">
-            Explorar clubes
-            <ChevronDown className="size-5 text-muted transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="px-5 pb-3">
-            <ClubDirectory clubs={directory} defaultName={club.myName} />
-          </div>
-        </details>
 
         <CreateClub defaultName={club.myName} className="w-full bg-surface text-fg" label="+ Crear otro club" />
       </div>
