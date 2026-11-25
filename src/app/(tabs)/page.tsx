@@ -11,6 +11,7 @@ import { getProgressData } from "@/lib/progress-data";
 import { LevelCard } from "@/components/progress/level-card";
 import { getBodyData } from "@/lib/body-data";
 import Link from "next/link";
+import { avatarUrl } from "@/lib/avatar";
 import { Button } from "@/components/ui/button";
 
 export default async function HoyPage() {
@@ -33,7 +34,7 @@ export default async function HoyPage() {
     <>
       <PageHeader title={`Hola, ${apodo}`} subtitle="Esto es lo que toca hoy." />
       <div className="space-y-4">
-        <LevelCard last={progress.level.last} counts={progress.level.counts} current={progress.weeks.at(-1)!} />
+        <LevelCard last={progress.level.last} counts={progress.level.counts} current={progress.weeks.at(-1)!} avatar={avatarUrl(profile.avatar_path)} />
 
         <FastTimer view={toView(fast)} compact streak={streak} />
 

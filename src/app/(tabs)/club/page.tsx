@@ -4,6 +4,7 @@ import { getClubData, type ClubMember } from "@/lib/club-data";
 import { LEVELS } from "@/lib/level";
 import { cn } from "@/lib/utils";
 import { JoinForm } from "./join-form";
+import { Avatar } from "@/components/shell/avatar";
 
 const dm = (date: string) => `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
 const MEDAL = ["🥇", "🥈", "🥉"];
@@ -21,7 +22,7 @@ export default async function ClubPage() {
           <div>
             <CardTitle>¿Te sumás?</CardTitle>
             <CardDescription className="mt-1">
-              Cada lunes, el ranking muestra en qué nivel de perrita cerró la semana cada una. Las demás solo ven tu nombre,
+              Cada lunes, el ranking muestra en qué nivel de perrita cerró la semana cada una. Las demás solo ven tu nombre, tu foto de perfil,
               tu nivel, tus puntos y el % de tu semana. Nunca ven tu peso, tus medidas ni tus fotos. Salís cuando quieras.
             </CardDescription>
           </div>
@@ -49,7 +50,10 @@ export default async function ClubPage() {
                 return (
                   <li key={m.id} className={cn("flex items-center gap-3 rounded-xl px-3 py-2.5", m.isMe ? "bg-accent text-accent-fg" : "bg-bg")}>
                     <span className="w-7 text-center text-lg font-black tabular-nums">{MEDAL[i] ?? i + 1}</span>
-                    <span className="text-2xl">{lvl.emoji}</span>
+                    <span className="relative shrink-0">
+                      <Avatar url={m.avatar} className="size-11 bg-surface" emojiClass="text-2xl" />
+                      <span className="absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full bg-bg text-sm">{lvl.emoji}</span>
+                    </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-black">
                         {m.name}
@@ -89,8 +93,12 @@ export default async function ClubPage() {
                         {here.map((m) => (
                           <span
                             key={m.id}
-                            className={cn("rounded-full px-2.5 py-0.5 text-xs font-bold", m.isMe ? "bg-accent text-accent-fg" : "bg-surface")}
+                            className={cn(
+                              "flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5 text-xs font-bold",
+                              m.isMe ? "bg-accent text-accent-fg" : "bg-surface",
+                            )}
                           >
+                            <Avatar url={m.avatar} className="size-6 bg-bg" emojiClass="text-xs" />
                             {m.name}
                           </span>
                         ))}
@@ -109,7 +117,7 @@ export default async function ClubPage() {
         <Card className="space-y-3">
           <div>
             <CardTitle>Tu lugar en el club</CardTitle>
-            <CardDescription className="mt-1">Las demás ven tu nombre, nivel, puntos y % de la semana. Nada más.</CardDescription>
+            <CardDescription className="mt-1">Las demás ven tu nombre, tu foto de perfil, nivel, puntos y % de la semana. Nada más.</CardDescription>
           </div>
           <JoinForm initialName={me.club_name ?? ""} joined />
         </Card>

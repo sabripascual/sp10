@@ -7,6 +7,8 @@ import { KeyGenerator } from "@/components/pwa/key-generator";
 import { PushSettings } from "@/components/pwa/push-settings";
 import { getProfile } from "@/lib/profile";
 import { SettingsForm } from "./settings-form";
+import { AvatarPicker } from "./avatar-picker";
+import { avatarUrl } from "@/lib/avatar";
 
 export default async function AjustesPage() {
   const profile = await getProfile();
@@ -20,6 +22,13 @@ export default async function AjustesPage() {
           <span aria-hidden>→</span>
         </Link>
       )}
+      <Card id="foto" className="mb-4 scroll-mt-20 space-y-4">
+        <div>
+          <CardTitle>Tu foto</CardTitle>
+          <CardDescription>Sale en ¿Cómo venís?, arriba y en el Ringo Club.</CardDescription>
+        </div>
+        <AvatarPicker userId={profile.id} url={avatarUrl(profile.avatar_path)} />
+      </Card>
       <Card id="avisos" className="mb-4 scroll-mt-20 space-y-4">
         <div>
           <CardTitle>Avisos</CardTitle>

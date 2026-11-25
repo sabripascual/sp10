@@ -2,6 +2,7 @@ import { LEVELS, levelFor, scoreParts, weekScore, type LevelKey, type ScorePart 
 import { weekGoals, type WeekSummary } from "@/lib/progress";
 import { missingText } from "@/lib/goals";
 import Link from "next/link";
+import { Avatar } from "@/components/shell/avatar";
 import { cn } from "@/lib/utils";
 
 // Del gris al amarillo a medida que sube el nivel
@@ -14,7 +15,9 @@ export function LevelCard({
   last,
   counts,
   current,
+  avatar = null,
 }: {
+  avatar?: string | null;
   last: { weekStart: string; score: number; level: LevelKey; parts: ScorePart[] } | null;
   counts: Record<LevelKey, number>;
   current: WeekSummary;
@@ -28,8 +31,8 @@ export function LevelCard({
 
       {lvl ? (
         <div className="flex items-center gap-4">
-          <div className={cn("relative grid size-24 shrink-0 place-items-center rounded-full", BADGE[idx])}>
-            <span className="text-5xl">🐶</span>
+          <div className={cn("relative grid size-24 shrink-0 place-items-center rounded-full", BADGE[idx], avatar && "p-1")}>
+            <Avatar url={avatar} className="size-full" emojiClass="text-5xl" />
             <span className="absolute -bottom-1 -right-1 grid size-10 place-items-center rounded-full bg-bg text-2xl ring-4 ring-surface">
               {lvl.emoji}
             </span>
@@ -44,7 +47,7 @@ export function LevelCard({
         </div>
       ) : (
         <div className="flex items-center gap-4">
-          <div className="grid size-24 shrink-0 place-items-center rounded-full bg-bg text-5xl">🐶</div>
+          <Avatar url={avatar} className="size-24 shrink-0 bg-bg" emojiClass="text-5xl" />
           <div>
             <p className="text-xl font-black leading-tight">Tu primer nivel sale el lunes</p>
             <p className="mt-1 text-sm text-muted">Califico semanas completas (lunes a domingo) según tu semana ideal y los derrapes.</p>

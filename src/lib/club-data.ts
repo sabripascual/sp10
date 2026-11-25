@@ -7,10 +7,12 @@ import { weekStart } from "@/lib/week";
 import { goalsOf } from "@/lib/goals";
 import { firstGradedWeek, levelFor, weekScore, type LevelKey } from "@/lib/level";
 import { weekGoals, weekSummaries } from "@/lib/progress";
+import { avatarUrl } from "@/lib/avatar";
 
 export type ClubMember = {
   id: string;
   name: string;
+  avatar: string | null;
   isMe: boolean;
   /** Nivel de la última semana cerrada (null = todavía no tiene una semana completa). */
   level: LevelKey | null;
@@ -23,7 +25,7 @@ export type ClubData = { me: Profile; joined: boolean; weekStart: string; member
 
 /**
  * Ranking del Ringo Club. Se calcula con service role (cada una solo puede leer lo suyo por RLS),
- * pero SOLO de quienes se sumaron, y devuelve únicamente nombre, nivel, puntos y % de la semana.
+ * pero SOLO de quienes se sumaron, y devuelve únicamente nombre, foto de perfil, nivel, puntos y % de la semana.
  */
 export async function getClubData(): Promise<ClubData> {
   const me = await getProfile();
@@ -71,6 +73,7 @@ export async function getClubData(): Promise<ClubData> {
     return {
       id: p.id,
       name: p.club_name!,
+      avatar: avatarUrl(p.avatar_path),
       isMe: p.id === me.id,
       level: score === null ? null : levelFor(score).key,
       score,

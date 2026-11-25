@@ -1,8 +1,12 @@
 import Link from "next/link";
-import { Bell, Settings } from "lucide-react";
+import { Bell } from "lucide-react";
+import { getProfile } from "@/lib/profile";
+import { avatarUrl } from "@/lib/avatar";
+import { Avatar } from "./avatar";
 import { RingoMark } from "@/components/brand/ringo-logo";
 
-export function TopBar() {
+export async function TopBar() {
+  const profile = await getProfile();
   return (
     <header className="sticky top-0 z-30 bg-bg/90 backdrop-blur pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex h-14 max-w-md items-center justify-between px-5">
@@ -21,9 +25,9 @@ export function TopBar() {
           <Link
             href="/ajustes"
             aria-label="Ajustes"
-            className="grid size-10 place-items-center rounded-full bg-surface text-fg"
+            className="block size-10 overflow-hidden rounded-full bg-surface ring-2 ring-surface"
           >
-            <Settings className="size-5" />
+            <Avatar url={avatarUrl(profile.avatar_path)} className="size-10" emojiClass="text-xl" />
           </Link>
         </div>
       </div>

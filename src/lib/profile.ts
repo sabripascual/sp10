@@ -19,6 +19,7 @@ export type Profile = {
   weekly_goals: Record<string, number> | null;
   club_visible?: boolean;
   club_name?: string | null;
+  avatar_path?: string | null;
 };
 
 export const DEFAULT_NICKNAMES = ["crack", "reina", "bebita", "diosa", "amorrrr"];
