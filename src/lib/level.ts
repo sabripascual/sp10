@@ -1,4 +1,4 @@
-// "¿Cómo venís?": nivel de la semana, de perrita pajera a perrita nivel dios.
+// "¿Cómo venís?": nivel de la semana, de Perrita Pajera a Perrita Nivel dios.
 // Se califica la semana cerrada (lunes a domingo); cambia cada lunes.
 import { weekGoals, type WeekSummary } from "@/lib/progress";
 import { fmtCount } from "@/lib/goals";
@@ -6,12 +6,12 @@ import { fmtCount } from "@/lib/goals";
 export type LevelKey = "pajera" | "vagoneta" | "promedio" | "motivada" | "crack" | "dios";
 
 export const LEVELS: { key: LevelKey; min: number; name: string; emoji: string; blurb: string }[] = [
-  { key: "pajera", min: 0, name: "Perrita pajera", emoji: "💤", blurb: "Semana de sillón. Pasa en las mejores familias: el lunes arrancamos de cero." },
-  { key: "vagoneta", min: 30, name: "Perrita vagoneta", emoji: "🛋️", blurb: "Algo hubo, pero a tu semana ideal le faltó bastante. Un par de cosas más y subís." },
-  { key: "promedio", min: 45, name: "Perrita promedio de la humanidad", emoji: "😐", blurb: "Ni fu ni fa. Con un empujoncito pasás a motivada." },
-  { key: "motivada", min: 60, name: "Perrita motivada", emoji: "🔥", blurb: "Se nota la onda. Seguí así que la crack está cerca." },
-  { key: "crack", min: 75, name: "Perrita crack", emoji: "⚡", blurb: "Semana de crack. Ni el Dibu ataja tanta constancia." },
-  { key: "dios", min: 90, name: "Perrita nivel dios", emoji: "👑", blurb: "Todo cumplido. Sos inalcanzable." },
+  { key: "pajera", min: 0, name: "Perrita Pajera", emoji: "💤", blurb: "Semana de sillón. Pasa en las mejores familias: el lunes arrancamos de cero." },
+  { key: "vagoneta", min: 30, name: "Perrita Vagoneta", emoji: "🛋️", blurb: "Algo hubo, pero a tu semana ideal le faltó bastante. Un par de cosas más y subís." },
+  { key: "promedio", min: 45, name: "Perrita Promedio de la humanidad", emoji: "😐", blurb: "Ni fu ni fa. Con un empujoncito pasás a Motivada." },
+  { key: "motivada", min: 60, name: "Perrita Motivada", emoji: "🔥", blurb: "Se nota la onda. Seguí así que la Crack está cerca." },
+  { key: "crack", min: 75, name: "Perrita Crack", emoji: "⚡", blurb: "Semana de crack. Ni el Dibu ataja tanta constancia." },
+  { key: "dios", min: 90, name: "Perrita Nivel dios", emoji: "👑", blurb: "Todo cumplido. Sos inalcanzable." },
 ];
 
 /**

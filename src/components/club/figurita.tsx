@@ -338,7 +338,7 @@ export function ShareFigurita({ d, className }: { d: FiguritaData; className?: s
         blob = await draw(d, false); // la foto no se pudo usar: va con el perrito
       }
       const file = new File([blob], `ringo-figurita${kind === "ig" ? "-historia" : ""}-${d.week.replace("/", "-")}.png`, { type: "image/png" });
-      const text = `Salí ${LEVELS.find((l) => l.key === d.level)!.name.toLowerCase()} ${LEVELS.find((l) => l.key === d.level)!.emoji} en el Ringo Club 🐶`;
+      const text = `Salí ${LEVELS.find((l) => l.key === d.level)!.name} ${LEVELS.find((l) => l.key === d.level)!.emoji} en el Ringo Club 🐶`;
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], text });
       } else {

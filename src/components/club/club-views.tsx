@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 // Del amarillo (arriba) al gris (abajo)
 const STEP_TONE = ["bg-accent text-accent-fg", "bg-[#ccbb00] text-black", "bg-[#8a7f10] text-white", "bg-[#4a4a4a] text-white", "bg-[#363636] text-white", "bg-[#262626] text-[#d4d4d4]"];
 const MOVE = { up: { t: "▲", c: "text-[#4ade80]" }, down: { t: "▼", c: "text-[#fb923c]" }, same: { t: "•", c: "text-muted" } };
-const short = (name: string) => name.replace("Perrita ", "").replace("promedio de la humanidad", "promedio");
+const short = (name: string) => name.replace("Perrita ", "").replace("Promedio de la humanidad", "Promedio");
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function Face({ m, size = "size-10", ring }: { m: ClubMember; size?: string; ring?: string }) {

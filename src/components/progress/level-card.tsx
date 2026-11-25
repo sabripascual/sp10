@@ -21,8 +21,6 @@ const BADGE = [
   "bg-accent",
 ];
 
-const dm = (date: string) =>
-  `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
 
 /** "¿Cómo venís?": nivel de la semana pasada, escalera de niveles y cuántas veces fuiste cada perrita. */
 export function LevelCard({
@@ -65,10 +63,7 @@ export function LevelCard({
             </span>
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-muted">
-              Nivel {idx + 1} de 6 · {last!.score} pts · semana del{" "}
-              {dm(last!.weekStart)}
-            </p>
+            <p className="text-xs font-bold text-muted">Tu clasificación de la semana</p>
             <p className="text-2xl font-black leading-tight">{lvl.name}</p>
             <p className="mt-1 text-sm text-muted">{lvl.blurb}</p>
           </div>

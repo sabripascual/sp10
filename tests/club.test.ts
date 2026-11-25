@@ -51,7 +51,7 @@ test("te pasó: alguien que ayer estaba atrás y hoy adelante", () => {
 test("figurita: número estable, texto de cambio y puntos al próximo escalón", () => {
   assert.equal(figuritaNumber("abc"), figuritaNumber("abc"));
   assert.match(figuritaNumber("abc"), /^\d{2}$/);
-  assert.equal(changeText("crack", "motivada"), "Subiste de motivada a crack, esaaa 📈");
+  assert.equal(changeText("crack", "motivada"), "Subiste de Motivada a Crack, esaaa 📈");
   assert.equal(changeText("motivada", "crack"), "Bajaste un escalón, nada que unos fierritos no arreglen");
   assert.match(changeText("crack", null), /primera figurita/);
   assert.deepEqual(pointsToNextLevel(70), { level: levelFor(75), pts: 5 });

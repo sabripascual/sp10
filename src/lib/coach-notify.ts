@@ -85,7 +85,7 @@ export function coachNotifications(ctx: CoachContext, rand: () => number = Math.
     // Puesto en su club (si está en varios, en el primero; el detalle de cada club llega en "Cerró el ranking")
     const c0 = ctx.clubs[0];
     const puesto = c0 ? ` y quedaste ${c0.pos}ª de ${c0.total} en ${c0.name}` : "";
-    add("level_result", ctx.last.weekStart, { emoji: lvl.emoji, nivel: lvl.name.toLowerCase(), cambio, puesto });
+    add("level_result", ctx.last.weekStart, { emoji: lvl.emoji, nivel: lvl.name, cambio, puesto });
   }
 
   // Lunes al mediodía: cerró el ranking (uno por club)
@@ -117,7 +117,7 @@ export function coachNotifications(ctx: CoachContext, rand: () => number = Math.
     const lvl = forecastLevel(items);
     const tone = pct >= 100 ? "done" : pct >= 50 ? "up" : pct >= 30 ? "mid" : "down";
     const linea = pick(FORECAST_LINES[tone], rand)
-      .replaceAll("{nivel}", lvl.name.replace("Perrita ", ""))
+      .replaceAll("{nivel}", lvl.name)
       .replaceAll("{emoji}", lvl.emoji)
       .replaceAll("{pct}", String(pct))
       .replaceAll("{falta}", missingText(items));

@@ -32,7 +32,7 @@ test("lunes 9:30: salió tu figurita, con puesto en el Club", () => {
   );
   assert.equal(due.length, 1);
   const msg = buildMessage(due[0].kind, due[0].vars, ["reina"], null, r0);
-  assert.equal(msg.body, "🃏 ¡Salió tu figurita, reina! Sos perrita crack ⚡ y quedaste 2ª de 5 en Ringo Club. Entrá a verla y mandala al grupo 📲");
+  assert.equal(msg.body, "🃏 ¡Salió tu figurita, reina! Sos Perrita Crack ⚡ y quedaste 2ª de 5 en Ringo Club. Entrá a verla y mandala al grupo 📲");
   // otro día u otra hora: nada; apagado por el admin: nada
   assert.equal(coachNotifications(base(at("2026-11-24T09:35:00"), { last: { weekStart: "2026-11-16", score: 78, level: "crack" } })).length, 0);
   assert.equal(coachNotifications(base(at("2026-11-23T09:35:00"), { last: { weekStart: "2026-11-16", score: 78, level: "crack" }, enabled: { level_result: false } })).length, 0);
@@ -43,7 +43,7 @@ test("miércoles 13:00: pronóstico según cómo vas", () => {
   const slow = goalProgress(goals, { fastOk: 1, byType: {} });
   const due = coachNotifications(base(at("2026-11-25T13:10:00"), { current: slow }), r0);
   assert.equal(due[0].kind, "forecast");
-  assert.match(String(due[0].vars.linea), /pronóstico dice perrita/);
+  assert.match(String(due[0].vars.linea), /pronóstico dice Perrita Pajera/);
   const fast = goalProgress(goals, { fastOk: 3, byType: { fuerza: 1 } });
   assert.equal(forecastLevel(fast.items).key, "dios"); // a este ritmo completa todo
 });

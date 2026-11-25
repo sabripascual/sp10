@@ -167,15 +167,15 @@ export const PODIUM_LINES = {
 export const FORECAST_LINES = {
   done: ["{Apodo}, ya cumpliste tu semana ideal y es miércoles. Lo que venga es de yapa 👑"],
   up: [
-    "Pronóstico Ringo: si seguís así, {apodo}, cerrás la semana perrita {nivel} {emoji}. Que no se te suba a la cabeza 😏",
+    "Pronóstico Ringo: si seguís así, {apodo}, cerrás la semana {nivel} {emoji}. Que no se te suba a la cabeza 😏",
     "{Apodo}, vas {pct}% y es miércoles. A este ritmo te van a pedir doping",
   ],
   mid: [
-    "{Apodo}, vas {pct}%: si mantenés, cerrás perrita {nivel} {emoji}. Con {falta} te asegurás subir",
+    "{Apodo}, vas {pct}%: si mantenés, cerrás {nivel} {emoji}. Con {falta} te asegurás subir",
     "Mitad de semana, {apodo}. Venís bien, pero el nivel dios no se regala: te falta {falta}",
   ],
   down: [
-    "El pronóstico dice perrita {nivel} {emoji}… pero los pronósticos se equivocan, {apodo}. Te falta {falta} y quedan 4 días",
+    "El pronóstico dice {nivel} {emoji}… pero los pronósticos se equivocan, {apodo}. Te falta {falta} y quedan 4 días",
     "{Apodo}, miércoles y {pct}%. Tranqui, Argentina remontó peores. {falta} y das vuelta el partido ⚽",
   ],
 };
