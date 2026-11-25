@@ -17,7 +17,11 @@ export type FiguritaData = {
   pct: number;
   prevLevel: LevelKey | null;
   week: string; // "16/11"
+  /** Club desde el que se mira (el puesto es de ese club). */
+  clubName?: string;
 };
+
+const bandText = (d: FiguritaData) => (d.clubName ?? `Ringo Club ${new Date().getFullYear()}`).toUpperCase();
 
 const GOLD = "#ffd24a";
 const YELLOW = "#ffe900";
@@ -34,7 +38,7 @@ export function FiguritaCard({ d }: { d: FiguritaData }) {
     >
       <div className="overflow-hidden rounded-2xl bg-[#141414]">
         <div className="flex items-center justify-between px-3.5 py-2.5 text-black" style={{ background: band }}>
-          <span className="text-xs font-black tracking-[0.08em]">RINGO CLUB {new Date().getFullYear()}</span>
+          <span className="truncate pr-2 text-xs font-black tracking-[0.08em]">{bandText(d)}</span>
           <span className="text-xs font-black">#{d.number}</span>
         </div>
         <div className="relative grid h-56 place-items-center bg-gradient-to-b from-[#3a3a3a] to-[#1f1f1f]">
@@ -155,7 +159,10 @@ async function drawFigurita(d: FiguritaData, withPhoto: boolean): Promise<Blob> 
   ctx.font = f(900, 36);
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
-  ctx.fillText(`RINGO CLUB ${new Date().getFullYear()}`, x0 + 60, y0 + pad + 46);
+  // nombre del club, achicado si no entra
+  let bt = bandText(d);
+  while (ctx.measureText(bt).width > cw - 240 && bt.length > 4) bt = bt.slice(0, -2) + "…";
+  ctx.fillText(bt, x0 + 60, y0 + pad + 46);
   ctx.textAlign = "right";
   ctx.fillText(`#${d.number}`, x0 + cw - 60, y0 + pad + 46);
   // Zona foto
@@ -282,7 +289,7 @@ async function drawStory(d: FiguritaData, withPhoto: boolean): Promise<Blob> {
   ctx.textAlign = "center";
   ctx.fillStyle = YELLOW;
   ctx.font = f(900, 30);
-  ctx.fillText("RINGO CLUB · SEMANA DEL " + d.week, W / 2, 300);
+  ctx.fillText(`${bandText(d)} · SEMANA DEL ${d.week}`, W / 2, 300);
   ctx.fillStyle = "#fff";
   ctx.font = f(900, 72);
   ctx.fillText("Mi figurita de la semana", W / 2, 385);

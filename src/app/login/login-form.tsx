@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 const inputClass =
   "h-14 w-full rounded-2xl bg-surface px-4 text-base text-fg placeholder:text-muted outline-none focus:ring-2 focus:ring-fg/40";
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(signIn, {});
   return (
     <form action={action} className="space-y-3">
+      {next && <input type="hidden" name="next" value={next} />}
       <input
         name="email"
         type="email"

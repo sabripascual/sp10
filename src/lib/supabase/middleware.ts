@@ -4,10 +4,12 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "./env";
 
 const PUBLIC_PATHS = ["/login", "/restringido", "/registro", "/recuperar", "/pendiente"];
 
-function redirectTo(request: NextRequest, pathname: string, base: NextResponse) {
+function redirectTo(request: NextRequest, pathname: string, base: NextResponse, next?: string) {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
   url.search = "";
+  // Volver a donde iba después del login (ej. un link de invitación a un club)
+  if (next) url.searchParams.set("next", next);
   const res = NextResponse.redirect(url);
   // conservar las cookies de sesión refrescadas
   base.cookies.getAll().forEach((c) => res.cookies.set(c));
@@ -47,7 +49,7 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
 
   if (!user?.sub) {
-    return isPublic ? response : redirectTo(request, "/login", response);
+    return isPublic ? response : redirectTo(request, "/login", response, path.startsWith("/club/unirse/") ? path : undefined);
   }
   // Logueada: el login la manda a Hoy (a /restringido llega si su cuenta está pausada)
   if (path === "/login" || path === "/registro" || path === "/recuperar") {

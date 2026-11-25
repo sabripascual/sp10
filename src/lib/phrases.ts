@@ -142,24 +142,24 @@ export const PHRASES: Record<NotifyKind, string[]> = {
 /** Domingo a la noche: el Club cierra a medianoche. {pos} {total} {gap} {arriba}. */
 export const CLOSING_LINES = {
   first: [
-    "🚨 Faltan 3 horas para que cierre el Ringo Club y vas PRIMERA, {apodo}. Agarrate fuerte que te quieren bajar del trono 👑",
-    "👑 {Apodo}, vas primera y quedan 3 horas. Cerrá la app, apagá la luz y no dejes que nadie te toque la corona",
+    "🚨 Faltan 3 horas para que cierre {club} y vas PRIMERA, {apodo}. Agarrate fuerte que te quieren bajar del trono 👑",
+    "👑 {Apodo}, vas primera en {club} y quedan 3 horas. Cerrá la app, apagá la luz y no dejes que nadie te toque la corona",
   ],
   chasing: [
-    "🚨 Últimas 3 horas del Ringo Club: vas {pos}ª y estás a {gap} pts de {arriba}. ¿Un entrenito de último momento, {apodo}? 😏",
-    "⏰ El Ringo Club cierra a medianoche y vas {pos}ª de {total}. Esto es como el último penal, {apodo}: a {arriba} le sacás {gap} pts y la pasás ⚽",
+    "🚨 Últimas 3 horas de {club}: vas {pos}ª y estás a {gap} pts de {arriba}. ¿Un entrenito de último momento, {apodo}? 😏",
+    "⏰ {club} cierra a medianoche y vas {pos}ª de {total}. Esto es como el último penal, {apodo}: a {arriba} le sacás {gap} pts y la pasás ⚽",
   ],
 };
 
 /** Lunes al mediodía: cerró el ranking. {ganadora} {pos} {total}. */
 export const PODIUM_LINES = {
   won: [
-    "🏆 ¡Cerró el ranking y GANASTE, {apodo}! 👑 Pasá a buscar tu corona por el podio, que la figurita dorada es tuya",
-    "🏆 Primera en el Ringo Club, {apodo}. Ya mandamos a hacer la estatua. Entrá a ver el podio 🌶️",
+    "🏆 ¡Cerró el ranking de {club} y GANASTE, {apodo}! 👑 Pasá a buscar tu corona por el podio, que la figurita dorada es tuya",
+    "🏆 Primera en {club}, {apodo}. Ya mandamos a hacer la estatua. Entrá a ver el podio 🌶️",
   ],
   rest: [
-    "🏆 Cerró el ranking, {apodo}: ganó {ganadora} 👑 y vos quedaste {pos}ª. Entrá a ver el podio y los premios 🌶️🚀🛋️",
-    "🍿 Ya está el podio de la semana: {ganadora} se llevó la corona y vos, el puesto {pos}. ¿Quién se ganó el sillón de oro? Entrá y enterate 🛋️",
+    "🏆 Cerró el ranking de {club}, {apodo}: ganó {ganadora} 👑 y vos quedaste {pos}ª. Entrá a ver el podio y los premios 🌶️🚀🛋️",
+    "🍿 Ya está el podio de {club}: {ganadora} se llevó la corona y vos, el puesto {pos}. ¿Quién se ganó el sillón de oro? Entrá y enterate 🛋️",
   ],
 };
 

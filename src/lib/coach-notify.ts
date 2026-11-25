@@ -32,9 +32,9 @@ export type CoachContext = {
   last: { weekStart: string; score: number; level: LevelKey } | null;
   prev: { level: LevelKey } | null;
   /** Ringo Club (si es miembro): puesto en la semana que cerró y quién ganó. */
-  club: { pos: number; total: number; winner: string } | null;
+  clubs: { id: string; name: string; pos: number; total: number; winner: string }[];
   /** Ringo Club en vivo (domingo a la noche): puesto y la de arriba. */
-  clubLive: { pos: number; total: number; above: { name: string; gap: number } | null } | null;
+  clubsLive: { id: string; name: string; pos: number; total: number; above: { name: string; gap: number } | null }[];
   /** Semana en curso. */
   current: { pct: number; items: GoalItem[] };
   fastStreak: number;
@@ -82,30 +82,34 @@ export function coachNotifications(ctx: CoachContext, rand: () => number = Math.
       const up = LEVELS.findIndex((l) => l.key === lvl.key) > LEVELS.findIndex((l) => l.key === ctx.prev!.level);
       cambio = up ? "Subiste de escalón, esaaa 📈 " : "Bajaste un escalón, nada que unos fierritos no arreglen. ";
     }
-    const puesto = ctx.club ? ` y quedaste ${ctx.club.pos}ª de ${ctx.club.total} en el Club` : "";
+    // Puesto en su club (si está en varios, en el primero; el detalle de cada club llega en "Cerró el ranking")
+    const c0 = ctx.clubs[0];
+    const puesto = c0 ? ` y quedaste ${c0.pos}ª de ${c0.total} en ${c0.name}` : "";
     add("level_result", ctx.last.weekStart, { emoji: lvl.emoji, nivel: lvl.name.toLowerCase(), cambio, puesto });
   }
 
-  // Lunes al mediodía: cerró el ranking (solo del Club)
-  if (day === 1 && at(PODIUM_AT) && ctx.club && ctx.last) {
-    const won = ctx.club.pos === 1;
-    const linea = pick(won ? PODIUM_LINES.won : PODIUM_LINES.rest, rand)
-      .replaceAll("{ganadora}", ctx.club.winner)
-      .replaceAll("{pos}", String(ctx.club.pos))
-      .replaceAll("{total}", String(ctx.club.total));
-    add("club_podium", ctx.last.weekStart, { linea });
-  }
+  // Lunes al mediodía: cerró el ranking (uno por club)
+  if (day === 1 && at(PODIUM_AT) && ctx.last)
+    for (const c of ctx.clubs) {
+      const linea = pick(c.pos === 1 ? PODIUM_LINES.won : PODIUM_LINES.rest, rand)
+        .replaceAll("{club}", c.name)
+        .replaceAll("{ganadora}", c.winner)
+        .replaceAll("{pos}", String(c.pos))
+        .replaceAll("{total}", String(c.total));
+      add("club_podium", `${ctx.last.weekStart}|${c.id}`, { linea }, `/club?c=${c.id}&tab=podio`);
+    }
 
-  // Domingo a la noche: último sprint (solo del Club, con al menos otra persona)
-  if (day === 7 && at(CLOSING_AT) && ctx.clubLive && ctx.clubLive.total >= 2) {
-    const { pos, total, above } = ctx.clubLive;
-    const linea = pick(pos === 1 || !above ? CLOSING_LINES.first : CLOSING_LINES.chasing, rand)
-      .replaceAll("{pos}", String(pos))
-      .replaceAll("{total}", String(total))
-      .replaceAll("{gap}", String(Math.max(1, above?.gap ?? 0)))
-      .replaceAll("{arriba}", above?.name ?? "");
-    add("club_closing", weekStart(today), { linea });
-  }
+  // Domingo a la noche: último sprint (uno por club, con al menos otra persona)
+  if (day === 7 && at(CLOSING_AT))
+    for (const c of ctx.clubsLive.filter((x) => x.total >= 2)) {
+      const linea = pick(c.pos === 1 || !c.above ? CLOSING_LINES.first : CLOSING_LINES.chasing, rand)
+        .replaceAll("{club}", c.name)
+        .replaceAll("{pos}", String(c.pos))
+        .replaceAll("{total}", String(c.total))
+        .replaceAll("{gap}", String(Math.max(1, c.above?.gap ?? 0)))
+        .replaceAll("{arriba}", c.above?.name ?? "");
+      add("club_closing", `${weekStart(today)}|${c.id}`, { linea }, `/club?c=${c.id}&tab=vivo`);
+    }
 
   // 2. Miércoles: pronóstico
   if (day === 3 && at(FORECAST_AT) && ctx.current.items.length) {
