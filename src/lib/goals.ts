@@ -14,7 +14,7 @@ export const GOAL_LABEL: Record<GoalKey, { emoji: string; label: string; one: st
   ...(Object.fromEntries(
     GOAL_KEYS.filter((k) => k !== "ayuno").map((k) => {
       const t = k as WorkoutType;
-      const name = t === "fuerza" ? "fierrito" : t === "bici" ? "salida en bici" : TYPE_LABEL[t].toLowerCase();
+      const name = t === "fuerza" ? "fierrito" : t === "bici" ? "salida en bici" : t === "crossfit" ? "CrossFit" : TYPE_LABEL[t].toLowerCase();
       const many = t === "fuerza" ? "fierritos" : t === "correr" ? "carreras" : t === "bici" ? "salidas en bici" : name;
       return [k, { emoji: TYPE_EMOJI[t], label: TYPE_LABEL[t], one: name, many }];
     }),

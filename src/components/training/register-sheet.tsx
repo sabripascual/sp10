@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { Chips } from "./chips";
 import { Celebration } from "./celebration";
 
-const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "squash", "trekking", "bici", "otro"];
+const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "squash", "trekking", "bici", "crossfit", "calistenia", "otro"];
 const MINUTES = [30, 45, 60, 75, 90, 120];
 const DEFAULT_ZONE: ZoneWork = { exercises: 3, reps: 12, rounds: 3 };
 

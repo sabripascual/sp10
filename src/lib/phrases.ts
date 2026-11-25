@@ -19,7 +19,9 @@ export type NotifyKind =
   | "streak_milestone"
   | "idle"
   | "club_closing"
-  | "club_podium";
+  | "club_podium"
+  // Solo para admins: recordatorio de solicitudes sin responder (no se configura)
+  | "admin_pending";
 
 export type CoachKind = "level_result" | "forecast" | "streak_milestone" | "idle" | "club_closing" | "club_podium";
 
@@ -72,6 +74,7 @@ export const URLS: Record<NotifyKind, string> = {
   idle: "/entrenos?registrar=any", // anotar algo ya
   club_closing: "/club?tab=vivo",
   club_podium: "/club?tab=podio",
+  admin_pending: "/admin#solicitudes",
 };
 
 export const PHRASES: Record<NotifyKind, string[]> = {
@@ -131,6 +134,7 @@ export const PHRASES: Record<NotifyKind, string[]> = {
     "🃏 Calificación del lunes: {nivel} {emoji}{puesto}. {cambio}Tocá y mirá tu figurita, {apodo}",
   ],
   club_closing: ["{linea}"],
+  admin_pending: ["{linea}"],
   club_podium: ["{linea}"],
   forecast: ["🔮 {linea}"],
   streak_milestone: ["{linea}"],

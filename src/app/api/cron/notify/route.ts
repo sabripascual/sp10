@@ -6,7 +6,7 @@ import { localDate, shiftDate, type FastDay } from "@/lib/fast";
 import { sinceDate } from "@/lib/fast-data";
 import { nextCheckDate } from "@/lib/body";
 import { isoDay, weekStart } from "@/lib/week";
-import { dueNotifications } from "@/lib/notify-rules";
+import { adminReminder, dueNotifications } from "@/lib/notify-rules";
 import { CLOSING_AT, coachNotifications, LEVEL_AT, PODIUM_AT } from "@/lib/coach-notify";
 import { allClubStandings } from "@/lib/club-data";
 import { closedRanking, liveRanking } from "@/lib/club";
@@ -188,6 +188,25 @@ export async function POST(req: NextRequest) {
       const { expired } = await sendPush(subs, { title: "Ringo", body: msg.body, url: n.url ?? URLS[n.kind], tag: n.kind });
       if (expired.length) await db.from("push_subscriptions").delete().in("endpoint", expired);
       report[p.id].push(n.kind);
+    }
+  }
+
+  // Admins: recordatorio de solicitudes de cuenta y pedidos de contraseña sin responder (10:00 y 19:00)
+  const admins = list.filter((p) => p.role === "admin" && subsOf.has(p.id));
+  if (admins.length) {
+    const [{ count: accounts }, { count: passwords }] = await Promise.all([
+      db.from("profiles").select("id", { count: "exact", head: true }).eq("role", "pending"),
+      db.from("password_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    ]);
+    for (const a of admins) {
+      const n = adminReminder(now, a.timezone, accounts ?? 0, passwords ?? 0);
+      if (!n) continue;
+      const { error: logErr } = await db.from("notification_log").insert({ user_id: a.id, kind: n.kind, ref: n.ref, phrase_id: 0 });
+      if (logErr) continue; // ya se mandó en este horario
+      const msg = buildMessage(n.kind, n.vars, a.nicknames, null);
+      const { expired } = await sendPush(subsOf.get(a.id)!, { title: "Ringo · Panel", body: msg.body, url: n.url ?? URLS[n.kind], tag: n.kind });
+      if (expired.length) await db.from("push_subscriptions").delete().in("endpoint", expired);
+      (report[a.id] ??= []).push(n.kind);
     }
   }
 

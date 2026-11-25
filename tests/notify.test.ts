@@ -99,3 +99,15 @@ test("cada aviso lleva a su acción: falta un deporte → registrar ese deporte"
   const due = dueNotifications(base(thu, { goals: { pct: 50, items } }));
   assert.deepEqual(due.map((n) => [n.url, n.vars.falta]), [["/entrenos?registrar=bici", "2 salidas en bici"]]);
 });
+
+test("admins: recordatorio de solicitudes a las 10 y a las 19, lleva a la bandeja", async () => {
+  const { adminReminder } = await import("../src/lib/notify-rules");
+  const tz = "America/Argentina/Tucuman";
+  const r = adminReminder(at("2026-11-25T10:05:00"), tz, 2, 1);
+  assert.equal(r?.ref, "2026-11-25|10:00");
+  assert.equal(r?.url, "/admin#solicitudes");
+  assert.match(String(r?.vars.linea), /2 solicitudes de cuenta y 1 pedido de contraseña/);
+  assert.equal(adminReminder(at("2026-11-25T19:10:00"), tz, 0, 1)?.url, "/admin#contrasenas");
+  assert.equal(adminReminder(at("2026-11-25T14:00:00"), tz, 2, 0), null); // fuera de horario
+  assert.equal(adminReminder(at("2026-11-25T10:05:00"), tz, 0, 0), null); // nada pendiente
+});

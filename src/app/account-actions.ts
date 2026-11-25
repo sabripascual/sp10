@@ -33,7 +33,7 @@ export async function requestPasswordReset(_prev: FormState, formData: FormData)
 
   const { error } = await db.from("password_requests").insert({ email, whatsapp });
   if (error) return { error: "No pude guardar el pedido. Probá de nuevo en un rato." };
-  await notifyAdmins(`🔑 ${email} pidió nueva contraseña`);
+  await notifyAdmins(`🔑 ${email} pidió nueva contraseña. Tocá para generarla y mandársela`, "/admin#contrasenas");
   return ok;
 }
 
@@ -63,7 +63,7 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
     await db.auth.admin.deleteUser(data.user.id); // que no quede una cuenta activa a medias
     return { error: "No pude crear la cuenta. Probá de nuevo." };
   }
-  await notifyAdmins(`🐶 Nueva solicitud: ${name} (${email})`);
+  await notifyAdmins(`🐶 Nueva solicitud de cuenta: ${name} (${email}). Tocá para aprobarla`, "/admin#solicitudes");
   return { ok: true, message: "¡Listo! Tu cuenta está esperando aprobación 🐶 Te avisamos por WhatsApp cuando esté activa." };
 }
 

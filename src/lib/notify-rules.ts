@@ -151,3 +151,28 @@ export function dueNotifications(ctx: NotifyContext): DueNotification[] {
 
   return out;
 }
+
+/**
+ * Recordatorio para las admins: 10:00 y 19:00 si hay solicitudes de cuenta o pedidos de contraseña sin responder.
+ * Lleva a la bandeja que corresponde del Panel.
+ */
+export function adminReminder(now: Date, tz: string, accounts: number, passwords: number): DueNotification | null {
+  if (!accounts && !passwords) return null;
+  const nowMin = toMin(formatInTimeZone(now, tz, "HH:mm"));
+  const slot = ["10:00", "19:00"].find((t) => {
+    const diff = nowMin - toMin(t);
+    return diff >= 0 && diff < CATCH_UP_MIN;
+  });
+  if (!slot) return null;
+  const parts = [
+    accounts ? `${accounts} ${accounts === 1 ? "solicitud de cuenta" : "solicitudes de cuenta"}` : "",
+    passwords ? `${passwords} ${passwords === 1 ? "pedido de contraseña" : "pedidos de contraseña"}` : "",
+  ].filter(Boolean);
+  const linea = `📬 Tenés ${parts.join(" y ")} esperando, {apodo}. Tocá y lo resolvés en un toque`;
+  return {
+    kind: "admin_pending",
+    ref: `${localDate(now, tz)}|${slot}`,
+    vars: { linea },
+    url: accounts ? "/admin#solicitudes" : "/admin#contrasenas",
+  };
+}

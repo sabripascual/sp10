@@ -41,7 +41,7 @@ export function AdminInbox({ applicants, requests }: { applicants: Applicant[]; 
       {msg && <p className="text-sm font-bold">{msg}</p>}
 
       {applicants.length > 0 && (
-        <div className="space-y-2 rounded-2xl bg-surface p-5">
+        <div id="solicitudes" className="scroll-mt-20 space-y-2 rounded-2xl bg-surface p-5 ring-1 ring-accent/40">
           <p className="text-lg font-bold">🐶 Solicitudes de cuenta ({applicants.length})</p>
           <ul className="divide-y divide-muted/30">
             {applicants.map((a) => (
@@ -87,7 +87,7 @@ export function AdminInbox({ applicants, requests }: { applicants: Applicant[]; 
       )}
 
       {requests.length > 0 && (
-        <div className="space-y-2 rounded-2xl bg-surface p-5">
+        <div id="contrasenas" className="scroll-mt-20 space-y-2 rounded-2xl bg-surface p-5 ring-1 ring-accent/40">
           <p className="text-lg font-bold">🔑 Pedidos de contraseña ({requests.length})</p>
           <ul className="divide-y divide-muted/30">
             {requests.map((r) => (

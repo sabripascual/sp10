@@ -2,7 +2,7 @@
 import type { EventPhase, SocialEvent } from "@/lib/events";
 
 // Las claves internas no cambian ("fuerza" = Fierritos, "correr" = Carrera).
-export type WorkoutType = "fuerza" | "correr" | "futbol" | "padel" | "tenis" | "squash" | "trekking" | "bici" | "otro";
+export type WorkoutType = "fuerza" | "correr" | "futbol" | "padel" | "tenis" | "squash" | "trekking" | "bici" | "crossfit" | "calistenia" | "otro";
 export type Feeling = "dificil" | "bien" | "excelente";
 
 export type Zone = "brazos" | "core" | "piernas";
@@ -36,10 +36,12 @@ export const TYPE_LABEL: Record<WorkoutType, string> = {
   squash: "Squash",
   trekking: "Trekking",
   bici: "Bici",
+  crossfit: "CrossFit",
+  calistenia: "Calistenia",
   otro: "Otro",
 };
 
-export const ALL_TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "squash", "trekking", "bici", "otro"];
+export const ALL_TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "squash", "trekking", "bici", "crossfit", "calistenia", "otro"];
 export const DEFAULT_FAVORITES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel"];
 export const MAX_FAVORITES = 4;
 
@@ -58,6 +60,8 @@ export const TYPE_EMOJI: Record<WorkoutType, string> = {
   squash: "⚫",
   trekking: "🥾",
   bici: "🚴‍♀️",
+  crossfit: "🏋️‍♀️",
+  calistenia: "🤸‍♀️",
   otro: "✨",
 };
 
