@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type Profile = {
   id: string;
-  role: "admin" | "user" | "disabled";
+  role: "admin" | "user" | "disabled" | "pending";
   nicknames: string[];
   fast_start: string; // "HH:MM:SS"
   fast_end: string;
@@ -22,6 +22,9 @@ export type Profile = {
   club_name?: string | null;
   avatar_path?: string | null;
   fasting_enabled?: boolean;
+  display_name?: string | null;
+  whatsapp?: string | null;
+  must_change_password?: boolean;
   derrape_comp?: Record<string, unknown> | null;
   strength_mode?: "simple" | "detailed" | null;
 };
@@ -47,6 +50,8 @@ export const getProfile = cache(async function getProfile(): Promise<Profile> {
   if (data) {
     // Cuenta pausada desde el panel admin
     if (data.role === "disabled") redirect("/restringido");
+    // Se registró sola y todavía no la aprobaron
+    if (data.role === "pending") redirect("/pendiente");
     return data as Profile;
   }
 

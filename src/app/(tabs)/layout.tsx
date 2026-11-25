@@ -2,6 +2,7 @@ import { BottomNav } from "@/components/shell/bottom-nav";
 import { TopBar } from "@/components/shell/top-bar";
 import { Footer } from "@/components/shell/footer";
 import { fastingOn, getProfile } from "@/lib/profile";
+import { TempPasswordPrompt } from "@/components/auth/password-forms";
 
 export default async function TabsLayout({ children }: { children: React.ReactNode }) {
   const profile = await getProfile();
@@ -13,6 +14,7 @@ export default async function TabsLayout({ children }: { children: React.ReactNo
         <Footer />
       </main>
       <BottomNav fasting={fastingOn(profile)} />
+      {profile.must_change_password && <TempPasswordPrompt />}
     </>
   );
 }

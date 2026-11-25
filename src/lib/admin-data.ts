@@ -25,7 +25,12 @@ export type AccountRow = {
   push: boolean;
 };
 
+export type Applicant = { id: string; email: string; name: string; whatsapp: string | null; createdAt: string };
+export type PasswordRequest = { id: string; email: string; whatsapp: string; createdAt: string; userId: string | null; name: string | null };
+
 export type AdminStats = {
+  applicants: Applicant[];
+  passwordRequests: PasswordRequest[];
   total: number;
   active7: number;
   new7: number;
@@ -47,13 +52,18 @@ export async function getAdminStats(): Promise<AdminStats> {
 
   const [usersRes, profiles, fasts, workouts, checks, events, subs] = await Promise.all([
     db.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-    db.from("profiles").select("id, role, created_at"),
+    db.from("profiles").select("*"),
     db.from("fast_days").select("user_id, updated_at").gte("date", since30),
     db.from("workouts").select("user_id, type, created_at, status").gte("date", since30),
     db.from("body_checks").select("user_id, created_at"),
     db.from("events").select("user_id, created_at"),
     db.from("push_subscriptions").select("user_id"),
   ]);
+  const { data: reqData } = await db
+    .from("password_requests")
+    .select("id, email, whatsapp, created_at")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false }); // sin la migración 0020: null, no rompe
   if (usersRes.error) throw new Error(usersRes.error.message);
 
   const roleOf = new Map((profiles.data ?? []).map((p) => [p.id as string, p.role as AccountRow["role"]]));
@@ -79,7 +89,32 @@ export async function getAdminStats(): Promise<AdminStats> {
   const eventsN = count(events.data);
   const pushUsers = new Set((subs.data ?? []).map((s) => s.user_id as string));
 
-  const accounts: AccountRow[] = usersRes.data.users
+  const profileOf = new Map((profiles.data ?? []).map((p) => [p.id as string, p as { display_name?: string | null; whatsapp?: string | null }]));
+  const users = usersRes.data.users;
+  const byEmail = new Map(users.map((u) => [(u.email ?? "").toLowerCase(), u.id]));
+  const applicants: Applicant[] = users
+    .filter((u) => roleOf.get(u.id) === ("pending" as AccountRow["role"]))
+    .map((u) => ({
+      id: u.id,
+      email: u.email ?? "",
+      name: profileOf.get(u.id)?.display_name ?? u.email ?? "",
+      whatsapp: profileOf.get(u.id)?.whatsapp ?? null,
+      createdAt: u.created_at,
+    }));
+  const passwordRequests: PasswordRequest[] = (reqData ?? []).map((r) => {
+    const userId = byEmail.get(String(r.email)) ?? null;
+    return {
+      id: r.id as string,
+      email: r.email as string,
+      whatsapp: r.whatsapp as string,
+      createdAt: r.created_at as string,
+      userId,
+      name: userId ? (profileOf.get(userId)?.display_name ?? null) : null,
+    };
+  });
+
+  const accounts: AccountRow[] = users
+    .filter((u) => roleOf.get(u.id) !== ("pending" as AccountRow["role"]))
     .map((u) => ({
       id: u.id,
       email: u.email ?? "(sin email)",
@@ -99,6 +134,8 @@ export async function getAdminStats(): Promise<AdminStats> {
   done.forEach((w) => byType.set(w.type, (byType.get(w.type) ?? 0) + 1));
 
   return {
+    applicants,
+    passwordRequests,
     total: accounts.length,
     active7: accounts.filter((a) => (a.lastActivity ?? "") >= since7 || (a.lastSignIn ?? "") >= since7).length,
     new7: accounts.filter((a) => a.createdAt >= since7).length,

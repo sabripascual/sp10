@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/restringido"];
+const PUBLIC_PATHS = ["/login", "/restringido", "/registro", "/recuperar", "/pendiente"];
 
 function redirectTo(request: NextRequest, pathname: string, base: NextResponse) {
   const url = request.nextUrl.clone();
@@ -50,7 +50,7 @@ export async function updateSession(request: NextRequest) {
     return isPublic ? response : redirectTo(request, "/login", response);
   }
   // Logueada: el login la manda a Hoy (a /restringido llega si su cuenta está pausada)
-  if (path === "/login") {
+  if (path === "/login" || path === "/registro" || path === "/recuperar") {
     return redirectTo(request, "/", response);
   }
   return response;

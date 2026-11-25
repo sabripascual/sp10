@@ -7,6 +7,7 @@ import { KeyGenerator } from "@/components/pwa/key-generator";
 import { PushSettings } from "@/components/pwa/push-settings";
 import { fastingOn, getProfile } from "@/lib/profile";
 import { SettingsForm } from "./settings-form";
+import { ChangePasswordForm, WhatsappForm } from "@/components/auth/password-forms";
 import { weekStart } from "@/lib/week";
 import { localDate } from "@/lib/fast";
 import { AvatarPicker } from "./avatar-picker";
@@ -37,6 +38,14 @@ export default async function AjustesPage() {
           <CardDescription>Te escribo con apodo y onda. Activá los que quieras.</CardDescription>
         </div>
         {vapid ? <PushSettings vapidPublicKey={vapid} prefs={profile.notify_prefs ?? {}} fasting={fastingOn(profile)} /> : <KeyGenerator />}
+      </Card>
+      <Card id="cuenta" className="mb-4 scroll-mt-20 space-y-4">
+        <div>
+          <CardTitle>Tu cuenta</CardTitle>
+          <CardDescription>Tu WhatsApp de recuperación (por si te olvidás la contraseña) y tu contraseña.</CardDescription>
+        </div>
+        <WhatsappForm current={profile.whatsapp ?? null} />
+        <ChangePasswordForm />
       </Card>
       <SettingsForm profile={profile} currentWeek={weekStart(localDate(new Date(), profile.timezone))} />
       <form action={signOut} className="mt-8">

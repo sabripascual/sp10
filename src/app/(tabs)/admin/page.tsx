@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/shell/page-header";
 import { AccountList } from "@/components/admin/account-list";
 import { CreateAccount } from "@/components/admin/create-account";
 import { CoachNotify } from "@/components/admin/coach-notify";
+import { AdminInbox } from "@/components/admin/inbox";
 import { getCoachPrefs } from "@/lib/app-settings";
 import { getAdminStats, requireAdmin } from "@/lib/admin-data";
 import { TYPE_EMOJI, TYPE_LABEL, type WorkoutType } from "@/lib/training-types";
@@ -27,6 +28,8 @@ export default async function AdminPage() {
     <>
       <PageHeader title="Panel Ringo 🐶" subtitle="Cómo se usa Ringo. Solo uso: nada de pesos ni fotos." />
       <div className="space-y-4">
+        <AdminInbox applicants={s.applicants} requests={s.passwordRequests} />
+
         <div className="grid grid-cols-2 gap-2">
           <Stat value={s.total} label="cuentas" />
           <Stat value={s.active7} label="activas esta semana" />
