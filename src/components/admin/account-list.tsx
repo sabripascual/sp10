@@ -4,14 +4,24 @@ import { useState, useTransition } from "react";
 import { resetPassword, setRole } from "@/app/(tabs)/admin/actions";
 import type { AccountRow } from "@/lib/admin-data";
 import { cn } from "@/lib/utils";
+import { formatInTimeZone } from "date-fns-tz";
 
 const ROLE: Record<AccountRow["role"], string> = { admin: "Admin", user: "Usuaria", disabled: "Pausada" };
 
-function ago(iso: string | null) {
+/** "hoy 14:32", "ayer 21:10", "lun 24/11 9:05" (hora de Argentina). */
+function lastSeen(iso: string | null) {
   if (!iso) return "nunca";
-  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  return d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`;
+  const tz = "America/Argentina/Tucuman";
+  const d = new Date(iso);
+  const day = (x: Date) => formatInTimeZone(x, tz, "yyyy-MM-dd");
+  const time = formatInTimeZone(d, tz, "H:mm");
+  const now = new Date();
+  if (day(d) === day(now)) return `hoy ${time}`;
+  if (day(d) === day(new Date(now.getTime() - 86_400_000))) return `ayer ${time}`;
+  const wd = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"][Number(formatInTimeZone(d, tz, "i")) % 7];
+  return `${wd} ${formatInTimeZone(d, tz, "d/M")} ${time}`;
 }
+
 
 /** Cuentas de Ringo con su uso y acciones de admin. */
 export function AccountList({ accounts, meId }: { accounts: AccountRow[]; meId: string }) {
@@ -43,9 +53,9 @@ export function AccountList({ accounts, meId }: { accounts: AccountRow[]; meId: 
                   {ROLE[a.role]}
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-muted">
-                Último uso {ago(a.lastActivity ?? a.lastSignIn)} · ⏱️ {a.fasts30} · 💪🏻 {a.workouts30} · 📏 {a.checks} · 😈 {a.events}
-                {a.push ? " · 🔔" : ""}
+              <p className="mt-0.5 flex items-center justify-between gap-2 text-xs text-muted">
+                <span>Último ingreso: {lastSeen(a.lastSeen)}</span>
+                <span className={cn("shrink-0 font-bold", a.push ? "text-fg" : "")}>{a.push ? "🔔 Avisos activos" : "🔕 Sin avisos"}</span>
               </p>
             </button>
             {open === a.id && a.id !== meId && (

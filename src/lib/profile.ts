@@ -25,6 +25,7 @@ export type Profile = {
   display_name?: string | null;
   whatsapp?: string | null;
   must_change_password?: boolean;
+  last_seen_at?: string | null;
   derrape_comp?: Record<string, unknown> | null;
   strength_mode?: "simple" | "detailed" | null;
 };

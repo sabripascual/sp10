@@ -17,6 +17,7 @@ export type AccountRow = {
   role: "admin" | "user" | "disabled";
   createdAt: string;
   lastSignIn: string | null;
+  lastSeen: string | null; // último ingreso a la app (o el último login si todavía no hay)
   lastActivity: string | null; // último registro de cualquier tipo
   fasts30: number; // ayunos marcados a mano en 30 días
   workouts30: number;
@@ -89,7 +90,7 @@ export async function getAdminStats(): Promise<AdminStats> {
   const eventsN = count(events.data);
   const pushUsers = new Set((subs.data ?? []).map((s) => s.user_id as string));
 
-  const profileOf = new Map((profiles.data ?? []).map((p) => [p.id as string, p as { display_name?: string | null; whatsapp?: string | null }]));
+  const profileOf = new Map((profiles.data ?? []).map((p) => [p.id as string, p as { display_name?: string | null; whatsapp?: string | null; last_seen_at?: string | null }]));
   const users = usersRes.data.users;
   const byEmail = new Map(users.map((u) => [(u.email ?? "").toLowerCase(), u.id]));
   const applicants: Applicant[] = users
@@ -121,6 +122,7 @@ export async function getAdminStats(): Promise<AdminStats> {
       role: roleOf.get(u.id) ?? "user",
       createdAt: u.created_at,
       lastSignIn: u.last_sign_in_at ?? null,
+      lastSeen: profileOf.get(u.id)?.last_seen_at ?? u.last_sign_in_at ?? null,
       lastActivity: latest.get(u.id) ?? null,
       fasts30: fastsN.get(u.id) ?? 0,
       workouts30: workoutsN.get(u.id) ?? 0,
