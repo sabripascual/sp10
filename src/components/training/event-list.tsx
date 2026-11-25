@@ -15,7 +15,7 @@ export function EventList({ events }: { events: EventView[] }) {
   return (
     <ul className="divide-y divide-muted/30">
       {events.map((ev) => {
-        const canCompensate = ev.phase === "compensate" || ev.phase === "pending";
+        const canCompensate = ev.phase === "compensate";
         return (
           <li key={ev.id} className="flex items-center gap-3 py-3">
             <div className="min-w-0 flex-1">
@@ -32,6 +32,8 @@ export function EventList({ events }: { events: EventView[] }) {
               >
                 ✓ Compensé
               </button>
+            ) : ev.phase === "missed" ? (
+              <span className="shrink-0 rounded-full bg-bg px-2.5 py-1 text-xs font-bold text-muted">sin compensar</span>
             ) : ev.phase === "compensated" ? (
               <button
                 disabled={pending}

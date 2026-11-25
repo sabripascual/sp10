@@ -4,12 +4,13 @@ import { useState, useTransition } from "react";
 import { compensateEvent, deleteEvent } from "@/app/(tabs)/entrenos/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { COMPENSATION_LABEL, KIND_LABEL, compensationTask } from "@/lib/events";
+import { COMPENSATION_LABEL, KIND_LABEL, compensateDeadline, compensationTask } from "@/lib/events";
+import { shiftDate } from "@/lib/fast";
 import type { EventView } from "@/lib/training-types";
-import { shortDate } from "@/lib/week";
+import { dayName, shortDate } from "@/lib/week";
 
 /** Tarjeta de un evento según su momento: preparar, disfrutar, compensar. */
-export function EventCard({ ev, firstMeal }: { ev: EventView; firstMeal: string }) {
+export function EventCard({ ev, firstMeal, today }: { ev: EventView; firstMeal: string; today: string }) {
   const [pending, start] = useTransition();
   const [party, setParty] = useState(false);
 
@@ -21,17 +22,19 @@ export function EventCard({ ev, firstMeal }: { ev: EventView; firstMeal: string 
 
   const remove = () => start(async () => void (await deleteEvent(ev.id)));
 
-  if (ev.phase === "compensate" || ev.phase === "pending") {
+  if (ev.phase === "compensate") {
+    const deadline = compensateDeadline(ev.date);
+    const yesterday = ev.date === shiftDate(today, -1);
+    const until = deadline === today ? "Hoy es el último día para compensarlo." : `Tenés hasta el ${dayName(deadline)} para compensarlo.`;
     return (
       <Card className="space-y-4">
         <div>
-          <CardTitle>
-            {ev.phase === "compensate" ? "Toca compensar el derrape" : "Derrape sin compensar"} · {ev.name}
-          </CardTitle>
+          <CardTitle>😈 Toca compensar · {ev.name}</CardTitle>
           <CardDescription className="mt-1">
-            {ev.phase === "compensate"
+            {yesterday
               ? `Ayer fue fiesta, hoy le devolvemos al cuerpo. ${compensationTask(ev.compensation, firstMeal)}`
-              : "Quedó sin tildar, sin drama. Si lo hiciste, marcalo."}
+              : `Fue el ${shortDate(ev.date)}. Compensación: ${COMPENSATION_LABEL[ev.compensation].toLowerCase()}.`}{" "}
+            {until}
           </CardDescription>
         </div>
         <Button variant="primary" size="lg" className="w-full" disabled={pending} onClick={() => compensate()}>

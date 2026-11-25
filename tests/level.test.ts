@@ -5,31 +5,31 @@ import type { WeekSummary } from "../src/lib/progress";
 
 const w = (x: Partial<WeekSummary>): WeekSummary => ({
   weekStart: "2026-11-16", isCurrent: false, strength: 0, strengthGoal: 3, fastOk: 7, fastDays: 7,
-  compensated: 0, pending: 0, runMinutes: 0, otherWorkouts: 0, ...x,
+  compensated: 0, missed: 0, runMinutes: 0, otherWorkouts: 0, byType: {}, goals: { ayuno: 5, fuerza: 2, futbol: 1 }, ...x,
 });
 
-test("semana perfecta es nivel dios", () => {
-  assert.equal(weekScore(w({ strength: 3, otherWorkouts: 3 })), 100);
+// Objetivo de ejemplo: 5 ayunos, 2 fierritos, 1 fútbol → 85 pts repartidos 29/28/28 + derrapes 15
+const t = (fuerza: number, futbol: number) => ({ fuerza, futbol });
+
+test("semana ideal cumplida es nivel dios", () => {
+  assert.equal(weekScore(w({ byType: t(2, 1) })), 100);
   assert.equal(levelFor(100).key, "dios");
 });
 
-test("buen ayuno y nada de entreno: promedio; con un derrape pendiente: vagoneta", () => {
-  assert.equal(levelFor(weekScore(w({}))).key, "promedio"); // 35 + 15 = 50
-  assert.equal(levelFor(weekScore(w({ pending: 1 }))).key, "vagoneta"); // 42,5 → 43
-});
-
-test("poco ayuno, poco entreno y derrapes: pajera", () => {
-  assert.equal(levelFor(weekScore(w({ fastOk: 2, pending: 2 }))).key, "pajera");
+test("solo ayuno: vagoneta; poco de todo y derrapes: pajera", () => {
+  assert.equal(weekScore(w({})), 44); // 29 + 15
+  assert.equal(levelFor(44).key, "vagoneta");
+  assert.equal(levelFor(weekScore(w({ fastOk: 2, missed: 2 }))).key, "pajera"); // 12 + 0
 });
 
 test("motivada y crack", () => {
-  assert.equal(levelFor(weekScore(w({ strength: 2, otherWorkouts: 1 }))).key, "crack"); // 35+23+5+15=78
-  assert.equal(levelFor(weekScore(w({ fastOk: 5, strength: 2 }))).key, "motivada"); // 25+23+0+15=63
+  assert.equal(levelFor(weekScore(w({ byType: t(1, 1) }))).key, "crack"); // 29+14+28+15 = 86
+  assert.equal(levelFor(weekScore(w({ fastOk: 3, byType: t(1, 1) }))).key, "motivada"); // 17+14+28+15 = 74
 });
 
 test("historial: solo semanas cerradas desde el inicio", () => {
   const h = levelHistory(
-    [w({ weekStart: "2026-11-09" }), w({ weekStart: "2026-11-16", strength: 3, otherWorkouts: 3 }), w({ weekStart: "2026-11-23", isCurrent: true })],
+    [w({ weekStart: "2026-11-09" }), w({ weekStart: "2026-11-16", byType: t(2, 1) }), w({ weekStart: "2026-11-23", isCurrent: true })],
     "2026-11-16",
   );
   assert.equal(h.graded.length, 1);
@@ -44,12 +44,12 @@ test("se califica desde la primera semana completa", () => {
 });
 
 test("desglose de puntos con el porqué", () => {
-  const parts = scoreParts(w({ fastOk: 6, strength: 2, otherWorkouts: 1, pending: 1 }));
-  assert.deepEqual(parts.map((p) => [p.key, p.points, p.why]), [
-    ["ayuno", 30, "6/7 cumplidos"],
-    ["fierritos", 23, "2 de 3"],
-    ["movimiento", 5, "1 de 3 entrenos"],
-    ["derrapes", 8, "1 sin compensar"],
+  const x = w({ fastOk: 4, byType: t(1, 0), missed: 1 });
+  assert.deepEqual(scoreParts(x).map((p) => [p.key, p.points, p.max, p.why]), [
+    ["ayuno", 23, 29, "4 de 5"],
+    ["fuerza", 14, 28, "1 de 2"],
+    ["futbol", 0, 28, "0 de 1"],
+    ["derrapes", 8, 15, "1 sin compensar"],
   ]);
-  assert.equal(weekScore(w({ fastOk: 6, strength: 2, otherWorkouts: 1, pending: 1 })), 66);
+  assert.equal(weekScore(x), 45);
 });

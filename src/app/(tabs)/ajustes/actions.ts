@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { favoritesOf } from "@/lib/training-types";
+import { GOAL_KEYS, MAX_PER_GOAL, type Goals } from "@/lib/goals";
 
 export type SettingsState = { ok?: boolean; error?: string };
 
@@ -14,7 +15,16 @@ export async function updateSettings(
 ): Promise<SettingsState> {
   const fastStart = String(formData.get("fast_start") ?? "");
   const fastEnd = String(formData.get("fast_end") ?? "");
-  const strengthGoal = Number(formData.get("strength_goal"));
+  let goals: Goals = {};
+  try {
+    const raw = JSON.parse(String(formData.get("weekly_goals") ?? "{}")) as Record<string, unknown>;
+    for (const k of GOAL_KEYS) {
+      const n = Number(raw[k]);
+      if (Number.isInteger(n) && n > 0) goals[k] = Math.min(n, MAX_PER_GOAL);
+    }
+  } catch {
+    goals = {};
+  }
   const hideWeight = formData.get("hide_weight") === "on";
   const favoriteSports = favoritesOf(String(formData.get("favorite_sports") ?? "").split(","));
   const bodyStart = String(formData.get("body_check_start") ?? "");
@@ -27,8 +37,7 @@ export async function updateSettings(
 
   if (!TIME_RE.test(fastStart) || !TIME_RE.test(fastEnd))
     return { error: "Revisá los horarios del ayuno." };
-  if (!Number.isInteger(strengthGoal) || strengthGoal < 1 || strengthGoal > 7)
-    return { error: "La meta de fuerza va de 1 a 7 por semana." };
+  if (Object.keys(goals).length === 0) return { error: "Elegí al menos un objetivo para tu semana." };
   if (nicknames.length === 0) return { error: "Dejame al menos un apodo." };
 
   const supabase = await createClient();
@@ -41,7 +50,9 @@ export async function updateSettings(
     .update({
       fast_start: fastStart,
       fast_end: fastEnd,
-      strength_goal: strengthGoal,
+      weekly_goals: goals,
+      // la meta de fierritos de siempre sigue al objetivo (si sacaste fierritos, queda la anterior)
+      ...(goals.fuerza ? { strength_goal: goals.fuerza } : {}),
       hide_weight: hideWeight,
       nicknames,
       body_check_start: bodyStart || null,

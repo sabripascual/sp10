@@ -3,14 +3,15 @@ import { formatInTimeZone } from "date-fns-tz";
 import { baseDurationMinutes, fastWindow, localDate, shiftDate, type FastConfig, type FastDay } from "@/lib/fast";
 import { isoDay } from "@/lib/week";
 import type { NotifyKind } from "@/lib/phrases";
+import { missingText, type GoalItem } from "@/lib/goals";
 
 export type NotifyContext = {
   now: Date;
   cfg: FastConfig;
   prefs: Partial<Record<NotifyKind, boolean>>;
   fastRecords: Map<string, FastDay>;
-  strengthDone: number;
-  strengthGoal: number;
+  /** Avance del objetivo semanal (Ajustes → Tu semana ideal). */
+  goals: { pct: number; items: GoalItem[] };
   events: { id: string; name: string; date: string; compensated_at: string | null }[];
   bodyNextDate: string;
   bodyDoneToday: boolean;
@@ -79,16 +80,17 @@ export function dueNotifications(ctx: NotifyContext): DueNotification[] {
     if (diff >= 120 && diff < 120 + CATCH_UP_MIN) add("fast_unconfirmed", ref);
   }
 
-  // Fuerza pendiente: jueves (meta-1) y domingo (meta)
+  // Cómo va la semana ideal: jueves y domingo a las 10, si falta algo
   if (at("10:00")) {
-    if (day === 4 && ctx.strengthDone < ctx.strengthGoal - 1)
-      add("strength_pending", today, { hechas: ctx.strengthDone, meta: ctx.strengthGoal, dia: DAYS[day] });
-    if (day === 7 && ctx.strengthDone < ctx.strengthGoal)
-      add("strength_pending", today, { hechas: ctx.strengthDone, meta: ctx.strengthGoal, dia: DAYS[day] });
+    if ((day === 4 || day === 7) && ctx.goals.items.length && ctx.goals.pct < 100)
+      add("week_goals", today, { pct: ctx.goals.pct, falta: missingText(ctx.goals.items), dia: DAYS[day] });
 
     for (const ev of ctx.events) {
       if (ev.date === shiftDate(today, 1)) add("event_tomorrow", ev.id, { evento: ev.name });
       if (ev.date === shiftDate(today, -1) && !ev.compensated_at) add("compensation_today", ev.id, { evento: ev.name });
+      // Último día para compensar (domingo) de un derrape de días anteriores
+      if (day === 7 && ev.date < shiftDate(today, -1) && ev.date >= shiftDate(today, -6) && !ev.compensated_at)
+        add("compensation_last", ev.id, { evento: ev.name });
     }
   }
 

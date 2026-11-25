@@ -6,6 +6,7 @@ import { loadFastRecords, sinceDate } from "@/lib/fast-data";
 import type { BodyCheck } from "@/lib/body";
 import { weekStart } from "@/lib/week";
 import { firstGradedWeek, levelHistory } from "@/lib/level";
+import { goalsOf } from "@/lib/goals";
 import {
   compensatedStreak,
   zoneStats,
@@ -51,7 +52,7 @@ export const getProgressData = cache(async function getProgressData(): Promise<P
     records,
     workouts: wRes.data ?? [],
     events: eRes.data ?? [],
-    strengthGoal: profile.strength_goal,
+    goals: goalsOf(profile.weekly_goals, profile.strength_goal),
     weeks: WEEKS,
   });
 

@@ -1,12 +1,12 @@
 // "¿Cómo venís?": nivel de la semana, de perrita pajera a perrita nivel dios.
 // Se califica la semana cerrada (lunes a domingo); cambia cada lunes.
-import type { WeekSummary } from "@/lib/progress";
+import { weekGoals, type WeekSummary } from "@/lib/progress";
 
 export type LevelKey = "pajera" | "vagoneta" | "promedio" | "motivada" | "crack" | "dios";
 
 export const LEVELS: { key: LevelKey; min: number; name: string; emoji: string; blurb: string }[] = [
   { key: "pajera", min: 0, name: "Perrita pajera", emoji: "💤", blurb: "Semana de sillón. Pasa en las mejores familias: el lunes arrancamos de cero." },
-  { key: "vagoneta", min: 30, name: "Perrita vagoneta", emoji: "🛋️", blurb: "El ayuno viene, al cuerpo le falta movimiento. Unos fierritos y subís." },
+  { key: "vagoneta", min: 30, name: "Perrita vagoneta", emoji: "🛋️", blurb: "Algo hubo, pero a tu semana ideal le faltó bastante. Un par de cosas más y subís." },
   { key: "promedio", min: 45, name: "Perrita promedio de la humanidad", emoji: "😐", blurb: "Ni fu ni fa. Con un empujoncito pasás a motivada." },
   { key: "motivada", min: 60, name: "Perrita motivada", emoji: "🔥", blurb: "Se nota la onda. Seguí así que la crack está cerca." },
   { key: "crack", min: 75, name: "Perrita crack", emoji: "⚡", blurb: "Semana de crack. Ni el Dibu ataja tanta constancia." },
@@ -14,30 +14,33 @@ export const LEVELS: { key: LevelKey; min: number; name: string; emoji: string; 
 ];
 
 /**
- * Puntaje 0-100:
- *  - Ayuno 35: cumplidos / días contados
- *  - Fierritos 35: hechos / meta (tope 1)
- *  - Movimiento extra 15: carrera, fútbol, pádel… (3 o más = completo)
- *  - Derrapes 15: compensados no restan; cada pendiente resta 7,5
+ * Puntaje 0-100, a partir de tu objetivo semanal (Ajustes → Tu semana ideal):
+ *  - Objetivos 85: se reparten en partes iguales entre lo que elegiste
+ *    (ej. ayunos, fierritos y fútbol → ~28 cada uno); cada uno suma según hecho / meta (tope 1).
+ *  - Derrapes 15: compensados no restan; cada uno que cerró la semana sin compensar resta 7,5.
  */
-export type ScorePart = { key: "ayuno" | "fierritos" | "movimiento" | "derrapes"; emoji: string; label: string; points: number; max: number; why: string };
+export type ScorePart = { key: string; emoji: string; label: string; points: number; max: number; why: string };
+
+const GOALS_POINTS = 85;
 
 /** Desglose del puntaje: cuántos puntos sumó cada parte y por qué. */
 export function scoreParts(w: WeekSummary): ScorePart[] {
-  const goal = Math.max(w.strengthGoal, 1);
-  return [
-    { key: "ayuno", emoji: "⏱️", label: "Ayuno", max: 35, points: Math.round(w.fastDays ? (w.fastOk / w.fastDays) * 35 : 0), why: w.fastDays ? `${w.fastOk}/${w.fastDays} cumplidos` : "todavía ninguno" },
-    { key: "fierritos", emoji: "💪🏻", label: "Fierritos", max: 35, points: Math.round(Math.min(w.strength / goal, 1) * 35), why: `${w.strength} de ${goal}` },
-    { key: "movimiento", emoji: "🏃‍♀️", label: "Extra", max: 15, points: Math.round(Math.min(w.otherWorkouts / 3, 1) * 15), why: `${w.otherWorkouts} de 3 entrenos` },
-    {
-      key: "derrapes",
-      emoji: "😈",
-      label: "Derrapes",
-      max: 15,
-      points: Math.round(Math.max(0, 15 - 7.5 * w.pending)),
-      why: w.pending ? `${w.pending} sin compensar` : "ninguno pendiente",
-    },
-  ];
+  const { items } = weekGoals(w);
+  const n = items.length;
+  const parts: ScorePart[] = items.map((g, i) => {
+    // reparto de 85 sin perder puntos por redondeo
+    const max = Math.floor(GOALS_POINTS / n) + (i < GOALS_POINTS % n ? 1 : 0);
+    return { key: g.key, emoji: g.emoji, label: g.label, max, points: Math.round(g.ratio * max), why: `${g.done} de ${g.target}` };
+  });
+  parts.push({
+    key: "derrapes",
+    emoji: "😈",
+    label: "Derrapes",
+    max: 15,
+    points: Math.round(Math.max(0, 15 - 7.5 * w.missed)),
+    why: w.missed ? `${w.missed} sin compensar` : "ninguno sin compensar",
+  });
+  return parts;
 }
 
 export function weekScore(w: WeekSummary) {

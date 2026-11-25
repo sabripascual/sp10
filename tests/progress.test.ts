@@ -28,29 +28,30 @@ test("resumen de la semana", () => {
       { date: "2026-11-16", type: "futbol", minutes: null, status: "skipped" },
     ],
     events: [{ date: "2026-11-20", compensated_at: "x" }],
-    strengthGoal: 3,
+    goals: { ayuno: 5, fuerza: 3, futbol: 1 },
     weeks: 1,
   });
   // lun 16 a sáb 21 terminaron (6), el del dom 22 está en curso; el 18 cortado → 5/6
-  assert.equal(summaryText(s[0]), "3/3 fierritos, 5/6 ayuno, 1 derrape compensado, 30 min corridos");
+  // ayunos 5/5 y fierritos 3/3 completos, fútbol 0/1 (el del lunes fue "no fui") → 67%
+  assert.equal(summaryText(s[0]), "67% de tu semana, 5/5 ayunos, 3/3 fierritos, 0/1 fútbol, 1 derrape compensado, 30 min corridos");
 });
 
 test("semanas con fuerza cumplida", () => {
   const w = (strength: number, isCurrent = false): WeekSummary => ({
-    weekStart: "", isCurrent, strength, strengthGoal: 3, fastOk: 0, fastDays: 0, compensated: 0, pending: 0, runMinutes: 0, otherWorkouts: 0,
+    weekStart: "", isCurrent, strength, strengthGoal: 3, fastOk: 0, fastDays: 0, compensated: 0, missed: 0, runMinutes: 0, otherWorkouts: 0, byType: {}, goals: { fuerza: 3 },
   });
   assert.deepEqual(strengthWeekStreaks([w(3), w(3), w(1), w(3), w(3), w(1, true)]), { current: 2, max: 2 });
   assert.deepEqual(strengthWeekStreaks([w(3), w(3), w(3, true)]), { current: 3, max: 3 });
 });
 
-test("compensados seguidos: lo pendiente corta, lo que está en 48 h no", () => {
+test("compensados seguidos: lo no compensado corta, lo que todavía se puede compensar no", () => {
   const today = "2026-11-30";
   const evs = [
     { date: "2026-11-01", compensated_at: "x" },
-    { date: "2026-11-08", compensated_at: null }, // pendiente
+    { date: "2026-11-08", compensated_at: null }, // no compensado
     { date: "2026-11-15", compensated_at: "x" },
     { date: "2026-11-22", compensated_at: "x" },
-    { date: "2026-11-29", compensated_at: null }, // todavía en 48 h
+    { date: "2026-11-29", compensated_at: null }, // domingo: se puede compensar hasta el lunes 30
   ];
   assert.deepEqual(compensatedStreak(evs, today), { current: 2, total: 3 });
 });

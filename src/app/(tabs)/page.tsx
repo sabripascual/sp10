@@ -26,7 +26,7 @@ export default async function HoyPage() {
   const apodo = randomNickname(profile.nicknames);
   const firstMeal = profile.fast_end.slice(0, 5);
 
-  const toCompensate = training.events.filter((e) => e.phase === "compensate" || e.phase === "pending");
+  const toCompensate = training.events.filter((e) => e.phase === "compensate");
   const soon = training.events.filter((e) => e.phase === "today" || e.phase === "tomorrow");
 
   return (
@@ -35,15 +35,7 @@ export default async function HoyPage() {
       <div className="space-y-4">
         <LevelCard last={progress.level.last} counts={progress.level.counts} current={progress.weeks.at(-1)!} />
 
-        {toCompensate.map((ev) => (
-          <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} />
-        ))}
-
         <FastTimer view={toView(fast)} compact streak={streak} />
-
-        {soon.map((ev) => (
-          <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} />
-        ))}
 
         {checkDue && (
           <Card className="space-y-3">
@@ -68,6 +60,11 @@ export default async function HoyPage() {
           nicknames={profile.nicknames}
           favorites={profile.favorite_sports}
         />
+
+        {/* Derrapes: después de lo importante (ayuno y entrenos) */}
+        {[...toCompensate, ...soon].map((ev) => (
+          <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} today={training.today} />
+        ))}
 
         <EventSheet today={training.today} className="w-full" />
       </div>

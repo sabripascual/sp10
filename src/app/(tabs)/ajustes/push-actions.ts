@@ -36,7 +36,7 @@ export async function sendTestPush(): Promise<PushResult> {
   const { data, error } = await supabase.from("push_subscriptions").select("endpoint, p256dh, auth");
   if (error) return { error: error.message };
   if (!data?.length) return { error: "Este celular todavía no tiene los avisos activados." };
-  const msg = buildMessage("strength_pending", { hechas: 0, meta: profile.strength_goal, dia: "hoy" }, profile.nicknames, null);
+  const msg = buildMessage("week_goals", { pct: 50, falta: "1 fierrito", dia: "hoy" }, profile.nicknames, null);
   const { delivered, expired } = await sendPush(data, { title: "Ringo · prueba", body: msg.body, url: "/" });
   if (expired.length) await supabase.from("push_subscriptions").delete().in("endpoint", expired);
   return delivered ? { ok: true } : { error: "No llegó a ningún dispositivo. Probá desactivar y activar de nuevo." };

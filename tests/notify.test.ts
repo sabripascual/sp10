@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { dueNotifications, isQuiet, type NotifyContext } from "../src/lib/notify-rules";
 import { buildMessage } from "../src/lib/phrases";
+import { goalProgress } from "../src/lib/goals";
 
 const at = (iso: string) => new Date(`${iso}-03:00`);
 const base = (now: Date, x: Partial<NotifyContext> = {}): NotifyContext => ({
@@ -9,8 +10,7 @@ const base = (now: Date, x: Partial<NotifyContext> = {}): NotifyContext => ({
   cfg: { fast_start: "19:00:00", fast_end: "11:00:00", timezone: "America/Argentina/Tucuman" },
   prefs: {},
   fastRecords: new Map(),
-  strengthDone: 0,
-  strengthGoal: 3,
+  goals: { pct: 100, items: [] },
   events: [],
   bodyNextDate: "2026-12-31",
   bodyDoneToday: false,
@@ -56,24 +56,35 @@ test("silencio nocturno 23:00 a 8:30", () => {
   assert.equal(isQuiet(at("2026-11-16T08:30:00"), "America/Argentina/Tucuman"), false);
 });
 
-test("jueves 10:00 fuerza pendiente si va menos de 2/3, eventos y compensación", () => {
+test("jueves 10:00 cómo va tu semana si falta algo, eventos y compensación", () => {
   const thu = at("2026-11-19T10:00:00");
-  assert.deepEqual(kinds(base(thu, { strengthDone: 1 })), ["strength_pending"]);
-  assert.deepEqual(kinds(base(thu, { strengthDone: 2 })), []);
+  const items = goalProgress({ ayuno: 5, fuerza: 2 }, { fastOk: 3, byType: { fuerza: 1 } }).items;
+  const due = dueNotifications(base(thu, { goals: { pct: 55, items } }));
+  assert.deepEqual(due.map((n) => [n.kind, n.vars.falta]), [["week_goals", "2 ayunos y 1 fierrito"]]);
+  assert.deepEqual(kinds(base(thu)), []); // semana completa: no molesta
   const events = [
     { id: "a", name: "cumple", date: "2026-11-20", compensated_at: null },
     { id: "b", name: "asado", date: "2026-11-18", compensated_at: null },
   ];
-  assert.deepEqual(kinds(base(thu, { strengthDone: 2, events })), ["compensation_today", "event_tomorrow"]);
+  assert.deepEqual(kinds(base(thu, { events })), ["compensation_today", "event_tomorrow"]);
 });
 
 test("control 9:30 y resumen del domingo 20:00", () => {
   assert.deepEqual(kinds(base(at("2026-11-16T09:30:00"), { bodyNextDate: "2026-11-16" })), ["body_check"]);
-  assert.deepEqual(kinds(base(at("2026-11-22T20:00:00"), { strengthDone: 3 })), ["fast_confirm", "weekly_summary"]);
+  assert.deepEqual(kinds(base(at("2026-11-22T20:00:00"), {})), ["fast_confirm", "weekly_summary"]);
 });
 
 test("frase con apodo, sin repetir la última", () => {
   const m = buildMessage("window_closing", {}, ["reina"], 0, () => 0);
   assert.equal(m.phraseId, 1);
   assert.equal(m.body, "Reina, metéle a la última comida que se te acaba la ventana");
+});
+
+test("domingo 10:00: último día para compensar un derrape de la semana", () => {
+  const sun = at("2026-11-22T10:00:00");
+  const events = [
+    { id: "a", name: "cumple", date: "2026-11-18", compensated_at: null },
+    { id: "b", name: "asado", date: "2026-11-19", compensated_at: "x" },
+  ];
+  assert.deepEqual(kinds(base(sun, { events })), ["compensation_last"]);
 });

@@ -1,5 +1,7 @@
 import { LEVELS, levelFor, scoreParts, weekScore, type LevelKey, type ScorePart } from "@/lib/level";
-import type { WeekSummary } from "@/lib/progress";
+import { weekGoals, type WeekSummary } from "@/lib/progress";
+import { missingText } from "@/lib/goals";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 // Del gris al amarillo a medida que sube el nivel
@@ -45,7 +47,7 @@ export function LevelCard({
           <div className="grid size-24 shrink-0 place-items-center rounded-full bg-bg text-5xl">🐶</div>
           <div>
             <p className="text-xl font-black leading-tight">Tu primer nivel sale el lunes</p>
-            <p className="mt-1 text-sm text-muted">Califico semanas completas (lunes a domingo): ayunos, fierritos, movimiento y derrapes.</p>
+            <p className="mt-1 text-sm text-muted">Califico semanas completas (lunes a domingo) según tu semana ideal y los derrapes.</p>
           </div>
         </div>
       )}
@@ -100,14 +102,42 @@ function Parts({ parts }: { parts: ScorePart[] }) {
   );
 }
 
-/** Lo que vas sumando en la semana en curso. */
+/** Tu semana ideal: a qué % vas, cada objetivo y lo que falta. */
 function CurrentWeek({ current, showParts }: { current: WeekSummary; showParts: boolean }) {
   const score = weekScore(current);
   const lvl = levelFor(score);
+  const { items, pct } = weekGoals(current);
+  const falta = missingText(items);
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 rounded-xl bg-bg p-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-sm font-bold">🎯 Tu semana va al</p>
+        <p className="text-3xl font-black tabular-nums leading-none">{pct}%</p>
+      </div>
+      <span className="block h-2 overflow-hidden rounded-full bg-surface">
+        <span className="block h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+      </span>
+      <ul className="flex flex-wrap gap-1.5">
+        {items.map((g) => (
+          <li
+            key={g.key}
+            className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
+              g.done >= g.target ? "bg-accent text-accent-fg" : "bg-surface text-fg",
+            )}
+          >
+            {g.emoji} {g.done}/{g.target}
+          </li>
+        ))}
+      </ul>
       <p className="text-xs text-muted">
-        <span className="font-bold text-fg">Esta semana llevás {score} pts</span> {lvl.emoji} · el lunes se cierra y sale tu nivel.
+        {pct >= 100 ? (
+          <span className="font-bold text-fg">¡Semana ideal cumplida! 👑</span>
+        ) : (
+          <>Te falta: <span className="font-bold text-fg">{falta}</span>.</>
+        )}{" "}
+        Llevás {score} pts {lvl.emoji}; el lunes sale tu nivel.{" "}
+        <Link href="/ajustes" className="underline">Cambiar objetivos</Link>
       </p>
       {showParts && <Parts parts={scoreParts(current)} />}
     </div>

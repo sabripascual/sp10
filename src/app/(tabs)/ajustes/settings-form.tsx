@@ -6,6 +6,8 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import type { Profile } from "@/lib/profile";
 import { FastProtocolPicker } from "@/components/fast/fast-protocol";
 import { FavoriteSportsPicker } from "./favorite-sports";
+import { WeeklyGoalsPicker } from "./weekly-goals";
+import { goalsOf } from "@/lib/goals";
 import { updateSettings, type SettingsState } from "./actions";
 
 const inputClass =
@@ -26,19 +28,12 @@ export function SettingsForm({ profile }: { profile: Profile }) {
 
       <Card className="space-y-4">
         <div>
-          <CardTitle>Meta de fierritos 💪🏻</CardTitle>
-          <CardDescription>Sesiones por semana (lunes a domingo).</CardDescription>
+          <CardTitle>Tu semana ideal 🎯</CardTitle>
+          <CardDescription>
+            Lo mínimo que querés cumplir de lunes a domingo. Con esto te digo a qué % vas, te aviso jueves y domingo, y sale tu nivel.
+          </CardDescription>
         </div>
-        <input
-          name="strength_goal"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={7}
-          defaultValue={profile.strength_goal}
-          className={inputClass}
-          required
-        />
+        <WeeklyGoalsPicker initial={goalsOf(profile.weekly_goals, profile.strength_goal)} />
       </Card>
 
       <Card className="space-y-4">

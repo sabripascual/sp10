@@ -16,6 +16,7 @@ export type Profile = {
   body_check_start: string | null;
   notify_prefs: Record<string, boolean> | null;
   favorite_sports: string[] | null;
+  weekly_goals: Record<string, number> | null;
 };
 
 export const DEFAULT_NICKNAMES = ["crack", "reina", "bebita", "diosa", "amorrrr"];

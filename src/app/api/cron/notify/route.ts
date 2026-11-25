@@ -6,6 +6,7 @@ import { nextCheckDate } from "@/lib/body";
 import { weekDates } from "@/lib/week";
 import { dueNotifications } from "@/lib/notify-rules";
 import { buildMessage, URLS, type NotifyKind } from "@/lib/phrases";
+import { goalProgress, goalsOf, goalsText } from "@/lib/goals";
 
 export const dynamic = "force-dynamic";
 
@@ -45,17 +46,21 @@ export async function POST(req: NextRequest) {
     const records = new Map(((fasts.data ?? []) as FastDay[]).map((r) => [r.date, r]));
     const ws = (workouts.data ?? []) as { date: string; type: string; minutes: number | null; status: string }[];
     const done = ws.filter((w) => w.status === "done");
-    const strengthDone = done.filter((w) => w.type === "fuerza").length;
     const checkDates = (checks.data ?? []) as { date: string }[];
 
-    // Resumen de la semana (para el domingo)
+    // Avance de la semana ideal (ayunos ya terminados + entrenos por tipo)
     const created = localDate(new Date(p.created_at as string), tz);
     const elapsed = week.filter((d) => d < today);
     const fastOk = elapsed.filter((d) => ["ok", "extended", "event"].includes(dayMark(d, now, p, records, created))).length;
+    const byType: Record<string, number> = {};
+    for (const w of done) byType[w.type] = (byType[w.type] ?? 0) + 1;
+    const goals = goalProgress(goalsOf(p.weekly_goals, p.strength_goal), { fastOk, byType });
+
+    // Resumen de la semana (para el domingo)
     const compensated = (events.data ?? []).filter((e) => e.compensated_at && e.date >= week[0]).length;
     const runMin = done.filter((w) => w.type === "correr").reduce((a, w) => a + (w.minutes ?? 0), 0);
-    const parts = [`${strengthDone}/${p.strength_goal} fierritos`, `${fastOk}/${elapsed.length || 7} ayuno`];
-    if (compensated) parts.push(`${compensated} ${compensated === 1 ? "evento compensado" : "eventos compensados"}`);
+    const parts = [`${goals.pct}% de tu semana`, goalsText(goals.items)];
+    if (compensated) parts.push(`${compensated} ${compensated === 1 ? "derrape compensado" : "derrapes compensados"}`);
     if (runMin) parts.push(`${runMin} min corridos`);
 
     const sentLog = (log.data ?? []) as { kind: NotifyKind; ref: string; phrase_id: number | null }[];
@@ -64,8 +69,7 @@ export async function POST(req: NextRequest) {
       cfg: p,
       prefs: (p.notify_prefs ?? {}) as Partial<Record<NotifyKind, boolean>>,
       fastRecords: records,
-      strengthDone,
-      strengthGoal: p.strength_goal,
+      goals,
       events: events.data ?? [],
       bodyNextDate: nextCheckDate(checkDates, p.body_check_start, today),
       bodyDoneToday: checkDates.some((c) => c.date === today),
