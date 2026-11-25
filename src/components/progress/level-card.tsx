@@ -140,7 +140,7 @@ function CurrentWeek({ current }: { current: WeekSummary }) {
   return (
     <div className="space-y-3 rounded-xl bg-bg p-3">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-sm font-bold">🎯 Tu semana va al</p>
+        <p className="text-sm font-bold">Tu progreso de la semana</p>
         <p className="text-3xl font-black tabular-nums leading-none">{pct}%</p>
       </div>
       <span className="block h-2 overflow-hidden rounded-full bg-surface">
