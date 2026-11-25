@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Link2, X } from "lucide-react";
-import { createClub, joinClub, leaveClub, removeMember, renameClub, renameMe, type ClubResult } from "@/app/(tabs)/club/actions";
+import { answerRequest, createClub, joinClub, leaveClub, removeMember, renameClub, renameMe, setVisibility, type ClubResult } from "@/app/(tabs)/club/actions";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Avatar } from "@/components/shell/avatar";
@@ -94,10 +94,12 @@ export function ClubManage({
   club,
   members,
   inviteUrl,
+  requests = [],
 }: {
-  club: { id: string; name: string; role: "owner" | "member"; myName: string; memberCount: number };
+  club: { id: string; name: string; role: "owner" | "member"; myName: string; memberCount: number; visibility: "public" | "private" };
   members: Member[];
   inviteUrl: string;
+  requests?: { userId: string; name: string; avatar: string | null }[];
 }) {
   const owner = club.role === "owner";
   const [msg, setMsg] = useState<string | null>(null);
@@ -132,6 +134,34 @@ export function ClubManage({
         </span>
       </div>
 
+      {owner && requests.length > 0 && (
+        <div className="space-y-2 rounded-xl bg-bg p-3">
+          <p className="text-sm font-black">🙋 Quieren sumarse ({requests.length})</p>
+          {requests.map((r) => (
+            <div key={r.userId} className="flex items-center gap-2">
+              <Avatar url={r.avatar} className="size-8 bg-surface" emojiClass="text-sm" />
+              <span className="min-w-0 flex-1 truncate text-sm font-bold">{r.name}</span>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => run(() => answerRequest(club.id, r.userId, true))}
+                className="rounded-full bg-accent px-3 py-1.5 text-xs font-black text-accent-fg"
+              >
+                Aceptar
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => run(() => answerRequest(club.id, r.userId, false))}
+                className="rounded-full bg-surface px-3 py-1.5 text-xs font-bold"
+              >
+                Rechazar
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <button type="button" onClick={invite} className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent font-black text-accent-fg active:scale-[0.98]">
         <Link2 className="size-5" /> Invitar amigas
       </button>
@@ -163,6 +193,30 @@ export function ClubManage({
       <details className="rounded-xl bg-bg p-3">
         <summary className="cursor-pointer text-sm font-bold">Opciones</summary>
         <div className="mt-3 space-y-3">
+          {owner && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold text-muted">¿Quién puede encontrarlo?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    ["public", "🌎 Público", "Aparece en el listado y se puede pedir entrar"],
+                    ["private", "🔒 Privado", "Solo con el link de invitación"],
+                  ] as const
+                ).map(([v, t, d]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    disabled={pending}
+                    onClick={() => run(() => setVisibility(club.id, v))}
+                    className={cn("rounded-xl p-2.5 text-left", club.visibility === v ? "bg-accent text-accent-fg" : "bg-surface")}
+                  >
+                    <span className="block text-sm font-black">{t}</span>
+                    <span className={cn("block text-[11px] leading-tight", club.visibility === v ? "text-accent-fg/80" : "text-muted")}>{d}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {owner && <p className="text-xs font-bold text-muted">Nombre del club</p>}
           {owner && (
             <div className="flex gap-2">

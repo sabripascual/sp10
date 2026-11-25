@@ -19,6 +19,20 @@ export async function notifyAdmins(body: string, url = "/admin") {
   }
 }
 
+/** Aviso push a una usuaria (ej. "te aceptaron en el club"). Si algo falla, no corta nada. */
+export async function notifyUser(userId: string, body: string, url: string) {
+  try {
+    if (!isPushConfigured()) return;
+    const db = createAdminClient();
+    const { data: subs } = await db.from("push_subscriptions").select("endpoint, p256dh, auth").eq("user_id", userId);
+    if (!subs?.length) return;
+    const { expired } = await sendPush(subs as Subscription[], { title: "Ringo Club", body, url, tag: "club" });
+    if (expired.length) await db.from("push_subscriptions").delete().in("endpoint", expired);
+  } catch {
+    /* el aviso es un extra */
+  }
+}
+
 /** Contraseña temporal fácil de dictar: "perrita-4821". */
 export function friendlyPassword() {
   const words = ["perrita", "fierrito", "huesito", "ringo", "crack", "diosa", "pelota", "vincha"];

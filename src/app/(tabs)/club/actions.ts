@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile } from "@/lib/profile";
 import { CLUB_MAX_MEMBERS } from "@/lib/club-data";
+import { notifyUser } from "@/lib/admin-notify";
 
 export type ClubResult = { ok?: string; error?: string; clubId?: string };
 
@@ -61,6 +62,7 @@ export async function joinClub(code: string, myName: string): Promise<ClubResult
   if ((rows ?? []).length >= CLUB_MAX_MEMBERS) return { error: `El club está lleno (máximo ${CLUB_MAX_MEMBERS}).` };
   const { error } = await db.from("club_members").insert({ club_id: club.id, user_id: me.id, role: "member", display_name: mine });
   if (error) return { error: error.message };
+  await db.from("club_requests").delete().eq("club_id", club.id).eq("user_id", me.id);
   return done({ ok: `¡Bienvenida a ${club.name}! 🏆`, clubId: club.id });
 }
 
@@ -114,4 +116,64 @@ export async function renameMe(clubId: string, myName: string): Promise<ClubResu
   const { error } = await db.from("club_members").update({ display_name: mine }).eq("club_id", clubId).eq("user_id", me.id);
   if (error) return { error: error.message };
   return done({ ok: "Nombre cambiado." });
+}
+
+// ── Públicos / privados y solicitudes ─────────────────────────────────────
+
+/** La dueña elige si el club es público (aparece con "Solicitar unirme") o privado (solo con invitación). */
+export async function setVisibility(clubId: string, visibility: "public" | "private"): Promise<ClubResult> {
+  const me = await getProfile();
+  if (visibility !== "public" && visibility !== "private") return { error: "Opción inválida." };
+  const { db, ownerId } = await ownerOf(clubId);
+  if (ownerId !== me.id) return { error: "Solo la dueña puede cambiar esto." };
+  const { error } = await db.from("clubs").update({ visibility }).eq("id", clubId);
+  if (error) return { error: error.message.includes("visibility") ? "Falta correr la migración 0023." : error.message };
+  return done({ ok: visibility === "public" ? "Ahora el club es público 🌎" : "Ahora el club es privado 🔒" });
+}
+
+/** Pedir entrar a un club público: le avisa a la dueña. */
+export async function requestJoin(clubId: string, myName: string): Promise<ClubResult> {
+  const me = await getProfile();
+  const mine = cleanName(myName, 20);
+  if (!mine) return { error: "Poné tu nombre en el club." };
+  const db = createAdminClient();
+  const { data: club } = await db.from("clubs").select("id, name, owner_id, visibility").eq("id", clubId).maybeSingle();
+  if (!club || club.visibility !== "public") return { error: "Ese club es privado: se entra solo con invitación." };
+  const { data: rows } = await db.from("club_members").select("user_id").eq("club_id", clubId);
+  if ((rows ?? []).some((r) => r.user_id === me.id)) return { error: "Ya estás en este club 😉" };
+  if ((rows ?? []).length >= CLUB_MAX_MEMBERS) return { error: `El club está lleno (máximo ${CLUB_MAX_MEMBERS}).` };
+  const { error } = await db.from("club_requests").upsert({ club_id: clubId, user_id: me.id, display_name: mine }, { onConflict: "club_id,user_id" });
+  if (error) return { error: error.message };
+  await notifyUser(club.owner_id as string, `🙋 ${mine} quiere sumarse a ${club.name}`, `/club?c=${clubId}`);
+  return done({ ok: "¡Solicitud enviada! Te avisamos cuando la dueña te acepte 🐶" });
+}
+
+export async function cancelRequest(clubId: string): Promise<ClubResult> {
+  const me = await getProfile();
+  const db = createAdminClient();
+  await db.from("club_requests").delete().eq("club_id", clubId).eq("user_id", me.id);
+  return done({ ok: "Solicitud cancelada." });
+}
+
+/** La dueña acepta o rechaza una solicitud. */
+export async function answerRequest(clubId: string, userId: string, accept: boolean): Promise<ClubResult> {
+  const me = await getProfile();
+  const { db, ownerId } = await ownerOf(clubId);
+  if (ownerId !== me.id) return { error: "Solo la dueña puede responder solicitudes." };
+  const { data: req } = await db.from("club_requests").select("display_name").eq("club_id", clubId).eq("user_id", userId).maybeSingle();
+  if (!req) return done({ error: "Esa solicitud ya no está." });
+  if (accept) {
+    const { count } = await db.from("club_members").select("user_id", { count: "exact", head: true }).eq("club_id", clubId);
+    if ((count ?? 0) >= CLUB_MAX_MEMBERS) return { error: `El club está lleno (máximo ${CLUB_MAX_MEMBERS}).` };
+    const { error } = await db
+      .from("club_members")
+      .upsert({ club_id: clubId, user_id: userId, role: "member", display_name: req.display_name }, { onConflict: "club_id,user_id" });
+    if (error) return { error: error.message };
+  }
+  await db.from("club_requests").delete().eq("club_id", clubId).eq("user_id", userId);
+  if (accept) {
+    const { data: club } = await db.from("clubs").select("name").eq("id", clubId).maybeSingle();
+    await notifyUser(userId, `🏆 ¡Te aceptaron en ${club?.name ?? "el club"}! Entrá a ver cómo viene el ranking`, `/club?c=${clubId}`);
+  }
+  return done({ ok: accept ? `${req.display_name} ya está en el club 🎉` : "Solicitud rechazada." });
 }

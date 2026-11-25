@@ -67,6 +67,7 @@ export type ClubInfo = {
   role: "owner" | "member";
   myName: string;
   memberCount: number;
+  visibility: "public" | "private";
 };
 
 type MemberRow = { club_id: string; user_id: string; role: "owner" | "member"; display_name: string };
@@ -77,7 +78,9 @@ export async function myClubs(db: Db, userId: string): Promise<ClubInfo[]> {
   const ids = (mine ?? []).map((m) => m.club_id as string);
   if (!ids.length) return [];
   const [{ data: clubs }, { data: all }] = await Promise.all([
-    db.from("clubs").select("id, name, owner_id, invite_code").in("id", ids),
+    withFallback(db.from("clubs").select("id, name, owner_id, invite_code, visibility").in("id", ids), () =>
+      db.from("clubs").select("id, name, owner_id, invite_code").in("id", ids),
+    ["visibility"]),
     db.from("club_members").select("club_id").in("club_id", ids),
   ]);
   const count = (id: string) => (all ?? []).filter((m) => m.club_id === id).length;
@@ -93,6 +96,7 @@ export async function myClubs(db: Db, userId: string): Promise<ClubInfo[]> {
         role: m.role as ClubInfo["role"],
         myName: m.display_name as string,
         memberCount: count(c.id as string),
+        visibility: ((c as { visibility?: string }).visibility === "public" ? "public" : "private") as ClubInfo["visibility"],
       };
     })
     .filter(Boolean) as ClubInfo[];
@@ -224,4 +228,57 @@ export async function inviteInfo(code: string) {
     memberCount: (rows ?? []).length,
     memberIds: (rows ?? []).map((r) => r.user_id as string),
   };
+}
+
+// ── Directorio de clubes y solicitudes ────────────────────────────────────
+
+export type DirectoryClub = {
+  id: string;
+  name: string;
+  ownerName: string;
+  memberCount: number;
+  visibility: "public" | "private";
+  isMember: boolean;
+  requested: boolean;
+  full: boolean;
+};
+
+/** Todos los clubes (públicos primero, después los más grandes). Solo nombre, dueña y cantidad: nada de rankings ajenos. */
+export async function clubDirectory(meId: string): Promise<DirectoryClub[]> {
+  const db = createAdminClient();
+  const [{ data: clubs }, { data: rows }, { data: reqs }] = await Promise.all([
+    withFallback(db.from("clubs").select("id, name, visibility"), () => db.from("clubs").select("id, name"), ["visibility"]),
+    db.from("club_members").select("club_id, user_id, role, display_name"),
+    db.from("club_requests").select("club_id").eq("user_id", meId),
+  ]);
+  return (clubs ?? [])
+    .map((c) => {
+      const members = (rows ?? []).filter((r) => r.club_id === c.id);
+      const vis = (c as { visibility?: string }).visibility === "public" ? "public" : "private";
+      return {
+        id: c.id as string,
+        name: c.name as string,
+        ownerName: (members.find((m) => m.role === "owner")?.display_name as string) ?? "—",
+        memberCount: members.length,
+        visibility: vis as DirectoryClub["visibility"],
+        isMember: members.some((m) => m.user_id === meId),
+        requested: (reqs ?? []).some((r) => r.club_id === c.id),
+        full: members.length >= CLUB_MAX_MEMBERS,
+      };
+    })
+    .sort((a, b) => (a.visibility === b.visibility ? b.memberCount - a.memberCount : a.visibility === "public" ? -1 : 1));
+}
+
+/** Solicitudes pendientes de un club (para la dueña). */
+export async function clubRequests(clubId: string) {
+  const db = createAdminClient();
+  const { data } = await db.from("club_requests").select("user_id, display_name, created_at").eq("club_id", clubId).order("created_at");
+  const ids = (data ?? []).map((r) => r.user_id as string);
+  const { data: profiles } = ids.length ? await db.from("profiles").select("id, avatar_path").in("id", ids) : { data: [] };
+  return (data ?? []).map((r) => ({
+    userId: r.user_id as string,
+    name: r.display_name as string,
+    avatar: avatarUrl((profiles ?? []).find((p) => p.id === r.user_id)?.avatar_path as string | null),
+    createdAt: r.created_at as string,
+  }));
 }

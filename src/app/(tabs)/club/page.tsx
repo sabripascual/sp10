@@ -1,6 +1,8 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shell/page-header";
-import { getClubData } from "@/lib/club-data";
+import { clubDirectory, clubRequests, getClubData } from "@/lib/club-data";
+import { ClubDirectory } from "@/components/club/club-directory";
+import { ChevronDown } from "lucide-react";
 import { closedRanking, figuritaNumber } from "@/lib/club";
 import { ClubTabs } from "@/components/club/club-tabs";
 import { LiveSteps, Podium } from "@/components/club/club-views";
@@ -34,6 +36,13 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
           <CreateClub defaultName={defaultName} className="w-full" label="+ Crear mi club" />
           <p className="text-center text-sm text-muted">¿Te pasaron un link de invitación? Abrilo y te sumás.</p>
         </Card>
+        <Card className="mt-4 space-y-2">
+          <div>
+            <CardTitle>Clubes de Ringo</CardTitle>
+            <CardDescription>En los públicos podés pedir entrar; los privados son solo con invitación.</CardDescription>
+          </div>
+          <ClubDirectory clubs={await clubDirectory(me.id)} defaultName={defaultName} />
+        </Card>
       </>
     );
   }
@@ -41,7 +50,11 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
   const ranked = closedRanking(members);
   const mine = ranked.find((m) => m.isMe);
   const pos = mine ? ranked.indexOf(mine) + 1 : 0;
-  const h = await headers();
+  const [h, directory, requests] = await Promise.all([
+    headers(),
+    clubDirectory(me.id),
+    club.role === "owner" ? clubRequests(club.id) : Promise.resolve([]),
+  ]);
   const inviteUrl = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}/club/unirse/${club.inviteCode}`;
 
   return (
@@ -81,7 +94,18 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
           club={club}
           members={members.map((m) => ({ id: m.id, name: m.name, avatar: m.avatar, isMe: m.isMe, role: m.role }))}
           inviteUrl={inviteUrl}
+          requests={requests}
         />
+
+        <details className="group rounded-2xl bg-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 font-bold">
+            Explorar clubes
+            <ChevronDown className="size-5 text-muted transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="px-5 pb-3">
+            <ClubDirectory clubs={directory} defaultName={club.myName} />
+          </div>
+        </details>
 
         <CreateClub defaultName={club.myName} className="w-full bg-surface text-fg" label="+ Crear otro club" />
       </div>
