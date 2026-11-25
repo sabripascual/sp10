@@ -57,3 +57,17 @@ test("figurita: número estable, texto de cambio y puntos al próximo escalón",
   assert.deepEqual(pointsToNextLevel(70), { level: levelFor(75), pts: 5 });
   assert.equal(pointsToNextLevel(95), null);
 });
+
+import { weekSummaries } from "../src/lib/progress";
+import { weekScore } from "../src/lib/level";
+
+test("la semana cerrada da lo mismo en el Club (3 semanas) que en Hoy (26 semanas)", () => {
+  const cfg = { fast_start: "19:00:00", fast_end: "11:00:00", timezone: "America/Argentina/Tucuman" };
+  const workouts = Array.from({ length: 40 }, (_, i) => ({ id: String(i), date: new Date(Date.UTC(2026, 9, 1 + i * 1.4)).toISOString().slice(0, 10), type: i % 3 ? "futbol" : "fuerza", minutes: 45, status: "done" }));
+  const events = [{ date: "2026-11-18", compensated_at: "x", compensated_by: "35" }];
+  const input = { now: new Date("2026-11-25T15:00:00Z"), cfg, since: "2026-10-01", records: new Map(), workouts, events, goals: { ayuno: 5, fuerza: 2, futbol: 2 } };
+  const club = weekSummaries({ ...input, weeks: 3 });
+  const hoy = weekSummaries({ ...input, weeks: 26 });
+  assert.equal(club[1].weekStart, hoy.at(-2)!.weekStart);
+  assert.equal(weekScore(club[1]), weekScore(hoy.at(-2)!));
+});

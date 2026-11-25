@@ -30,7 +30,9 @@ export function LiveSteps({ members, daysLeft, myMissing }: { members: ClubMembe
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">Si la semana cerrara hoy…</p>
+        <p className="text-sm text-muted">
+          <strong className="text-fg">Esta semana, en curso:</strong> dónde cerraría cada una si terminara hoy
+        </p>
         <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 text-xs font-extrabold">
           <span className="size-2 animate-pulse rounded-full bg-[#ff5a5a]" />
           En vivo · {daysLeft === 1 ? "cierra hoy" : `cierra en ${daysLeft} días`}
@@ -88,10 +90,15 @@ export function LiveSteps({ members, daysLeft, myMissing }: { members: ClubMembe
       {me && meLevel && (
         <div className="flex items-center justify-between gap-3 rounded-2xl bg-accent px-4 py-3 text-accent-fg">
           <div className="min-w-0">
-            <p className="text-xs font-extrabold">Vos vas {pos}ª</p>
+            <p className="text-xs font-extrabold">Esta semana vas {pos}ª</p>
             <p className="truncate text-lg font-black">
-              {meLevel.emoji} {cap(short(meLevel.name))} · {me.live.pct}% de tu semana
+              {meLevel.emoji} {cap(short(meLevel.name))} · {me.live.pct}%
             </p>
+            {me.closed && (
+              <p className="truncate text-[11px] font-bold opacity-75">
+                La semana pasada cerraste {LEVELS.find((l) => l.key === me.closed!.level)!.emoji} {cap(short(LEVELS.find((l) => l.key === me.closed!.level)!.name))}
+              </p>
+            )}
           </div>
           <span className="shrink-0 text-right text-xs font-black leading-tight">
             {myMissing ? (
@@ -115,7 +122,7 @@ export function LiveSteps({ members, daysLeft, myMissing }: { members: ClubMembe
 }
 
 /** El lunes: podio de la semana que cerró, premios y cómo quedó cada una. */
-export function Podium({ members }: { members: ClubMember[] }) {
+export function Podium({ members, weekLabel }: { members: ClubMember[]; weekLabel?: string }) {
   const ranked = closedRanking(members);
   if (!ranked.length)
     return <p className="rounded-2xl bg-surface p-5 text-sm text-muted">Todavía nadie cerró una semana completa. El lunes sale el primer podio 🏆</p>;
@@ -152,6 +159,9 @@ export function Podium({ members }: { members: ClubMember[] }) {
 
   return (
     <div className="space-y-5">
+      <p className="text-sm text-muted">
+        <strong className="text-fg">Semana pasada{weekLabel ? ` (del ${weekLabel})` : ""}:</strong> así cerró cada una. Es la misma clasificación que ves en Hoy y en tu figurita.
+      </p>
       <div className="grid grid-cols-3 items-end gap-2 pt-2">
         <Spot m={second} place={2} />
         <Spot m={first} place={1} />

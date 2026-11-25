@@ -89,7 +89,7 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
         <ClubTabs
           startOnPodium={startOnPodium}
           live={<LiveSteps members={members} daysLeft={daysLeft} myMissing={myMissing} />}
-          podium={<Podium members={members} />}
+          podium={<Podium members={members} weekLabel={dm(closedWeek)} />}
         />
 
         <ClubManage

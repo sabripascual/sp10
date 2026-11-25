@@ -11,8 +11,8 @@ export function ClubTabs({ live, podium, startOnPodium }: { live: ReactNode; pod
       <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1" role="tablist">
         {(
           [
-            ["live", "🔴 En vivo"],
-            ["podium", "🏆 Podio de la semana"],
+            ["live", "🔴 Esta semana"],
+            ["podium", "🏆 Semana pasada"],
           ] as const
         ).map(([k, label]) => (
           <button
