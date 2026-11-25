@@ -321,59 +321,13 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 - **Cuentas (v2.0)**: migración 0020 (rol `pending`, `profiles.display_name`, `whatsapp`, `must_change_password`; tabla `password_requests` solo service role). **Registro** (`/registro`, `signUp` en `src/app/account-actions.ts`): crea la cuenta con service role (no hace falta habilitar sign ups en Supabase ni mandar mails), rol `pending` → `/pendiente`; aviso push a las admins (`notifyAdmins`, `src/lib/admin-notify.ts`); tope 50 pendientes. **Olvidé mi contraseña** (`/recuperar`, `requestPasswordReset`): email + WhatsApp, respuesta siempre igual, 1 pedido por email cada 10 min y 20 por hora en total. **Panel → bandeja** (`AdminInbox`): solicitudes (Aprobar → `user` + link de WhatsApp "Ya podés entrar"; Rechazar → borra la cuenta) y pedidos (Generar contraseña tipo `perrita-4821` → `must_change_password` + link `wa.me` con la contraseña; Descartar). Después de un reseteo (también el manual del Panel), `TempPasswordPrompt` en el layout ofrece elegir la propia ("Ahora no" la esconde hasta la próxima vez). **Ajustes → "Tu cuenta"**: WhatsApp de recuperación y cambiar contraseña. WhatsApp normalizado a formato internacional (`src/lib/whatsapp.ts`, Argentina por defecto, con tests).
 - **Clubes propios (v2.0)**: migración 0021: `clubs` (nombre 1-40, `owner_id`, `invite_code` único) y `club_members` (club, usuaria, rol owner/member, `display_name` 1-20); RLS prendido sin políticas: todo pasa por el servidor con service role (`src/app/(tabs)/club/actions.ts`: crear (máx. 5 propios), sumarse con código (tope `CLUB_MAX_MEMBERS` = 30), salir (si se va la dueña, la más antigua pasa a dueña; si no queda nadie se borra), sacar gente / renombrar / renovar link (solo dueña), cambiar mi nombre). La migración crea "Ringo Club" de la admin original con todas las que tenían `club_visible` (esas columnas quedan sin uso). `src/lib/club-data.ts`: `myClubs`, `clubRoster`, `standingsFor`, `allClubStandings` (cron y Panel, cada perfil se calcula una vez), `getClubData(clubId)`, `inviteInfo`. Pantalla `/club?c=<id>`: selector si está en varios, figurita con el nombre del club en la banda y el puesto de ese club, pestañas En vivo / Podio, `ClubManage` (Invitar amigas con `navigator.share`, miembros, opciones), "+ Crear otro club"; sin clubes: invitación a crear uno. Invitación: `/club/unirse/<código>` ("X te invita a…" → nombre → Sumarme); sin sesión, el login vuelve ahí (`?next=`). Avisos `club_podium`/`club_closing` uno por club (ref `semana|club`, lleva a `/club?c=…`), `level_result` con el puesto del primer club.
 - **Ringo en números (v2.0)**: sección del Panel (`src/lib/ringo-numbers.ts` → `getRingoNumbers`, componente `components/admin/ringo-numbers.tsx`), solo admin: usuarias (totales, activas 7 y ~30 días, por aprobar, nuevas por semana), frecuencia de uso (días por semana con algún registro en las últimas 4: promedio y distribución 0 / 1-2 / 3-4 / 5-7), nivel promedio de las últimas 8 semanas cerradas, cuántas en cada nivel la semana pasada, clubes (dueña, miembros, nivel promedio, ganadora) y **ranking general de todas las usuarias** (puntaje de la semana pasada, nivel, días/semana, 🔥 semanas seguidas en motivada o más). Cada semana con los objetivos que tenía (historial). Nunca pesos, medidas ni fotos.
+- **Progreso según la semana ideal (v2.0)**: la pantalla se arma con los objetivos de la semana ideal de hoy (en su orden; cada semana se mide con los que tenía): (1) "Tu semana ideal, semana a semana" con barras del % de 12 semanas (`WeekBars`, raya = meta, en curso punteada) + semanas seguidas al 100 % (récord), promedio de las últimas 4 y mejor semana (`idealStats`); (2) una tarjeta por objetivo (`goalSeries`: hecho vs. meta por semana, racha cumpliéndolo y récord; ayuno: días seguidos + duración promedio `fastAvgHours`; carrera: minutos y kcal de las últimas 4; resto: veces y minutos; fierritos detallado suma `ZonesCard`); (3) "También hiciste" con lo que está fuera de la rutina (`otherWorkouts`); (4) Derrapes (compensados seguidos, total, sin compensar en 12 semanas); (5) Medidas y peso; (6) Semanas anteriores con %, perrita y chips por objetivo. `WeekSummary` suma `sessionsByType`, `minutesByType` y `runKcal`.
 - **SQL**: las migraciones viven en `supabase/migrations/` y se pegan en el SQL Editor de Supabase (desde el entorno cloud no hay acceso directo a la base).
 
 ## Pendiente
 
-### Backlog aprobado (cuando la dueña diga "ejecutar backlog", desarrollar en este orden)
-
-Todo aprobado por la dueña. Cada ítem termina con lint + build + tests en verde, commit y push a `main` y a la rama, y el SQL nuevo en `supabase/migrations/` (avisarle qué correr). Seguir las reglas de siempre: tono rioplatense sin culpa, avisos que llevan a la acción, el panel nunca muestra pesos/medidas/fotos.
-
-#### 1. Recuperar contraseña por WhatsApp + cambiar contraseña
-- **Login → "¿Olvidaste tu contraseña?"**: la persona pone su **email** y un **WhatsApp de recuperación** (precargado si ya lo dio). Respuesta siempre igual, exista o no la cuenta: "Listo, en breve te mandamos una contraseña nueva por WhatsApp 📲".
-- **Datos**: tabla `password_requests` (email, whatsapp, created_at, resolved_at, status) solo service role (RLS sin políticas). Anti-abuso: 1 pedido por email cada 10 min; si llegan muchos juntos, no spamear avisos.
-- **Aviso push a las admins**: "🔑 {email} pidió nueva contraseña" → lleva al Panel.
-- **Panel Ringo → "Pedidos de contraseña"**: email, WhatsApp, cuándo, si la cuenta existe. **"Generar contraseña"** (fácil de dictar, tipo `perrita-4821`, se activa ya) y **"Mandar por WhatsApp"** (abre `wa.me/<número>` con "¡Hola! Tu nueva contraseña de Ringo es … Entrá y cambiala 🐶"). El pedido queda resuelto.
-- **Cambiar contraseña**:
-  - Después de un reseteo (marca en el perfil, ej. `must_change_password`), al entrar se ofrece **"Entraste con una contraseña temporal. Elegí la tuya"** con "Cambiar" / "Ahora no" (vuelve a aparecer hasta que la cambie).
-  - En **Ajustes**: tarjeta "Cambiar contraseña" (nueva + repetir) y el **WhatsApp de recuperación** editable (`profiles.whatsapp`).
-
-#### 2. Crear cuenta con aprobación de la admin
-- **Login → "¿No tenés cuenta? Creala"**: nombre, email, contraseña y WhatsApp. Queda **pendiente**: pantalla "Tu cuenta está esperando aprobación 🐶 Te avisamos por WhatsApp" (también si intenta entrar antes).
-- **Rol nuevo `pending`** (como `disabled`, `getProfile` lo manda a la pantalla de espera; `protect_role` impide cambiárselo sola). Supabase Auth: habilitar sign ups con confirmación de email apagada (la aprobación la reemplaza).
-- **Aviso push a las admins**: "🐶 Nueva solicitud: {nombre} ({email})" → lleva al Panel.
-- **Panel → "Solicitudes"**: nombre, email, WhatsApp, fecha; **Aprobar** (rol `user` + botón "Avisarle por WhatsApp" con "¡Hola {nombre}! Ya podés entrar a Ringo: {link}") y **Rechazar** (borra la cuenta).
-
-#### 3. Panel Ringo: "Ringo en números" (solo admin)
-- **Usuarias**: totales, activas 7 y 30 días, nuevas por semana, pendientes de aprobar; **frecuencia de uso** (días por semana con algún registro: promedio y distribución 1-2 / 3-4 / 5-7).
-- **Clubes**: cuántos hay; por club: dueña, miembros, nivel promedio de la última semana y ganadora del podio.
-- **Ranking general**: **todas las usuarias de la app** (estén o no en un club), por puntaje de la última semana cerrada, con nivel de perrita y racha de semanas; arriba, cuántas en cada nivel (💤 → 👑).
-- **Tendencia**: nivel promedio de las últimas 8 semanas.
-- Solo la admin lo ve. Nunca pesos, medidas ni fotos.
-
-#### 4. Clubes propios (varios Ringo Club)
-- **Crear club**: en la pestaña Club, "+ Crear un club" con **nombre del club** (obligatorio, lo elige quien lo crea; la dueña lo puede cambiar después). Quien lo crea es la **dueña**. Se genera un **link de invitación** para compartir por WhatsApp.
-- **Sumarse**: el link abre "{dueña} te invita a {club}" → nombre en ese club → **Sumarme** (si no tiene cuenta, primero se registra y queda pendiente de aprobación). **Tope: 30 miembros por club.** Se puede estar en **varios clubes**; selector de club arriba en la pestaña.
-- **Dentro de cada club**: lo mismo de hoy (escalones en vivo, podio del lunes, premios, "Así quedó cada una") solo con sus miembros.
-- **La dueña puede**: ver y renovar el link (el viejo deja de andar), **sacar gente**, cambiar el nombre. Cualquiera puede salir de un club.
-- **Datos**: `clubs` (nombre, owner, código de invitación) y `club_members` (club, usuaria, rol owner/member, nombre en el club). RLS: solo ves los clubes donde sos miembro; el ranking se calcula con service role y solo con nombre/foto/nivel/puntos/%.
-- **Migración**: crear **"Ringo Club"** con la dueña como owner y pasar a todas las que hoy tienen `club_visible` (con su `club_name`). Nadie pierde nada.
-- **Figurita (decidido)**: **una por semana y es tuya** (perrita, puntos y % salen de tu rutina, iguales en todos los clubes). Lo único que cambia es el **puesto**: toma el del club que estás mirando, y la banda de arriba dice el nombre del club ("LAS PIBAS DEL FÚTBOL · #07"). En varios clubes, se comparte la de cada uno.
-- **Avisos del Club** (`club_podium`, `club_closing`, puesto en `level_result`): por club, con el nombre del club; si está en varios, uno por club.
-
-#### 5. Progreso armado según tu semana ideal
-La pantalla se construye a partir de la semana ideal de cada una (una sección por objetivo, en su orden). Ya existe la base: hoy Progreso esconde lo que no es rutina (v1.9).
-1. **Arriba, constancia general**: barras con el **% de la semana ideal en las últimas 12 semanas** (línea en 100 %); números grandes: **semanas seguidas cumpliendo la semana ideal** (+ récord), **promedio de las últimas 4** y **mejor semana**.
-2. **Una tarjeta por objetivo configurado** (solo esos): gráfico de 12 semanas hecho vs. meta (barra con la meta marcada), **semanas seguidas cumpliendo ese objetivo**, y lo propio del tipo:
-   - Ayuno: racha de días, récord y horas promedio.
-   - Fierritos: semanas cumplidas; si es detallado, zonas con el cambio de la medida asociada (brazos → brazo, core → cintura, piernas → pierna).
-   - Carrera: veces, minutos por semana y kcal aproximadas.
-   - Bici, fútbol, pádel y resto: veces y minutos por semana.
-3. **Otros entrenos** fuera de la semana ideal: una línea "También hiciste: 2 de tenis, 1 de trekking" (dato, sin sección).
-4. **Derrapes** (métrica personal): compensados seguidos, total y sin compensar recientes; aclara que no cuentan para nivel ni ranking.
-5. **Cuerpo**: medidas y tendencia de peso como hoy (respeta número oculto).
-6. **Semanas anteriores**: cada una con %, perrita y chips de sus objetivos ("Semana del 16/11 · 72 % · 🔥 motivada · 5/5 ayunos · 1/2 fierritos · 1/1 fútbol"), con los objetivos que tenía esa semana (historial).
-- Si cambia la semana ideal, Progreso se adapta solo; sacar un deporte esconde su tarjeta sin borrar su historia.
+### Backlog
+- (vacío: el backlog aprobado se desarrolló completo en v2.0: cuentas, clubes propios, Ringo en números y Progreso según la semana ideal)
 
 ### Otros pendientes
 

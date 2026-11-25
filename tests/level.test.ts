@@ -5,7 +5,7 @@ import type { WeekSummary } from "../src/lib/progress";
 
 const w = (x: Partial<WeekSummary>): WeekSummary => ({
   weekStart: "2026-11-16", isCurrent: false, strength: 0, strengthGoal: 3, fastOk: 7, fastDays: 7,
-  compensated: 0, missed: 0, runMinutes: 0, otherWorkouts: 0, byType: {}, goals: { ayuno: 5, fuerza: 2, futbol: 1 }, ...x,
+  compensated: 0, missed: 0, runMinutes: 0, otherWorkouts: 0, byType: {}, sessionsByType: {}, minutesByType: {}, runKcal: 0, goals: { ayuno: 5, fuerza: 2, futbol: 1 }, ...x,
 });
 
 // Objetivo de ejemplo: 5 ayunos, 2 fierritos, 1 fútbol → 100 pts repartidos 34/33/33. Los derrapes no restan.

@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, type Profile } from "@/lib/profile";
-import { localDate, shiftDate } from "@/lib/fast";
+import { dayMark, fastWindow, localDate, shiftDate } from "@/lib/fast";
 import { loadFastRecords, sinceDate } from "@/lib/fast-data";
 import type { BodyCheck } from "@/lib/body";
 import { weekStart } from "@/lib/week";
@@ -28,6 +28,8 @@ export type ProgressData = {
   checks: BodyCheck[];
   zones: ReturnType<typeof zoneStats>;
   level: ReturnType<typeof levelHistory>;
+  /** Horas promedio de los ayunos cumplidos de las últimas 4 semanas (null si no hay). */
+  fastAvgHours: number | null;
 };
 
 export const getProgressData = cache(async function getProgressData(): Promise<ProgressData> {
@@ -57,8 +59,21 @@ export const getProgressData = cache(async function getProgressData(): Promise<P
     weeks: WEEKS,
   });
 
+  // Horas promedio de los ayunos terminados y cumplidos (últimos 28 días)
+  const durations: number[] = [];
+  for (let d = shiftDate(today, -28); d < today; d = shiftDate(d, 1)) {
+    if (d < since) continue;
+    const mark = dayMark(d, now, profile, records, since);
+    if (mark !== "ok" && mark !== "extended" && mark !== "event") continue;
+    const w = fastWindow(d, profile, records.get(d) ?? null);
+    if (w.end > now) continue;
+    durations.push((w.end.getTime() - w.start.getTime()) / 3_600_000);
+  }
+  const fastAvgHours = durations.length ? Math.round((durations.reduce((a, b) => a + b, 0) / durations.length) * 10) / 10 : null;
+
   return {
     profile,
+    fastAvgHours,
     weeks,
     fast: fastStreaks(now, profile, records, since),
     strength: strengthWeekStreaks(weeks),

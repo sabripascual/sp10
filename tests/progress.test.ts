@@ -39,7 +39,7 @@ test("resumen de la semana", () => {
 
 test("semanas con fuerza cumplida", () => {
   const w = (strength: number, isCurrent = false): WeekSummary => ({
-    weekStart: "", isCurrent, strength, strengthGoal: 3, fastOk: 0, fastDays: 0, compensated: 0, missed: 0, runMinutes: 0, otherWorkouts: 0, byType: {}, goals: { fuerza: 3 },
+    weekStart: "", isCurrent, strength, strengthGoal: 3, fastOk: 0, fastDays: 0, compensated: 0, missed: 0, runMinutes: 0, otherWorkouts: 0, byType: {}, sessionsByType: {}, minutesByType: {}, runKcal: 0, goals: { fuerza: 3 },
   });
   assert.deepEqual(strengthWeekStreaks([w(3), w(3), w(1), w(3), w(3), w(1, true)]), { current: 2, max: 2 });
   assert.deepEqual(strengthWeekStreaks([w(3), w(3), w(3, true)]), { current: 3, max: 3 });
@@ -119,4 +119,25 @@ test("semana ideal con historial: cada semana con sus objetivos; los cambios des
   assert.deepEqual(profileGoals({ strength_goal: 2, weekly_goals: { futbol: 1 } }), { futbol: 1 });
   // sin ayuno, el ayuno no cuenta aunque esté en el historial
   assert.deepEqual(profileGoals({ ...p, fasting_enabled: false }, "2026-11-23"), { fuerza: 3 });
+});
+
+import { goalSeries, idealStats, otherWorkouts } from "../src/lib/progress";
+
+test("progreso según la semana ideal: racha al 100 %, por objetivo y otros entrenos", () => {
+  const wk = (ws: string, fuerza: number, extra: Record<string, number> = {}, isCurrent = false, goals: Record<string, number> = { fuerza: 2 }) => ({
+    weekStart: ws, isCurrent, strength: fuerza, strengthGoal: goals.fuerza ?? 0, fastOk: 0, fastDays: 7, compensated: 0, missed: 0, runMinutes: 0, otherWorkouts: 0,
+    byType: { fuerza, ...extra }, sessionsByType: { fuerza, ...extra }, minutesByType: { fuerza: fuerza * 60 }, runKcal: 0, goals,
+  });
+  const weeks = [wk("2026-10-26", 1), wk("2026-11-02", 2), wk("2026-11-09", 3, { tenis: 1 }), wk("2026-11-16", 2, { trekking: 1 }), wk("2026-11-23", 0, {}, true)];
+  const ideal = idealStats(weeks);
+  assert.deepEqual(ideal.streak, { current: 3, max: 3 }); // la semana en curso todavía no corta
+  assert.equal(ideal.avg4, 88); // 50, 100, 100, 100
+  assert.equal(ideal.best, 100);
+  const f = goalSeries(weeks, "fuerza");
+  assert.deepEqual(f.series.map((s) => [s.done, s.target]), [[1, 2], [2, 2], [3, 2], [2, 2], [0, 2]]);
+  assert.deepEqual(f.streak, { current: 3, max: 3 });
+  assert.deepEqual(otherWorkouts(weeks, ["fuerza"]), [["tenis", 1], ["trekking", 1]]);
+  // una semana sin ese objetivo no suma ni corta
+  const g = goalSeries([wk("2026-11-02", 2), wk("2026-11-09", 0, {}, false, {}), wk("2026-11-16", 2)], "fuerza");
+  assert.equal(g.streak.max, 2);
 });

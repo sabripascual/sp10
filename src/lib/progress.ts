@@ -4,7 +4,7 @@ import { eventPhase } from "@/lib/events";
 import { weekStart } from "@/lib/week";
 import { goalProgress, goalsText, type Goals } from "@/lib/goals";
 
-type W = { id?: string; date: string; type: string; minutes: number | null; status: string };
+type W = { id?: string; date: string; type: string; minutes: number | null; status: string; details?: { kcal?: number } | null };
 type E = { date: string; compensated_at: string | null; compensated_by?: string | null };
 
 /** Un entreno que compensó un derrape cuenta la mitad para la semana ideal. */
@@ -21,7 +21,10 @@ export type WeekSummary = {
   missed: number; // derrapes que cerraron la semana sin compensar
   runMinutes: number;
   otherWorkouts: number; // carrera, fútbol, pádel, etc. (todo lo que no es fierritos)
-  byType: Record<string, number>; // entrenos hechos por tipo
+  byType: Record<string, number>; // entrenos hechos por tipo (el que compensó un derrape cuenta medio)
+  sessionsByType: Record<string, number>; // sesiones reales por tipo
+  minutesByType: Record<string, number>; // minutos por tipo
+  runKcal: number; // kcal aproximadas de carrera
   goals: Goals; // objetivo semanal (el de hoy, aplicado a todas las semanas)
 };
 
@@ -49,6 +52,12 @@ export function weekSummaries(input: {
     const done = input.workouts.filter((w) => inWeek(w) && w.status === "done");
     const evs = input.events.filter(inWeek);
     const goalsAt = typeof input.goals === "function" ? input.goals(ws) : input.goals;
+    const sessionsByType: Record<string, number> = {};
+    const minutesByType: Record<string, number> = {};
+    for (const w of done) {
+      sessionsByType[w.type] = (sessionsByType[w.type] ?? 0) + 1;
+      minutesByType[w.type] = (minutesByType[w.type] ?? 0) + (w.minutes ?? 0);
+    }
     const byType: Record<string, number> = {};
     for (const w of done) byType[w.type] = (byType[w.type] ?? 0) + (w.id && compensators.has(w.id) ? COMPENSATOR_WEIGHT : 1);
     out.push({
@@ -63,6 +72,9 @@ export function weekSummaries(input: {
       runMinutes: done.filter((w) => w.type === "correr").reduce((a, w) => a + (w.minutes ?? 0), 0),
       otherWorkouts: done.filter((w) => w.type !== "fuerza").length,
       byType,
+      sessionsByType,
+      minutesByType,
+      runKcal: done.filter((w) => w.type === "correr").reduce((a, w) => a + (w.details?.kcal ?? 0), 0),
       goals: goalsAt,
     });
   }
@@ -173,4 +185,64 @@ export function measureChange<T extends { date: string } & Record<string, unknow
     .map((c) => Number(c[key]));
   if (vals.length < 2) return null;
   return Math.round((vals.at(-1)! - vals[0]) * 10) / 10;
+}
+
+// ── Progreso según la semana ideal ───────────────────────────────────────
+
+type Met = { met: boolean; isCurrent: boolean; counts: boolean };
+
+/** Semanas seguidas cumpliendo algo. La semana en curso suma solo si ya se cumplió (si no, no corta). */
+function metStreak(list: Met[]) {
+  let run = 0;
+  let max = 0;
+  let current = 0;
+  for (const x of list) {
+    if (x.isCurrent) {
+      current = x.met ? run + 1 : run;
+      max = Math.max(max, current);
+      break;
+    }
+    if (!x.counts) continue; // semana sin ese objetivo: no suma ni corta
+    run = x.met ? run + 1 : 0;
+    max = Math.max(max, run);
+    current = run;
+  }
+  return { current, max };
+}
+
+/** Constancia general: % de la semana ideal por semana, racha al 100 %, promedio de las últimas 4 y mejor semana. */
+export function idealStats(weeks: WeekSummary[]) {
+  const series = weeks.map((w) => ({ weekStart: w.weekStart, isCurrent: w.isCurrent, pct: weekGoals(w).pct, hasGoals: weekGoals(w).items.length > 0 }));
+  const closed = series.filter((s) => !s.isCurrent && s.hasGoals);
+  const last4 = closed.slice(-4);
+  return {
+    series,
+    streak: metStreak(series.map((s) => ({ met: s.pct >= 100, isCurrent: s.isCurrent, counts: s.hasGoals }))),
+    avg4: last4.length ? Math.round(last4.reduce((a, s) => a + s.pct, 0) / last4.length) : null,
+    best: closed.length ? Math.max(...closed.map((s) => s.pct)) : null,
+  };
+}
+
+/** Un objetivo semana a semana: hecho vs. meta (la de cada semana) y racha cumpliéndolo. */
+export function goalSeries(weeks: WeekSummary[], key: string) {
+  const series = weeks.map((w) => ({
+    weekStart: w.weekStart,
+    isCurrent: w.isCurrent,
+    done: key === "ayuno" ? w.fastOk : (w.byType[key] ?? 0),
+    sessions: key === "ayuno" ? w.fastOk : (w.sessionsByType[key] ?? 0),
+    minutes: w.minutesByType[key] ?? 0,
+    target: (w.goals as Record<string, number | undefined>)[key] ?? 0,
+  }));
+  return {
+    series,
+    streak: metStreak(series.map((s) => ({ met: s.target > 0 && s.done >= s.target, isCurrent: s.isCurrent, counts: s.target > 0 }))),
+  };
+}
+
+/** Entrenos fuera de la semana ideal (últimas `n` semanas): "2 de tenis, 1 de trekking". */
+export function otherWorkouts(weeks: WeekSummary[], goalKeys: string[], n = 4) {
+  const totals: Record<string, number> = {};
+  for (const w of weeks.slice(-n))
+    for (const [t, c] of Object.entries(w.sessionsByType)) if (!goalKeys.includes(t)) totals[t] = (totals[t] ?? 0) + c;
+  return Object.entries(totals).sort((a, b) => b[1] - a[1]);
 }
