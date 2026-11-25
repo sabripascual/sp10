@@ -322,6 +322,21 @@ Siete etapas cortas (0 a 6). Cada una termina con algo usable en el celular y un
 
 ## Pendiente
 
+### Backlog (próxima sesión, a definir y desarrollar)
+
+1. **Registro con aprobación del admin.** Que cualquiera pueda crearse una cuenta en Ringo (email + contraseña) desde el login ("Crear cuenta"), pero la cuenta queda **pendiente** hasta que la dueña la aprueba desde el Panel Ringo.
+   - Propuesta: nuevo rol `pending` (como `disabled`): `getProfile` lo manda a una pantalla "Tu cuenta está esperando aprobación 🐶"; en el Panel, sección "Solicitudes" con Aprobar / Rechazar; aviso push a la admin cuando llega una solicitud. Activar "sign ups" en Supabase Auth con confirmación de email apagada (la aprobación la reemplaza, y así no hace falta mandar mails para registrarse). Cuidado: el trigger `protect_role` ya impide que una usuaria se cambie el rol sola.
+2. **Recuperar contraseña.** Sugerencia en dos pasos:
+   - **Paso 1 (sin mails, lo más simple):** botón "Olvidé mi contraseña" en el login → la usuaria pone su email → le llega un **aviso push a la admin** ("Juli pidió nueva contraseña") → la admin la cambia desde el Panel (ya existe "Nueva contraseña") y se la pasa por WhatsApp. Cero infraestructura nueva.
+   - **Paso 2 (automático, por mail):** usar el "olvidé mi contraseña" de Supabase Auth (`resetPasswordForEmail` + pantalla para poner la nueva). Requiere SMTP propio porque el mail que trae Supabase de fábrica solo envía a los miembros del proyecto y con límite muy bajo: **Resend** (gratis hasta ~3.000 mails/mes) configurado en Supabase → Authentication → SMTP, con un dominio verificado (ej. de BRAVE). SMS/WhatsApp automático: descartado por ahora (Twilio y similares cobran por mensaje).
+   - A decidir: ¿arrancamos con el paso 1 y sumamos el 2 cuando haya dominio?
+3. **Clubes propios (varios Ringo Club).** Que cualquiera pueda **crear un club** e **invitar amigas** (link o código de invitación); cada club tiene **su propio ranking** solo con sus miembros (escalones en vivo, podio, premios, figurita y avisos del Club, por club).
+   - Propuesta de datos: tablas `clubs` (nombre, dueña, código de invitación) y `club_members` (club, usuaria, rol owner/member, nombre en el club); una usuaria puede estar en más de un club (selector de club en la pestaña). RLS: solo ves los clubes donde sos miembro; el ranking se sigue calculando con service role y solo con nombre/foto/nivel/puntos/%.
+   - Migración: crear el club de la dueña ("Ringo Club", owner = la dueña) y pasar a todas las que hoy tienen `club_visible` a ese club. Los avisos `club_podium` / `club_closing` y el puesto del lunes pasan a ser por club.
+   - A evaluar: límite de miembros, si la dueña del club puede sacar gente, y qué pasa con la figurita (¿puesto en cada club?).
+
+### Otros pendientes
+
 - **Mensaje de bienvenida (WhatsApp)**: sumar el paso de derrapes (agendar, compensar hasta el domingo, se marca solo, no cuenta para nivel ni ranking).
 - **Alimentación** para quien hace dieta sin ayuno: por ahora nada (decisión de la dueña).
 
