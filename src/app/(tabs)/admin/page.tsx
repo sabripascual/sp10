@@ -4,6 +4,8 @@ import { AccountList } from "@/components/admin/account-list";
 import { CreateAccount } from "@/components/admin/create-account";
 import { CoachNotify } from "@/components/admin/coach-notify";
 import { AdminInbox } from "@/components/admin/inbox";
+import { RingoNumbers } from "@/components/admin/ringo-numbers";
+import { getRingoNumbers } from "@/lib/ringo-numbers";
 import { getCoachPrefs } from "@/lib/app-settings";
 import { getAdminStats, requireAdmin } from "@/lib/admin-data";
 import { TYPE_EMOJI, TYPE_LABEL, type WorkoutType } from "@/lib/training-types";
@@ -21,7 +23,7 @@ function Stat({ value, label }: { value: number | string; label: string }) {
 
 export default async function AdminPage() {
   const me = await requireAdmin();
-  const [s, coach] = await Promise.all([getAdminStats(), getCoachPrefs()]);
+  const [s, coach, numbers] = await Promise.all([getAdminStats(), getCoachPrefs(), getRingoNumbers()]);
   const pct = (n: number) => (s.total ? `${Math.round((n / s.total) * 100)}%` : "—");
 
   return (
@@ -29,6 +31,8 @@ export default async function AdminPage() {
       <PageHeader title="Panel Ringo 🐶" subtitle="Cómo se usa Ringo. Solo uso: nada de pesos ni fotos." />
       <div className="space-y-4">
         <AdminInbox applicants={s.applicants} requests={s.passwordRequests} />
+
+        <RingoNumbers d={numbers} />
 
         <div className="grid grid-cols-2 gap-2">
           <Stat value={s.total} label="cuentas" />
