@@ -17,6 +17,8 @@ export type Profile = {
   notify_prefs: Record<string, boolean> | null;
   favorite_sports: string[] | null;
   weekly_goals: Record<string, number> | null;
+  club_visible?: boolean;
+  club_name?: string | null;
 };
 
 export const DEFAULT_NICKNAMES = ["crack", "reina", "bebita", "diosa", "amorrrr"];

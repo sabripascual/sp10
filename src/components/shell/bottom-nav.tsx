@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sun, Timer, Dumbbell, PersonStanding, TrendingUp } from "lucide-react";
+import { Sun, Timer, Dumbbell, PersonStanding, TrendingUp, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -11,6 +11,7 @@ const tabs = [
   { href: "/entrenos", label: "Entrenos", icon: Dumbbell },
   { href: "/cuerpo", label: "Cuerpo", icon: PersonStanding },
   { href: "/progreso", label: "Progreso", icon: TrendingUp },
+  { href: "/club", label: "Club", icon: Trophy },
 ];
 
 // Botonera amarilla flotante: íconos negros nítidos, la activa en pastilla negra.
@@ -18,7 +19,7 @@ export function BottomNav() {
   const pathname = usePathname();
   return (
     <nav className="fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md rounded-full bg-accent text-accent-fg shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
-      <ul className="grid grid-cols-5 p-1.5">
+      <ul className="grid grid-cols-6 p-1">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
