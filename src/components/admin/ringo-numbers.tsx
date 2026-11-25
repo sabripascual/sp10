@@ -1,11 +1,30 @@
 import { LEVELS, type LevelKey } from "@/lib/level";
 import type { getRingoNumbers } from "@/lib/ringo-numbers";
 import { cn } from "@/lib/utils";
+import { waLink } from "@/lib/whatsapp";
 
 type Data = Awaited<ReturnType<typeof getRingoNumbers>>;
 const emoji = (k: LevelKey | null) => (k ? LEVELS.find((l) => l.key === k)!.emoji : "—");
 const comma = (n: number) => String(n).replace(".", ",");
 const dm = (d: string) => `${Number(d.slice(8))}/${Number(d.slice(5, 7))}`;
+
+function Bar({ label, pct, note }: { label: string; pct: number; note?: string }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-baseline justify-between gap-2 text-xs">
+        <span className="font-bold">{label}</span>
+        <span className="font-black tabular-nums">
+          {pct}%{note && <span className="ml-1 font-normal text-muted">· {note}</span>}
+        </span>
+      </div>
+      <span className="block h-2 overflow-hidden rounded-full bg-bg">
+        <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+      </span>
+    </div>
+  );
+}
+
+const pctCell = (v: number | null) => (v === null ? "—" : `${v}%`);
 
 function Stat({ value, label }: { value: number | string; label: string }) {
   return (
@@ -33,6 +52,90 @@ export function RingoNumbers({ d }: { d: Data }) {
         <Stat value={d.users.active30} label="activas 30 días" />
         <Stat value={d.users.pending} label="por aprobar" />
       </div>
+      {/* 1. En riesgo */}
+      <div className="space-y-2">
+        <p className="text-sm font-bold">
+          ⚠️ En riesgo de abandonar <span className="font-normal text-muted">· 7 días o más sin anotar nada</span>
+        </p>
+        {d.atRisk.length === 0 ? (
+          <p className="text-xs text-muted">Nadie: todas vienen anotando 🙌</p>
+        ) : (
+          <ul className="divide-y divide-muted/30">
+            {d.atRisk.map((r) => (
+              <li key={r.id} className="flex items-center gap-2 py-2 text-sm">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-bold">{r.name}</span>
+                  <span className="block text-xs text-muted">{r.since === null ? "Nunca anotó nada" : `Hace ${r.since} días`}</span>
+                </span>
+                {r.whatsapp ? (
+                  <a
+                    href={waLink(r.whatsapp, `¡Hola ${r.name.split(" ")[0]}! 🐶 Te extrañamos en Ringo. ¿Cómo venís con tu semana ideal? Un toque y volvés a sumar 💪🏻`)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-black text-accent-fg"
+                  >
+                    WhatsApp
+                  </a>
+                ) : (
+                  <span className="shrink-0 text-[11px] text-muted">sin WhatsApp</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* 2. Retención */}
+      {d.cohorts.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-bold">
+            Retención <span className="font-normal text-muted">· de las que entraron cada semana, % activas después</span>
+          </p>
+          <table className="w-full text-xs tabular-nums">
+            <thead className="text-muted">
+              <tr>
+                <th className="py-1 text-left font-bold">Entraron</th>
+                <th className="font-bold">Cuántas</th>
+                <th className="font-bold">Sem 1</th>
+                <th className="font-bold">Sem 2</th>
+                <th className="font-bold">Sem 4</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.cohorts.map((c) => (
+                <tr key={c.weekStart} className="border-t border-muted/30 text-center">
+                  <td className="py-1.5 text-left font-bold">{dm(c.weekStart)}</td>
+                  <td>{c.n}</td>
+                  <td>{pctCell(c.w1)}</td>
+                  <td>{pctCell(c.w2)}</td>
+                  <td>{pctCell(c.w4)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 3. Activación */}
+      <div className="space-y-2">
+        <p className="text-sm font-bold">
+          Activación <span className="font-normal text-muted">· qué completaron</span>
+        </p>
+        {d.activation.map((a) => (
+          <Bar key={a.key} label={a.label} pct={a.pct} />
+        ))}
+      </div>
+
+      {/* 4. Uso por función */}
+      <div className="space-y-2">
+        <p className="text-sm font-bold">
+          Uso por función <span className="font-normal text-muted">· últimos 28 días</span>
+        </p>
+        {d.features.map((f) => (
+          <Bar key={f.key} label={f.label} pct={f.pct} note={"note" in f ? f.note : undefined} />
+        ))}
+      </div>
+
       <p className="text-xs text-muted">
         Nuevas por semana: {d.users.newByWeek.map((w) => `${dm(w.weekStart)} → ${w.n}`).join(" · ")}
       </p>

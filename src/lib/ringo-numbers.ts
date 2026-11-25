@@ -28,22 +28,28 @@ export async function getRingoNumbers() {
   const from = shiftDate(current, -7 * (WEEKS - 1));
   const last28 = shiftDate(today, -27);
 
-  const [{ data: profilesData }, { data: fasts }, { data: workouts }, { data: events }, { data: checks }, clubs] = await Promise.all([
+  const [{ data: profilesData }, { data: fasts }, { data: workouts }, { data: events }, { data: checks }, clubs, { data: subs }, { data: memberships }] = await Promise.all([
     db.from("profiles").select("*"),
     db.from("fast_days").select("user_id, date, status, broken_at, extra_hours, event_id, started_at, ended_at, updated_at").gte("date", shiftDate(from, -1)).order("date"),
     db.from("workouts").select("id, user_id, date, type, minutes, status, created_at").gte("date", from),
     db.from("events").select("user_id, date, compensated_at, compensated_by, created_at").gte("date", shiftDate(from, -7)),
     db.from("body_checks").select("user_id, date"),
     allClubStandings(db, now),
+    db.from("push_subscriptions").select("user_id"),
+    db.from("club_members").select("user_id"),
   ]);
   const profiles = ((profilesData ?? []) as Profile[]).filter((p) => p.role !== "pending");
   const active = profiles.filter((p) => p.role !== "disabled");
   const nameOf = (p: Profile) => p.display_name || p.club_name || p.nicknames?.[0] || "Sin nombre";
 
-  // Días con algún registro (últimos 28) por usuaria
+  // Días con algún registro por usuaria (todo lo cargado: ~9 semanas). `days` = últimos 28.
+  const allDays = new Map<string, Set<string>>();
   const days = new Map<string, Set<string>>();
   const mark = (uid: string, d: string | null | undefined) => {
-    if (!d || d < last28 || d > today) return;
+    if (!d || d > today) return;
+    if (!allDays.has(uid)) allDays.set(uid, new Set());
+    allDays.get(uid)!.add(d);
+    if (d < last28) return;
     if (!days.has(uid)) days.set(uid, new Set());
     days.get(uid)!.add(d);
   };
@@ -121,7 +127,67 @@ export async function getRingoNumbers() {
     })
     .sort((a, b) => b.members - a.members);
 
+  // ── 1. En riesgo: 7+ días sin anotar nada (cuentas de 7+ días) ──
+  const lastDay = (uid: string) => [...(allDays.get(uid) ?? [])].sort().at(-1) ?? null;
+  const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86_400_000);
+  const atRisk = active
+    .filter((p) => p.role === "user" || p.role === "admin")
+    .map((p) => {
+      const last = lastDay(p.id);
+      const created = String(p.created_at).slice(0, 10);
+      return { id: p.id, name: nameOf(p), whatsapp: p.whatsapp ?? null, last, since: last ? daysBetween(last, today) : null, created };
+    })
+    .filter((r) => daysBetween(r.created, today) >= 7 && (r.since === null || r.since >= 7))
+    .sort((a, b) => (b.since ?? 999) - (a.since ?? 999));
+
+  // ── 2. Retención por cohorte (semana de alta): % con actividad en la semana 1, 2 y 4 después ──
+  const activeBetween = (uid: string, a: string, b: string) => [...(allDays.get(uid) ?? [])].some((d) => d >= a && d < b);
+  const cohorts = Array.from({ length: 6 }, (_, i) => {
+    const ws = shiftDate(current, -7 * (6 - i));
+    const members = profiles.filter((p) => {
+      const d = String(p.created_at).slice(0, 10);
+      return d >= ws && d < shiftDate(ws, 7);
+    });
+    const rate = (k: number) => {
+      const start = shiftDate(ws, 7 * k);
+      if (start > today) return null; // todavía no llegó esa semana
+      if (!members.length) return null;
+      const n = members.filter((p) => activeBetween(p.id, start, shiftDate(start, 7))).length;
+      return Math.round((n / members.length) * 100);
+    };
+    return { weekStart: ws, n: members.length, w1: rate(1), w2: rate(2), w4: rate(4) };
+  }).filter((c) => c.n > 0);
+
+  // ── 3. Activación: lo básico completado ──
+  const withPush = new Set((subs ?? []).map((s) => s.user_id as string));
+  const inClub = new Set((memberships ?? []).map((m) => m.user_id as string));
+  const pctOf = (fn: (p: Profile) => boolean) => (active.length ? Math.round((active.filter(fn).length / active.length) * 100) : 0);
+  const activation = [
+    { key: "semana", label: "Armó su semana ideal", pct: pctOf((p) => Boolean(p.weekly_goals) || (p.goals_history?.length ?? 0) > 0) },
+    { key: "avisos", label: "Activó los avisos", pct: pctOf((p) => withPush.has(p.id)) },
+    { key: "foto", label: "Puso foto", pct: pctOf((p) => Boolean(p.avatar_path)) },
+    { key: "club", label: "Está en un club", pct: pctOf((p) => inClub.has(p.id)) },
+  ];
+
+  // ── 4. Uso por función (últimos 28 días) ──
+  const used = (rows: { user_id: string; d: string | null }[]) => new Set(rows.filter((r) => r.d && r.d >= last28 && r.d <= today).map((r) => r.user_id));
+  const fastUsers = used((fasts ?? []).filter((f) => f.started_at || f.ended_at || f.broken_at).map((f) => ({ user_id: f.user_id, d: f.date })));
+  const workoutUsers = used((workouts ?? []).map((w) => ({ user_id: w.user_id, d: w.date })));
+  const eventUsers = used((events ?? []).map((e) => ({ user_id: e.user_id, d: String(e.created_at).slice(0, 10) })));
+  const bodyUsers = used((checks ?? []).map((c) => ({ user_id: c.user_id, d: c.date })));
+  const share = (set: Set<string>) => (active.length ? Math.round((active.filter((p) => set.has(p.id)).length / active.length) * 100) : 0);
+  const features = [
+    { key: "entrenos", label: "Cargó entrenos", pct: share(workoutUsers) },
+    { key: "ayuno", label: "Marcó ayunos", pct: share(fastUsers), note: `${pctOf((p) => p.fasting_enabled !== false)}% lo tiene prendido` },
+    { key: "derrapes", label: "Agendó derrapes", pct: share(eventUsers) },
+    { key: "cuerpo", label: "Hizo un control", pct: share(bodyUsers) },
+  ];
+
   return {
+    atRisk,
+    cohorts,
+    activation,
+    features,
     users: {
       total: active.length,
       active7: activeIn(7),
