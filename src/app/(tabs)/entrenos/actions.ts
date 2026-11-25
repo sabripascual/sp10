@@ -4,10 +4,12 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { localDate, shiftDate } from "@/lib/fast";
-import type { Compensation, EventKind } from "@/lib/events";
+import { COMP_FAST_HOURS, COMP_MINUTES, type CompDetail, type Compensation, type EventKind } from "@/lib/events";
+import { autoCompensate } from "@/lib/compensation-data";
 import { ZONES, type Feeling, type WorkoutDetails, type WorkoutType, type Zone } from "@/lib/training-types";
 
 export type ActionResult = { error?: string; ok?: boolean };
+export type WorkoutResult = ActionResult & { compensated?: string[] };
 
 const TYPES: WorkoutType[] = ["fuerza", "correr", "futbol", "padel", "tenis", "squash", "trekking", "bici", "otro"];
 const FEELINGS: Feeling[] = ["dificil", "bien", "excelente"];
@@ -38,7 +40,7 @@ export async function addWorkout(input: {
   feeling?: Feeling | null;
   note?: string | null;
   details?: WorkoutDetails;
-}): Promise<ActionResult> {
+}): Promise<WorkoutResult> {
   const dateError = await validDate(input.date);
   if (dateError) return { error: dateError };
   if (!TYPES.includes(input.type)) return { error: "Tipo inválido." };
@@ -70,7 +72,10 @@ export async function addWorkout(input: {
     source: "manual",
     details,
   });
-  return error ? { error: error.message } : done();
+  if (error) return { error: error.message };
+  // ¿Este entreno compensó algún derrape? Se marca solo.
+  const compensated = await autoCompensate(supabase, await getProfile());
+  return { ...done(), compensated };
 }
 
 export async function deleteWorkout(id: string): Promise<ActionResult> {
@@ -84,6 +89,7 @@ export async function createEvent(input: {
   date: string;
   kind: EventKind;
   compensation: Compensation;
+  detail?: CompDetail;
 }): Promise<ActionResult> {
   const name = input.name.trim();
   if (!name) return { error: "Ponele un nombre al derrape." };
@@ -91,23 +97,27 @@ export async function createEvent(input: {
   if (input.date < (await today())) return { error: "El derrape tiene que ser hoy o más adelante." };
   if (!["cena", "tragos", "ambos"].includes(input.kind)) return { error: "Tipo inválido." };
   if (!["fast", "workout", "both"].includes(input.compensation)) return { error: "Compensación inválida." };
+  const d = input.detail;
+  if (d && (!(d.sport === "any" || TYPES.includes(d.sport as WorkoutType)) || !COMP_MINUTES.includes(d.minutes) || !COMP_FAST_HOURS.includes(d.fastHours)))
+    return { error: "Revisá cómo lo compensás." };
+  const detail: CompDetail = d ?? { sport: "fuerza", minutes: 30, fastHours: 2 };
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("events")
-    .insert({ name: name.slice(0, 80), date: input.date, kind: input.kind, compensation: input.compensation })
+    .insert({ name: name.slice(0, 80), date: input.date, kind: input.kind, compensation: input.compensation, comp_detail: detail })
     .select("id")
     .single();
   if (error) return { error: error.message };
 
   // El ayuno de esa noche queda como "evento" (no corta la racha);
-  // si se compensa con ayuno, la primera comida del día siguiente se corre +2 h.
+  // si se compensa con ayuno, la primera comida del día siguiente se corre las horas elegidas.
   const { error: fastError } = await supabase.from("fast_days").upsert(
     {
       date: input.date,
       status: "event",
       event_id: data.id,
-      ...(input.compensation !== "workout" ? { extra_hours: 2 } : {}),
+      ...(input.compensation !== "workout" ? { extra_hours: detail.fastHours } : {}),
     },
     { onConflict: "user_id,date" },
   );
@@ -118,7 +128,7 @@ export async function compensateEvent(id: string, undo = false): Promise<ActionR
   const supabase = await createClient();
   const { error } = await supabase
     .from("events")
-    .update({ compensated_at: undo ? null : new Date().toISOString() })
+    .update(undo ? { compensated_at: null, compensated_by: null } : { compensated_at: new Date().toISOString() })
     .eq("id", id);
   return error ? { error: error.message } : done();
 }

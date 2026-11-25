@@ -9,6 +9,7 @@ import { firstGradedWeek, levelFor, weekScore } from "@/lib/level";
 import { weekGoals, weekSummaries } from "@/lib/progress";
 import { avatarUrl } from "@/lib/avatar";
 import type { ClubMember } from "@/lib/club";
+import { withFallback } from "@/lib/db-fallback";
 
 export type ClubData = {
   me: Profile;
@@ -35,8 +36,10 @@ export async function clubStanding(db: Db, p: Profile, now: Date) {
   const from = shiftDate(current, -15);
   const [fasts, workouts, events] = await Promise.all([
     db.from("fast_days").select("date, status, broken_at, extra_hours, event_id, started_at, ended_at").eq("user_id", p.id).order("date"),
-    db.from("workouts").select("date, type, minutes, status").eq("user_id", p.id).gte("date", from),
-    db.from("events").select("date, compensated_at").eq("user_id", p.id).gte("date", from),
+    db.from("workouts").select("id, date, type, minutes, status").eq("user_id", p.id).gte("date", from),
+    withFallback(db.from("events").select("date, compensated_at, compensated_by").eq("user_id", p.id).gte("date", from), () =>
+      db.from("events").select("date, compensated_at").eq("user_id", p.id).gte("date", from),
+    ),
   ]);
   const records = new Map(((fasts.data ?? []) as FastDay[]).map((r) => [r.date, r]));
   const since = sinceDate(p, records);

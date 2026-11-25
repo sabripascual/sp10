@@ -11,10 +11,13 @@ import {
   TYPE_LABEL,
   ZONES,
   runKcal,
+  zonesSummary,
+  type RecentStrength,
   type WorkoutType,
   type Zone,
   type ZoneWork,
 } from "@/lib/training-types";
+import { shortDate } from "@/lib/week";
 import { cn } from "@/lib/utils";
 import { Chips } from "./chips";
 import { Celebration } from "./celebration";
@@ -54,7 +57,12 @@ export function RegisterSheet({
   className,
   children,
   autoOpen = false,
+  strengthMode = "detailed",
+  recentStrength = [],
 }: {
+  /** Fierritos: "simple" (día y tiempo) o "detailed" (zonas + reutilizar). */
+  strengthMode?: "simple" | "detailed" | null;
+  recentStrength?: RecentStrength[];
   /** Se abre sola al cargar (cuando venís desde un aviso). */
   autoOpen?: boolean;
   today: string;
@@ -78,6 +86,13 @@ export function RegisterSheet({
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [party, setParty] = useState<{ emoji: string; apodo: string; detail: string } | null>(null);
+  const [showPrev, setShowPrev] = useState(false);
+  const detailed = strengthMode === "detailed";
+  const reuse = (r: RecentStrength) => {
+    setZones({ ...(r.details.zones ?? {}) });
+    if (r.minutes) setMinutes(r.minutes);
+    setShowPrev(false);
+  };
 
   useEffect(() => {
     if (!autoOpen) return;
@@ -98,6 +113,7 @@ export function RegisterSheet({
     setZones({});
     setNote("");
     setMsg(null);
+    setShowPrev(false);
   };
 
   const toggleZone = (z: Zone) =>
@@ -119,7 +135,7 @@ export function RegisterSheet({
         type,
         minutes,
         note,
-        details: type === "fuerza" ? { zones } : type === "correr" && kcal ? { kcal } : {},
+        details: type === "fuerza" && detailed ? { zones } : type === "correr" && kcal ? { kcal } : {},
       });
       if (res.error) return setMsg(res.error);
       const names = nicknames.length ? nicknames : ["crack"];
@@ -129,6 +145,7 @@ export function RegisterSheet({
         minutes ? `${minutes} min` : null,
         zoneNames.length ? zoneNames.join(", ") : null,
         kcal ? `≈ ${kcal} kcal` : null,
+        res.compensated?.length ? `😈✅ Compensaste ${res.compensated.join(" y ")}` : null,
       ]
         .filter(Boolean)
         .join(" · ");
@@ -226,8 +243,39 @@ export function RegisterSheet({
                 {kcal !== null && <p className="text-sm font-bold">≈ {kcal} kcal quemadas</p>}
               </div>
 
-              {type === "fuerza" && (
+              {type === "fuerza" && detailed && (
                 <div className="space-y-3">
+                  {recentStrength.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button type="button" onClick={() => reuse(recentStrength[0])} className="h-12 rounded-xl bg-bg px-2 text-sm font-bold active:scale-95">
+                          🔁 Repetir el último
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowPrev((v) => !v)}
+                          className={cn("h-12 rounded-xl px-2 text-sm font-bold active:scale-95", showPrev ? "bg-accent text-accent-fg" : "bg-bg")}
+                        >
+                          📅 Usar uno anterior
+                        </button>
+                      </div>
+                      {showPrev && (
+                        <ul className="space-y-1.5">
+                          {recentStrength.map((r, i) => (
+                            <li key={i}>
+                              <button type="button" onClick={() => reuse(r)} className="w-full rounded-xl bg-bg px-3 py-2 text-left active:scale-[0.99]">
+                                <span className="block text-sm font-bold">
+                                  {shortDate(r.date).charAt(0).toUpperCase() + shortDate(r.date).slice(1)}
+                                  {r.minutes ? ` · ${r.minutes} min` : ""}
+                                </span>
+                                <span className="block text-xs text-muted">{zonesSummary(r.details)}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                   <p className="text-sm text-muted">¿Qué entrenaste?</p>
                   <div className="grid grid-cols-3 gap-2">
                     {ZONES.map((z) => (

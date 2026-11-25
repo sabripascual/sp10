@@ -4,23 +4,41 @@ import { useState, useTransition } from "react";
 import { createEvent } from "@/app/(tabs)/entrenos/actions";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import type { Compensation, EventKind } from "@/lib/events";
+import { DEFAULT_COMP, type CompPrefs, type EventKind } from "@/lib/events";
+import { CompPicker } from "./comp-picker";
 import { Chips } from "./chips";
 
 const inputClass = "h-12 w-full rounded-xl bg-bg px-4 text-base text-fg outline-none focus:ring-2 focus:ring-accent";
 
-export function EventSheet({ today, className, fasting = true }: { today: string; className?: string; fasting?: boolean }) {
+export function EventSheet({
+  today,
+  className,
+  fasting = true,
+  defaults = DEFAULT_COMP,
+}: {
+  today: string;
+  className?: string;
+  fasting?: boolean;
+  /** Cómo compensa por defecto (Ajustes). */
+  defaults?: CompPrefs;
+}) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [date, setDate] = useState(today);
   const [kind, setKind] = useState<EventKind>("cena");
-  const [comp, setComp] = useState<Compensation>(fasting ? "fast" : "workout");
+  const [comp, setComp] = useState<CompPrefs>(defaults);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
 
   const save = () =>
     start(async () => {
-      const res = await createEvent({ name, date, kind, compensation: comp });
+      const res = await createEvent({
+        name,
+        date,
+        kind,
+        compensation: fasting ? comp.mode : "workout",
+        detail: { sport: comp.sport, minutes: comp.minutes, fastHours: comp.fastHours },
+      });
       if (res.error) return setMsg(res.error);
       setMsg("¡Agendado! Derrapá tranqui, que después compensamos.");
       setTimeout(() => {
@@ -37,6 +55,7 @@ export function EventSheet({ today, className, fasting = true }: { today: string
         className={className}
         onClick={() => {
           setDate(today);
+          setComp(defaults);
           setMsg(null);
           setOpen(true);
         }}
@@ -48,7 +67,12 @@ export function EventSheet({ today, className, fasting = true }: { today: string
           <div className="space-y-5">
             <div>
               <SheetTitle>Derrape a la vista 😈</SheetTitle>
-              <SheetDescription>Cero culpa: lo disfrutás y al otro día lo compensamos.</SheetDescription>
+              <SheetDescription>Cero culpa: lo disfrutás y después lo compensamos.</SheetDescription>
+              <p className="mt-2 rounded-xl bg-bg p-3 text-xs leading-snug text-muted">
+                Anotar tus derrapes te sirve para ver cuándo te salís de tu rutina de comida o de ayuno. Suma a tus
+                métricas personales, pero <strong className="text-fg">no cuenta para tu nivel ni para el ranking</strong>: es para
+                tu motivación.
+              </p>
             </div>
             <input
               className={inputClass}
@@ -71,21 +95,8 @@ export function EventSheet({ today, className, fasting = true }: { today: string
               />
             </div>
             <div className="space-y-2">
-              <p className="text-sm text-muted">¿Cómo lo compensamos al día siguiente?</p>
-              <Chips
-                cols={1}
-                value={comp}
-                onChange={setComp}
-                options={
-                  fasting
-                    ? [
-                        { value: "fast", label: "+2 h de ayuno" },
-                        { value: "workout", label: "Entreno extra (fierritos o 30 min de carrera)" },
-                        { value: "both", label: "Las dos" },
-                      ]
-                    : [{ value: "workout", label: "Entreno extra (fierritos o 30 min de carrera)" }]
-                }
-              />
+              <p className="text-sm text-muted">¿Cómo lo compensás? (tenés hasta el domingo; se marca solo cuando lo cargás)</p>
+              <CompPicker value={comp} onChange={setComp} fasting={fasting} />
             </div>
             <Button variant="primary" size="lg" className="w-full" disabled={pending || !name.trim()} onClick={save}>
               {pending ? "Guardando…" : "Agendar"}

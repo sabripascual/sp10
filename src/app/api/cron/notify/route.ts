@@ -16,6 +16,7 @@ import { profileGoals } from "@/lib/goals";
 import { firstGradedWeek, levelHistory } from "@/lib/level";
 import { fastStreaks, strengthWeekStreaks, summaryText, weekGoals, weekSummaries } from "@/lib/progress";
 import type { Profile } from "@/lib/profile";
+import { withFallback } from "@/lib/db-fallback";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +32,10 @@ async function loadUser(db: ReturnType<typeof createAdminClient>, p: Profile, no
   const [fasts, workouts, events, checks] = await Promise.all([
     // todos los ayunos cargados: "sin fila = cumplido", así que para la racha hacen falta todos
     db.from("fast_days").select("date, status, broken_at, extra_hours, event_id, started_at, ended_at, updated_at").eq("user_id", p.id).order("date"),
-    db.from("workouts").select("date, type, minutes, status, created_at").eq("user_id", p.id).gte("date", from),
-    db.from("events").select("id, name, date, compensated_at, created_at").eq("user_id", p.id).gte("date", from),
+    db.from("workouts").select("id, date, type, minutes, status, created_at").eq("user_id", p.id).gte("date", from),
+    withFallback(db.from("events").select("id, name, date, compensated_at, created_at, compensated_by").eq("user_id", p.id).gte("date", from), () =>
+      db.from("events").select("id, name, date, compensated_at, created_at").eq("user_id", p.id).gte("date", from),
+    ),
     db.from("body_checks").select("date, created_at").eq("user_id", p.id).order("date"),
   ]);
   const records = new Map(((fasts.data ?? []) as (FastDay & Row)[]).map((r) => [r.date, r]));

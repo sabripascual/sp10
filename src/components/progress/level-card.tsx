@@ -1,6 +1,6 @@
 import { LEVELS, levelFor, scoreParts, weekScore, type LevelKey, type ScorePart } from "@/lib/level";
 import { weekGoals, type WeekSummary } from "@/lib/progress";
-import { missingText } from "@/lib/goals";
+import { fmtCount, missingText } from "@/lib/goals";
 import Link from "next/link";
 import { Avatar } from "@/components/shell/avatar";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,7 @@ export function LevelCard({
           <Avatar url={avatar} className="size-24 shrink-0 bg-bg" emojiClass="text-5xl" />
           <div>
             <p className="text-xl font-black leading-tight">Tu primer nivel sale el lunes</p>
-            <p className="mt-1 text-sm text-muted">Califico semanas completas (lunes a domingo) según tu semana ideal y los derrapes.</p>
+            <p className="mt-1 text-sm text-muted">Califico semanas completas (lunes a domingo) según tu semana ideal.</p>
           </div>
         </div>
       )}
@@ -129,7 +129,7 @@ function CurrentWeek({ current, showParts }: { current: WeekSummary; showParts: 
               g.done >= g.target ? "bg-accent text-accent-fg" : "bg-surface text-fg",
             )}
           >
-            {g.emoji} {g.done}/{g.target}
+            {g.emoji} {fmtCount(g.done)}/{g.target}
           </li>
         ))}
       </ul>

@@ -12,6 +12,7 @@ import { LevelCard } from "@/components/progress/level-card";
 import { getBodyData } from "@/lib/body-data";
 import Link from "next/link";
 import { avatarUrl } from "@/lib/avatar";
+import { compPrefsOf } from "@/lib/events";
 import { Button } from "@/components/ui/button";
 
 export default async function HoyPage() {
@@ -60,6 +61,8 @@ export default async function HoyPage() {
           weightKg={training.weightKg}
           nicknames={profile.nicknames}
           favorites={profile.favorite_sports}
+          strengthMode={profile.strength_mode}
+          recentStrength={training.recentStrength}
         />
 
         {/* Derrapes: después de lo importante (ayuno y entrenos). Los avisos de derrapes llevan a #derrapes */}
@@ -67,7 +70,7 @@ export default async function HoyPage() {
           {[...toCompensate, ...soon].map((ev) => (
             <EventCard key={ev.id} ev={ev} firstMeal={firstMeal} today={training.today} />
           ))}
-          <EventSheet today={training.today} className="w-full" fasting={fastingOn(profile)} />
+          <EventSheet today={training.today} className="w-full" fasting={fastingOn(profile)} defaults={compPrefsOf(profile.derrape_comp, fastingOn(profile))} />
         </div>
       </div>
     </>

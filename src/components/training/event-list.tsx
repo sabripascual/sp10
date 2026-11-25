@@ -3,7 +3,8 @@
 import { useTransition } from "react";
 import { X } from "lucide-react";
 import { compensateEvent, deleteEvent } from "@/app/(tabs)/entrenos/actions";
-import { COMPENSATION_LABEL } from "@/lib/events";
+import { compDetailText } from "@/lib/events";
+import { TYPE_LABEL, type WorkoutType } from "@/lib/training-types";
 import type { EventView } from "@/lib/training-types";
 import { shortDate } from "@/lib/week";
 
@@ -21,7 +22,7 @@ export function EventList({ events }: { events: EventView[] }) {
             <div className="min-w-0 flex-1">
               <p className="truncate font-bold">{ev.name}</p>
               <p className="truncate text-xs text-muted">
-                {shortDate(ev.date)} · {COMPENSATION_LABEL[ev.compensation]}
+                {shortDate(ev.date)} · {compDetailText(ev.compensation, ev.comp_detail, (x) => TYPE_LABEL[x as WorkoutType] ?? x)}
               </p>
             </div>
             {canCompensate ? (

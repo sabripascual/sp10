@@ -4,13 +4,14 @@ import { useState, useTransition } from "react";
 import { compensateEvent, deleteEvent } from "@/app/(tabs)/entrenos/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { COMPENSATION_LABEL, KIND_LABEL, compensateDeadline, compensationTask } from "@/lib/events";
+import { KIND_LABEL, compDetailText, compensateDeadline } from "@/lib/events";
+import { TYPE_LABEL, type WorkoutType } from "@/lib/training-types";
 import { shiftDate } from "@/lib/fast";
 import type { EventView } from "@/lib/training-types";
 import { dayName, shortDate } from "@/lib/week";
 
 /** Tarjeta de un evento según su momento: preparar, disfrutar, compensar. */
-export function EventCard({ ev, firstMeal, today }: { ev: EventView; firstMeal: string; today: string }) {
+export function EventCard({ ev, today }: { ev: EventView; firstMeal?: string; today: string }) {
   const [pending, start] = useTransition();
   const [party, setParty] = useState(false);
 
@@ -25,17 +26,17 @@ export function EventCard({ ev, firstMeal, today }: { ev: EventView; firstMeal: 
   if (ev.phase === "compensate") {
     const deadline = compensateDeadline(ev.date);
     const yesterday = ev.date === shiftDate(today, -1);
+    const task = compDetailText(ev.compensation, ev.comp_detail, (s) => TYPE_LABEL[s as WorkoutType] ?? s);
     const until = deadline === today ? "Hoy es el último día para compensarlo." : `Tenés hasta el ${dayName(deadline)} para compensarlo.`;
     return (
       <Card className="space-y-4">
         <div>
           <CardTitle>😈 Toca compensar · {ev.name}</CardTitle>
           <CardDescription className="mt-1">
-            {yesterday
-              ? `Ayer fue fiesta, hoy le devolvemos al cuerpo. ${compensationTask(ev.compensation, firstMeal)}`
-              : `Fue el ${shortDate(ev.date)}. Compensación: ${COMPENSATION_LABEL[ev.compensation].toLowerCase()}.`}{" "}
-            {until}
+            {yesterday ? "Ayer fue fiesta, hoy le devolvemos al cuerpo. " : `Fue el ${shortDate(ev.date)}. `}
+            Toca: <strong className="text-fg">{task}</strong>. {until}
           </CardDescription>
+          <p className="mt-2 text-xs text-muted">✨ Se marca solo cuando lo cargás. Si lo compensaste de otra forma, tocá el botón.</p>
         </div>
         <Button variant="primary" size="lg" className="w-full" disabled={pending} onClick={() => compensate()}>
           ✓ Listo, compensado
@@ -69,7 +70,7 @@ export function EventCard({ ev, firstMeal, today }: { ev: EventView; firstMeal: 
     <Card>
       <CardTitle>😈 {headline}</CardTitle>
       <CardDescription className="mt-1">
-        {KIND_LABEL[ev.kind]} · Compensación: {COMPENSATION_LABEL[ev.compensation]}
+        {KIND_LABEL[ev.kind]} · Se compensa con {compDetailText(ev.compensation, ev.comp_detail, (x) => TYPE_LABEL[x as WorkoutType] ?? x)}
       </CardDescription>
       <button className="mt-3 text-xs text-muted underline" disabled={pending} onClick={remove}>
         Borrar derrape

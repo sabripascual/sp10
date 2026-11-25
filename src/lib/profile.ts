@@ -21,6 +21,8 @@ export type Profile = {
   club_name?: string | null;
   avatar_path?: string | null;
   fasting_enabled?: boolean;
+  derrape_comp?: Record<string, unknown> | null;
+  strength_mode?: "simple" | "detailed" | null;
 };
 
 /** ¿Usa la parte de ayuno? (sin la columna todavía = sí) */

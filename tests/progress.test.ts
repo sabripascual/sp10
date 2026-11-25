@@ -80,3 +80,21 @@ test("cambio de medida entre el primer y el último control", () => {
   assert.equal(measureChange(cs, "thigh_cm"), -1.5);
   assert.equal(measureChange(cs.slice(0, 1), "thigh_cm"), null);
 });
+
+test("el entreno que compensó un derrape cuenta la mitad para la semana ideal", () => {
+  const s = weekSummaries({
+    now: at("2026-11-22T21:00:00"),
+    cfg,
+    since: "2026-11-15",
+    records: new Map(),
+    workouts: [
+      { id: "w1", date: "2026-11-17", type: "fuerza", minutes: 60, status: "done" },
+      { id: "w2", date: "2026-11-19", type: "fuerza", minutes: 60, status: "done" },
+    ],
+    events: [{ date: "2026-11-18", compensated_at: "x", compensated_by: "w2" }],
+    goals: { fuerza: 2 },
+    weeks: 1,
+  });
+  assert.equal(s[0].byType.fuerza, 1.5);
+  assert.equal(s[0].strength, 2); // las sesiones se cuentan igual
+});

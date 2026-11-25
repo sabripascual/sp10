@@ -84,3 +84,6 @@ export type DayPlan = {
 };
 
 export type EventView = SocialEvent & { phase: EventPhase };
+
+/** Un fierrito anterior con detalle, para reutilizarlo. */
+export type RecentStrength = { date: string; minutes: number | null; details: WorkoutDetails };

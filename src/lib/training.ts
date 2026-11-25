@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile, type Profile } from "@/lib/profile";
 import { localDate, shiftDate } from "@/lib/fast";
 import { eventPhase, type SocialEvent } from "@/lib/events";
-import type { DayPlan, EventView, Workout } from "@/lib/training-types";
+import { autoCompensate } from "@/lib/compensation-data";
+import type { DayPlan, EventView, RecentStrength, Workout } from "@/lib/training-types";
 export * from "@/lib/training-types";
 import { isoDay, weekDates } from "@/lib/week";
 
@@ -15,6 +16,8 @@ export type TrainingData = {
   runKcal: number;
   weightKg: number; // último peso cargado (para estimar kcal); 65 si no hay
   events: EventView[]; // relevantes: próximos, de hoy, a compensar y pendientes recientes
+  /** Últimos fierritos con detalle (para "Repetir el último" / "Usar uno anterior"). */
+  recentStrength: RecentStrength[];
 };
 
 export async function getTrainingData(profileArg?: Profile): Promise<TrainingData> {
@@ -22,8 +25,10 @@ export async function getTrainingData(profileArg?: Profile): Promise<TrainingDat
   const today = localDate(new Date(), profile.timezone);
   const dates = weekDates(today);
   const supabase = await createClient();
+  // Antes de leer: marca compensados los derrapes que ya se cumplieron (ej. el ayuno extra terminó solo)
+  await autoCompensate(supabase, profile);
 
-  const [{ data: wData, error: wErr }, { data: eData, error: eErr }, { data: lastWeight }] = await Promise.all([
+  const [{ data: wData, error: wErr }, { data: eData, error: eErr }, { data: recent }, { data: lastWeight }] = await Promise.all([
     supabase
       .from("workouts")
       .select("id, date, type, minutes, feeling, note, source, status, details")
@@ -32,9 +37,23 @@ export async function getTrainingData(profileArg?: Profile): Promise<TrainingDat
       .order("created_at"),
     supabase
       .from("events")
-      .select("id, name, date, kind, compensation, compensated_at")
+      .select("id, name, date, kind, compensation, compensated_at, comp_detail, compensated_by")
       .gte("date", shiftDate(today, -14))
-      .order("date"),
+      .order("date")
+      .then(async (r) =>
+        // Si todavía no se corrió la migración 0018, sin las columnas nuevas
+        r.error?.message.includes("comp_")
+          ? await supabase.from("events").select("id, name, date, kind, compensation, compensated_at").gte("date", shiftDate(today, -14)).order("date")
+          : r,
+      ),
+    supabase
+      .from("workouts")
+      .select("date, minutes, details")
+      .eq("type", "fuerza")
+      .eq("status", "done")
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(12),
     supabase
       .from("body_checks")
       .select("weight_kg")
@@ -69,5 +88,6 @@ export async function getTrainingData(profileArg?: Profile): Promise<TrainingDat
     runKcal: doneAll.filter((w) => w.type === "correr").reduce((a, w) => a + (w.details?.kcal ?? 0), 0),
     weightKg: lastWeight?.weight_kg ? Number(lastWeight.weight_kg) : 65,
     events,
+    recentStrength: ((recent ?? []) as RecentStrength[]).filter((r) => r.details?.zones && Object.keys(r.details.zones).length).slice(0, 6),
   };
 }

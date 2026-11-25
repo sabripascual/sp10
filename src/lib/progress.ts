@@ -4,8 +4,11 @@ import { eventPhase } from "@/lib/events";
 import { weekStart } from "@/lib/week";
 import { goalProgress, goalsText, type Goals } from "@/lib/goals";
 
-type W = { date: string; type: string; minutes: number | null; status: string };
-type E = { date: string; compensated_at: string | null };
+type W = { id?: string; date: string; type: string; minutes: number | null; status: string };
+type E = { date: string; compensated_at: string | null; compensated_by?: string | null };
+
+/** Un entreno que compensó un derrape cuenta la mitad para la semana ideal. */
+export const COMPENSATOR_WEIGHT = 0.5;
 
 export type WeekSummary = {
   weekStart: string;
@@ -34,6 +37,7 @@ export function weekSummaries(input: {
 }): WeekSummary[] {
   const today = localDate(input.now, input.cfg.timezone);
   const current = weekStart(today);
+  const compensators = new Set(input.events.map((e) => e.compensated_by).filter(Boolean) as string[]);
   const out: WeekSummary[] = [];
   for (let i = input.weeks - 1; i >= 0; i--) {
     const ws = shiftDate(current, -7 * i);
@@ -44,7 +48,7 @@ export function weekSummaries(input: {
     const done = input.workouts.filter((w) => inWeek(w) && w.status === "done");
     const evs = input.events.filter(inWeek);
     const byType: Record<string, number> = {};
-    for (const w of done) byType[w.type] = (byType[w.type] ?? 0) + 1;
+    for (const w of done) byType[w.type] = (byType[w.type] ?? 0) + (w.id && compensators.has(w.id) ? COMPENSATOR_WEIGHT : 1);
     out.push({
       weekStart: ws,
       isCurrent: ws === current,

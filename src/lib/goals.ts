@@ -59,12 +59,15 @@ export function goalProgress(goals: Goals, c: WeekCounts) {
   return { items, pct };
 }
 
+/** 1 → "1", 1.5 → "1,5" (los entrenos que compensaron un derrape cuentan medio). */
+export const fmtCount = (n: number) => (Number.isInteger(n) ? String(n) : n.toLocaleString("es-AR", { maximumFractionDigits: 1 }));
+
 /** "2 ayunos y 1 fierrito" (lo que falta), o "" si está todo. */
 export function missingText(items: GoalItem[]) {
   const parts = items
     .filter((i) => i.done < i.target)
     .map((i) => {
-      const n = i.target - i.done;
+      const n = Math.ceil(i.target - i.done);
       return `${n} ${n === 1 ? GOAL_LABEL[i.key].one : GOAL_LABEL[i.key].many}`;
     });
   if (parts.length <= 1) return parts[0] ?? "";
@@ -73,7 +76,7 @@ export function missingText(items: GoalItem[]) {
 
 /** "5/5 ayunos, 1/2 fierritos, 1/1 fútbol" */
 export function goalsText(items: GoalItem[]) {
-  return items.map((i) => `${i.done}/${i.target} ${i.target === 1 ? GOAL_LABEL[i.key].one : GOAL_LABEL[i.key].many}`).join(", ");
+  return items.map((i) => `${fmtCount(i.done)}/${i.target} ${i.target === 1 ? GOAL_LABEL[i.key].one : GOAL_LABEL[i.key].many}`).join(", ");
 }
 
 /** A dónde lleva un aviso de la semana: a registrar lo primero que falta (deporte), al ayuno, o a Hoy. */

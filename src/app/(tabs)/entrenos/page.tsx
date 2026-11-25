@@ -9,7 +9,7 @@ import { ALL_TYPES, type WorkoutType } from "@/lib/training-types";
 export default async function EntrenosPage({ searchParams }: { searchParams: Promise<{ registrar?: string }> }) {
   const { registrar } = await searchParams;
   const openType = registrar === "any" ? "any" : ALL_TYPES.includes(registrar as WorkoutType) ? (registrar as WorkoutType) : null;
-  const { profile, today, week, strengthDone, runMinutes, runKcal, weightKg, events } = await getTrainingData();
+  const { profile, today, week, strengthDone, runMinutes, runKcal, weightKg, events, recentStrength } = await getTrainingData();
   const workouts = week.flatMap((d) => d.workouts).reverse();
 
   return (
@@ -26,6 +26,8 @@ export default async function EntrenosPage({ searchParams }: { searchParams: Pro
           weightKg={weightKg}
           nicknames={profile.nicknames}
           favorites={profile.favorite_sports}
+          strengthMode={profile.strength_mode}
+          recentStrength={recentStrength}
           showRegisterAll
           openType={openType}
         />
@@ -40,7 +42,9 @@ export default async function EntrenosPage({ searchParams }: { searchParams: Pro
         {events.length > 0 && (
           <Card>
             <CardTitle>Derrapes agendados 😈</CardTitle>
-            <CardDescription>Los nuevos se agendan desde Hoy.</CardDescription>
+            <CardDescription>
+              Te sirven para ver cuándo te salís de tu rutina. Son para tu motivación: no cuentan para tu nivel ni el ranking. Los nuevos se agendan desde Hoy.
+            </CardDescription>
             <EventList events={events} />
           </Card>
         )}

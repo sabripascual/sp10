@@ -1,6 +1,7 @@
 // "¿Cómo venís?": nivel de la semana, de perrita pajera a perrita nivel dios.
 // Se califica la semana cerrada (lunes a domingo); cambia cada lunes.
 import { weekGoals, type WeekSummary } from "@/lib/progress";
+import { fmtCount } from "@/lib/goals";
 
 export type LevelKey = "pajera" | "vagoneta" | "promedio" | "motivada" | "crack" | "dios";
 
@@ -15,13 +16,14 @@ export const LEVELS: { key: LevelKey; min: number; name: string; emoji: string; 
 
 /**
  * Puntaje 0-100, a partir de tu objetivo semanal (Ajustes → Tu semana ideal):
- *  - Objetivos 85: se reparten en partes iguales entre lo que elegiste
- *    (ej. ayunos, fierritos y fútbol → ~28 cada uno); cada uno suma según hecho / meta (tope 1).
- *  - Derrapes 15: compensados no restan; cada uno que cerró la semana sin compensar resta 7,5.
+ * los 100 puntos se reparten en partes iguales entre lo que elegiste
+ * (ej. ayunos, fierritos y fútbol → ~33 cada uno); cada uno suma según hecho / meta (tope 1).
+ * Los derrapes NO restan: son una métrica personal (Progreso), no cuentan para el nivel ni el ranking.
+ * Un entreno que compensó un derrape cuenta la mitad para su objetivo (ver weekSummaries).
  */
 export type ScorePart = { key: string; emoji: string; label: string; points: number; max: number; why: string };
 
-const GOALS_POINTS = 85;
+const GOALS_POINTS = 100;
 
 /** Desglose del puntaje: cuántos puntos sumó cada parte y por qué. */
 export function scoreParts(w: WeekSummary): ScorePart[] {
@@ -30,15 +32,7 @@ export function scoreParts(w: WeekSummary): ScorePart[] {
   const parts: ScorePart[] = items.map((g, i) => {
     // reparto de 85 sin perder puntos por redondeo
     const max = Math.floor(GOALS_POINTS / n) + (i < GOALS_POINTS % n ? 1 : 0);
-    return { key: g.key, emoji: g.emoji, label: g.label, max, points: Math.round(g.ratio * max), why: `${g.done} de ${g.target}` };
-  });
-  parts.push({
-    key: "derrapes",
-    emoji: "😈",
-    label: "Derrapes",
-    max: 15,
-    points: Math.round(Math.max(0, 15 - 7.5 * w.missed)),
-    why: w.missed ? `${w.missed} sin compensar` : "ninguno sin compensar",
+    return { key: g.key, emoji: g.emoji, label: g.label, max, points: Math.round(g.ratio * max), why: `${fmtCount(g.done)} de ${g.target}` };
   });
   return parts;
 }

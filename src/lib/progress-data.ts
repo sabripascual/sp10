@@ -7,6 +7,7 @@ import type { BodyCheck } from "@/lib/body";
 import { weekStart } from "@/lib/week";
 import { firstGradedWeek, levelHistory } from "@/lib/level";
 import { profileGoals } from "@/lib/goals";
+import { withFallback } from "@/lib/db-fallback";
 import {
   compensatedStreak,
   zoneStats,
@@ -38,8 +39,8 @@ export const getProgressData = cache(async function getProgressData(): Promise<P
 
   const [records, wRes, eRes, cRes] = await Promise.all([
     loadFastRecords(profile, shiftDate(today, -400)),
-    supabase.from("workouts").select("date, type, minutes, status, details").gte("date", from),
-    supabase.from("events").select("date, compensated_at"),
+    supabase.from("workouts").select("id, date, type, minutes, status, details").gte("date", from),
+    withFallback(supabase.from("events").select("date, compensated_at, compensated_by"), () => supabase.from("events").select("date, compensated_at")),
     supabase.from("body_checks").select("id, date, weight_kg, waist_cm, hip_cm, chest_cm, arm_cm, thigh_cm, note").order("date"),
   ]);
   for (const r of [wRes, eRes, cRes]) if (r.error) throw new Error(`No pude leer el progreso: ${r.error.message}`);

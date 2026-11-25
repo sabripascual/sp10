@@ -8,7 +8,7 @@ const w = (x: Partial<WeekSummary>): WeekSummary => ({
   compensated: 0, missed: 0, runMinutes: 0, otherWorkouts: 0, byType: {}, goals: { ayuno: 5, fuerza: 2, futbol: 1 }, ...x,
 });
 
-// Objetivo de ejemplo: 5 ayunos, 2 fierritos, 1 fútbol → 85 pts repartidos 29/28/28 + derrapes 15
+// Objetivo de ejemplo: 5 ayunos, 2 fierritos, 1 fútbol → 100 pts repartidos 34/33/33. Los derrapes no restan.
 const t = (fuerza: number, futbol: number) => ({ fuerza, futbol });
 
 test("semana ideal cumplida es nivel dios", () => {
@@ -16,15 +16,16 @@ test("semana ideal cumplida es nivel dios", () => {
   assert.equal(levelFor(100).key, "dios");
 });
 
-test("solo ayuno: vagoneta; poco de todo y derrapes: pajera", () => {
-  assert.equal(weekScore(w({})), 44); // 29 + 15
-  assert.equal(levelFor(44).key, "vagoneta");
-  assert.equal(levelFor(weekScore(w({ fastOk: 2, missed: 2 }))).key, "pajera"); // 12 + 0
+test("solo ayuno: vagoneta; poco de todo: pajera; los derrapes sin compensar no restan", () => {
+  assert.equal(weekScore(w({})), 34);
+  assert.equal(levelFor(34).key, "vagoneta");
+  assert.equal(levelFor(weekScore(w({ fastOk: 2 }))).key, "pajera"); // 14
+  assert.equal(weekScore(w({ missed: 3 })), weekScore(w({})));
 });
 
 test("motivada y crack", () => {
-  assert.equal(levelFor(weekScore(w({ byType: t(1, 1) }))).key, "crack"); // 29+14+28+15 = 86
-  assert.equal(levelFor(weekScore(w({ fastOk: 3, byType: t(1, 1) }))).key, "motivada"); // 17+14+28+15 = 74
+  assert.equal(levelFor(weekScore(w({ byType: t(1, 1) }))).key, "crack"); // 34+17+33 = 84
+  assert.equal(levelFor(weekScore(w({ fastOk: 3, byType: t(1, 1) }))).key, "motivada"); // 20+17+33 = 70
 });
 
 test("historial: solo semanas cerradas desde el inicio", () => {
@@ -43,13 +44,12 @@ test("se califica desde la primera semana completa", () => {
   assert.equal(firstGradedWeek("2026-11-18"), "2026-11-23"); // miércoles → el lunes siguiente
 });
 
-test("desglose de puntos con el porqué", () => {
+test("desglose de puntos con el porqué (sin derrapes)", () => {
   const x = w({ fastOk: 4, byType: t(1, 0), missed: 1 });
   assert.deepEqual(scoreParts(x).map((p) => [p.key, p.points, p.max, p.why]), [
-    ["ayuno", 23, 29, "4 de 5"],
-    ["fuerza", 14, 28, "1 de 2"],
-    ["futbol", 0, 28, "0 de 1"],
-    ["derrapes", 8, 15, "1 sin compensar"],
+    ["ayuno", 27, 34, "4 de 5"],
+    ["fuerza", 17, 33, "1 de 2"],
+    ["futbol", 0, 33, "0 de 1"],
   ]);
-  assert.equal(weekScore(x), 45);
+  assert.equal(weekScore(x), 44);
 });

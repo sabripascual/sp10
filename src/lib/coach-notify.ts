@@ -54,9 +54,9 @@ const levelInfo = (k: LevelKey) => LEVELS.find((l) => l.key === k)!;
 
 /** Si seguís al mismo ritmo: nivel con que cerrarías la semana. */
 export function forecastLevel(items: GoalItem[]) {
-  if (!items.length) return levelFor(15);
+  if (!items.length) return levelFor(0);
   const avg = items.reduce((a, i) => a + Math.min(1, (i.done / i.target) * FORECAST_FACTOR), 0) / items.length;
-  return levelFor(Math.round(avg * 85) + 15);
+  return levelFor(Math.round(avg * 100));
 }
 
 export function coachNotifications(ctx: CoachContext, rand: () => number = Math.random): DueNotification[] {

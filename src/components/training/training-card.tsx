@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { TYPE_EMOJI, TYPE_LABEL, favoritesOf, type DayPlan, type WorkoutType } from "@/lib/training-types";
+import { TYPE_EMOJI, TYPE_LABEL, favoritesOf, type DayPlan, type RecentStrength, type WorkoutType } from "@/lib/training-types";
 import { RegisterSheet } from "./register-sheet";
 import { WeekStrip } from "./week-strip";
 
@@ -34,7 +34,11 @@ export function TrainingCard({
   favorites,
   showRegisterAll = false,
   openType = null,
+  strengthMode = "detailed",
+  recentStrength = [],
 }: {
+  strengthMode?: "simple" | "detailed" | null;
+  recentStrength?: RecentStrength[];
   /** Venís desde un aviso: abre el registro de ese tipo ("any" = elegir tipo). */
   openType?: WorkoutType | "any" | null;
   week: DayPlan[];
@@ -54,7 +58,7 @@ export function TrainingCard({
   const count = (t: WorkoutType) => all.filter((w) => w.type === t).length;
   const mins = (t: WorkoutType) => all.filter((w) => w.type === t).reduce((a, w) => a + (w.minutes ?? 0), 0);
   const favs = favoritesOf(favorites);
-  const sheet = { today, weightKg, nicknames, className: tile };
+  const sheet = { today, weightKg, nicknames, className: tile, strengthMode, recentStrength };
   const openHere = (t: WorkoutType) => openType === t;
   const openAll = Boolean(openType) && !(openType !== "any" && favs.includes(openType as WorkoutType));
   const times = (n: number) => (n === 0 ? "Todavía nada" : n === 1 ? "1 vez" : `${n} veces`);
@@ -108,6 +112,8 @@ export function TrainingCard({
           weightKg={weightKg}
           nicknames={nicknames}
           label="+ Registrar otro entreno"
+          strengthMode={strengthMode}
+          recentStrength={recentStrength}
           className="w-full"
           autoOpen={openAll}
           initialType={openAll && openType !== "any" ? (openType as WorkoutType) : null}

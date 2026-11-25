@@ -9,6 +9,9 @@ import { FastProtocolPicker } from "@/components/fast/fast-protocol";
 import { FavoriteSportsPicker } from "./favorite-sports";
 import { WeeklyGoalsPicker } from "./weekly-goals";
 import { goalsOf } from "@/lib/goals";
+import { compPrefsOf, type CompPrefs } from "@/lib/events";
+import { CompPicker } from "@/components/training/comp-picker";
+import { cn } from "@/lib/utils";
 import { updateSettings, type SettingsState } from "./actions";
 
 const inputClass =
@@ -27,6 +30,8 @@ export function SettingsForm({ profile }: { profile: Profile }) {
 function Form({ profile, onDiscard }: { profile: Profile; onDiscard: () => void }) {
   const [state, action, pending] = useActionState<SettingsState, FormData>(updateSettings, {});
   const [fasting, setFasting] = useState(profile.fasting_enabled !== false);
+  const [comp, setComp] = useState<CompPrefs>(compPrefsOf(profile.derrape_comp, profile.fasting_enabled !== false));
+  const [strengthMode, setStrengthMode] = useState<"simple" | "detailed">(profile.strength_mode === "detailed" ? "detailed" : "simple");
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   const saved = useRef("");
@@ -118,6 +123,44 @@ function Form({ profile, onDiscard }: { profile: Profile; onDiscard: () => void 
           </CardDescription>
         </div>
         <WeeklyGoalsPicker initial={goalsOf(profile.weekly_goals, profile.strength_goal)} fasting={fasting} />
+      </Card>
+
+      <Card className="space-y-4">
+        <div>
+          <CardTitle>Fierritos 💪🏻: ¿cómo los registrás?</CardTitle>
+          <CardDescription>Elegilo una vez; después cada fierrito se carga así.</CardDescription>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              ["simple", "⚡ Simple", "Día y tiempo, como el resto de los deportes"],
+              ["detailed", "📝 Detallado", "Zonas, repetir el último o usar uno anterior"],
+            ] as const
+          ).map(([k, title, desc]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setStrengthMode(k)}
+              className={cn("rounded-xl p-3 text-left transition-colors", strengthMode === k ? "bg-accent text-accent-fg" : "bg-bg text-fg")}
+            >
+              <span className="block font-black">{title}</span>
+              <span className={cn("block text-xs", strengthMode === k ? "text-accent-fg/80" : "text-muted")}>{desc}</span>
+            </button>
+          ))}
+        </div>
+        <input type="hidden" name="strength_mode" value={strengthMode} />
+      </Card>
+
+      <Card className="space-y-4">
+        <div>
+          <CardTitle>Cómo compensás tus derrapes 😈</CardTitle>
+          <CardDescription>
+            Viene así al agendar uno (lo podés cambiar en cada derrape). Se marca compensado solo cuando cargás eso antes del domingo.
+            El entreno que compensa cuenta la mitad para tu semana ideal.
+          </CardDescription>
+        </div>
+        <CompPicker value={comp} onChange={setComp} fasting={fasting} />
+        <input type="hidden" name="derrape_comp" value={JSON.stringify(fasting ? comp : { ...comp, mode: "workout" })} />
       </Card>
 
       <Card className="space-y-4">

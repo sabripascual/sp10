@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { favoritesOf } from "@/lib/training-types";
 import { GOAL_KEYS, MAX_PER_GOAL, type Goals } from "@/lib/goals";
+import { compPrefsOf, type CompPrefs } from "@/lib/events";
 
 export type SettingsState = { ok?: boolean; error?: string };
 
@@ -16,6 +17,13 @@ export async function updateSettings(
   const fastStart = String(formData.get("fast_start") ?? "");
   const fastEnd = String(formData.get("fast_end") ?? "");
   const fastingEnabled = formData.get("fasting_enabled") === "on";
+  const strengthMode = formData.get("strength_mode") === "detailed" ? "detailed" : "simple";
+  let derrapeComp: CompPrefs | null = null;
+  try {
+    derrapeComp = compPrefsOf(JSON.parse(String(formData.get("derrape_comp") ?? "null")), fastingEnabled);
+  } catch {
+    derrapeComp = null;
+  }
   let goals: Goals = {};
   try {
     const raw = JSON.parse(String(formData.get("weekly_goals") ?? "{}")) as Record<string, unknown>;
@@ -54,6 +62,8 @@ export async function updateSettings(
       fast_end: fastEnd,
       weekly_goals: goals,
       fasting_enabled: fastingEnabled,
+      strength_mode: strengthMode,
+      ...(derrapeComp ? { derrape_comp: derrapeComp } : {}),
       // la meta de fierritos de siempre sigue al objetivo (si sacaste fierritos, queda la anterior)
       ...(goals.fuerza ? { strength_goal: goals.fuerza } : {}),
       hide_weight: hideWeight,
