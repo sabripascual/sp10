@@ -30,6 +30,8 @@ export type ProgressData = {
   level: ReturnType<typeof levelHistory>;
   /** Horas promedio de los ayunos cumplidos de las últimas 4 semanas (null si no hay). */
   fastAvgHours: number | null;
+  /** Lunes de tu primera semana en Ringo (semana 1). */
+  firstWeek: string;
 };
 
 export const getProgressData = cache(async function getProgressData(): Promise<ProgressData> {
@@ -74,6 +76,7 @@ export const getProgressData = cache(async function getProgressData(): Promise<P
   return {
     profile,
     fastAvgHours,
+    firstWeek: weekStart(since),
     weeks,
     fast: fastStreaks(now, profile, records, since),
     strength: strengthWeekStreaks(weeks),

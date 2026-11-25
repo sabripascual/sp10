@@ -10,7 +10,10 @@ import { fastingOn } from "@/lib/profile";
 
 type Data = Awaited<ReturnType<typeof getProgressData>>;
 
-const dm = (date: string) => `${Number(date.slice(8))}/${Number(date.slice(5, 7))}`;
+/** "16/11/2026" */
+const dmy = (date: string) => `${date.slice(8)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
+/** Número de semana desde tu primera semana en Ringo (la primera es la 1). */
+const weekNumber = (ws: string, first: string) => Math.round((Date.parse(`${ws}T12:00:00Z`) - Date.parse(`${first}T12:00:00Z`)) / (7 * 86_400_000)) + 1;
 const LAST_WEEKS = 6;
 
 /** Progreso simple: cómo voy esta semana, si estoy mejorando y qué me sale bien / qué me cuesta. */
@@ -71,7 +74,6 @@ export function ProgresoView({ data }: { data: Data }) {
           <Card className="space-y-3">
             <div>
               <CardTitle>Tus últimas semanas</CardTitle>
-              <p className="text-xs text-muted">Cada fecha es el lunes de esa semana.</p>
               {trend && <CardDescription className="mt-0.5 text-fg">{trend}</CardDescription>}
             </div>
             <ul className="space-y-2.5">
@@ -80,7 +82,10 @@ export function ProgresoView({ data }: { data: Data }) {
                 const lvl = levelFor(weekScore(w));
                 return (
                   <li key={w.weekStart} className="flex items-center gap-3 text-sm">
-                    <span className="w-11 shrink-0 font-bold tabular-nums text-muted">{dm(w.weekStart)}</span>
+                    <span className="w-[74px] shrink-0 leading-tight">
+                      <span className="block font-bold">Semana {weekNumber(w.weekStart, data.firstWeek)}</span>
+                      <span className="block text-[10px] tabular-nums text-muted">{dmy(w.weekStart)}</span>
+                    </span>
                     <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-bg">
                       <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
                     </span>
