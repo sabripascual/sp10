@@ -64,7 +64,9 @@ export function LevelCard({
           </div>
           <div className="min-w-0">
             <p className="text-xs font-bold text-muted">Tu clasificación de la semana</p>
-            <p className="text-2xl font-black leading-tight">{lvl.name}</p>
+            <p className="text-2xl font-black leading-tight">
+              Perrita, <span className="text-accent">{lvl.name.replace("Perrita ", "")}</span>
+            </p>
             <p className="mt-1 text-sm text-muted">{lvl.blurb}</p>
           </div>
         </div>
