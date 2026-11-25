@@ -6,6 +6,8 @@ import { EventList } from "@/components/training/event-list";
 import { TrainingCard } from "@/components/training/training-card";
 import { WorkoutList } from "@/components/training/workout-list";
 import { getTrainingData } from "@/lib/training";
+import { getProgressData } from "@/lib/progress-data";
+import { ZonesCard } from "@/components/progress/zones-card";
 import { ALL_TYPES, type WorkoutType } from "@/lib/training-types";
 
 export default async function EntrenosPage({ searchParams }: { searchParams: Promise<{ registrar?: string }> }) {
@@ -13,6 +15,8 @@ export default async function EntrenosPage({ searchParams }: { searchParams: Pro
   const openType = registrar === "any" ? "any" : ALL_TYPES.includes(registrar as WorkoutType) ? (registrar as WorkoutType) : null;
   const { profile, today, week, strengthDone, runMinutes, runKcal, weightKg, events, recentStrength } = await getTrainingData();
   const workouts = week.flatMap((d) => d.workouts).reverse();
+  // Fierritos por zona (antes en Progreso): solo si los registrás en detallado
+  const zones = profile.strength_mode === "detailed" ? await getProgressData() : null;
 
   return (
     <>
@@ -33,6 +37,8 @@ export default async function EntrenosPage({ searchParams }: { searchParams: Pro
           showRegisterAll
           openType={openType}
         />
+
+        {zones && <ZonesCard zones={zones.zones} checks={zones.checks} />}
 
         {workouts.length > 0 && (
           <Card>
